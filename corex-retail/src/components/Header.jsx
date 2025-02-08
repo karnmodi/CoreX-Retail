@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import '../Header.css'; 
+import '../Css/Header.css'; 
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
-    { to: '/home', label: 'Home' },
+    { to: '/', label: 'Home' },
     { to: '/login', label: 'Login' },
+    { to: '/dashboard', label: 'Dashboard' },
   ];
 
   return (
