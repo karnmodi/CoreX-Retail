@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth,db } from "./FirebaseConfig";
-import { onAuthStateChanged, signInWithEmailAndPassword} from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile} from "firebase/auth";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
 
@@ -46,7 +46,13 @@ export const AuthProvider = ({children}) => {
 
     const loginwithEmailPassword = async(email, password) => {
         try{
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredentials = await signInWithEmailAndPassword(auth, email, password);
+            console.log("User Logged In:" , userCredentials.user)
+            
+            setUser(userCredentials.user);
+            await fetchUserData(userCredentials.user.uid);
+            
+            return userCredentials.user;
         } catch(error){
             console.error(error.message)
             throw error;
@@ -54,9 +60,35 @@ export const AuthProvider = ({children}) => {
         }
     };
 
+    const registerWithEmailPassword = async(name, email, password)=> {
+            try {
+              const credentials = await createUserWithEmailAndPassword(auth, email, password);
+              const user = credentials.user;
+              setUser(user);
+        
+              await updateProfile(user, {
+                StaffName: name,
+              });
+        
+              await setDoc(doc(db, "staffs", user.uid), {
+                name: name,
+                email: email,
+                uid: user.uid,
+              });
+              
+              await fetchUserData(user.uid);
+              console.log("User Registered", name, " &", email )
+            } 
+            catch (error) {
+              console.error("Registration Failed:", error.message);
+              alert(error.message);
+            }
+    }
+
     const logout = async () => {
         setUserData(null)
         await signOut(auth);
+        
     };
 
     const getCurrentUser = () => {
@@ -65,7 +97,7 @@ export const AuthProvider = ({children}) => {
 
 
     return(
-        <AuthContext.Provider value = {{user, userData, loginwithEmailPassword, logout, loading, getCurrentUser}}>
+        <AuthContext.Provider value = {{user, userData, loginwithEmailPassword, registerWithEmailPassword, logout, loading, getCurrentUser}}>
             {!loading && children}
         </AuthContext.Provider>
     );

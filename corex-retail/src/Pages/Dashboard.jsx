@@ -1,18 +1,29 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "../configs/AuthContext";
 import Header from "../components/Header.jsx";
+import { useNavigate } from "react-router-dom";
 
-const  Dashboard = () => {
+const Dashboard = () => {
+    const { user, userData, logout } = useAuth();
+    const navigate = useNavigate();
 
-    const {user, userData,logout, getCurrentUser} = useAuth();
+    useEffect(() => {
+        if (!user) {
+            navigate("/login");
+        }
+    }, [user, navigate]);
+
+    const handleLogout = async () => {
+        await logout();
+        navigate("/login");
+    };
 
     return (
         <>
-        <Header/>
-        <h1>Welcome, {getCurrentUser || "Loading..."} </h1>
-        <h1>Welcome, {userData?.name || "Loading..."} </h1>
-        <p>{user?.email}</p>
-        <button onClick={logout}>LogOut</button>
+            <Header />
+            <h1>Welcome, {userData?.name || user?.displayName || "Loading..."}</h1>
+            <p>Email: {user?.email}</p>
+            <button onClick={handleLogout}>Log Out</button>
         </>
     );
 };

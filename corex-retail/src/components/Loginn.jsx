@@ -1,5 +1,5 @@
 import React, { createContext, useState } from "react";
-import { useAuth, loginwithEmailPassword } from "../configs/AuthContext";
+import { useAuth } from "../configs/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 
@@ -10,7 +10,7 @@ function Loginn(){
     const { loginwithEmailPassword } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = async(e) => {
+    const handleLogin = async(e) => {
         e.preventDefault();
         try{
             await loginwithEmailPassword(email,password);
@@ -27,7 +27,7 @@ function Loginn(){
     return(
         <>
         <div id="LoginForm">
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleLogin}>
                     <div class="Tab_Header">
                         <h2 class="tab active" id="LoginTab">Sign in for Faster Checkout.</h2>
                     </div>

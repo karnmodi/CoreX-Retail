@@ -6,7 +6,7 @@ const PrivateRoute = ({ children }) => {
 
   return user
     ? children
-    : (alert("Please Login First"), (<Navigate to="/login" />));
+    : ( (<Navigate to="/login" />));
 };
 
 export default PrivateRoute;

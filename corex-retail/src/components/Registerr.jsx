@@ -1,31 +1,20 @@
 import React, { useState } from "react";
-import { auth, db } from "../configs/FirebaseConfig";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { useAuth } from "../configs/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Registerr = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { registerWithEmailPassword } = useAuth();
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const credentials = await createUserWithEmailAndPassword(auth, email, password);
-      const user = credentials.user;
-
-
-      await updateProfile(user, {
-        displayName: name,
-      });
-
-      await setDoc(doc(db, "staffs", user.uid), {
-        name: name,
-        email: email,
-        uid: user.uid,
-      });
-
-      alert("User Successfully created.");
+      registerWithEmailPassword(name, email, password);
+      alert("User Created Successfully");
+      navigate("/dashboard")
     } 
     catch (error) {
       console.error("Registration Failed:", error.message);

@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import {useAuth} from '../configs/AuthContext'
 import '../Css/Header.css'; 
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth()
 
   const navLinks = [
     { to: '/', label: 'Home' },
-    { to: '/login', label: 'Login' },
-    { to: '/dashboard', label: 'Dashboard' },
-  ];
+    !user && { to: '/login', label: 'Login' },
+    user && { to: '/dashboard', label: 'Dashboard' },
+  ].filter(Boolean);
 
   return (
     <header className="header">
