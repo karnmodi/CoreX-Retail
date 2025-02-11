@@ -6,7 +6,6 @@ import LoginPage from "./Pages/LoginPage";
 import Dashboard from "./Pages/Dashboard";
 import { AuthProvider } from "./configs/AuthContext";
 import PrivateRoute from "./configs/PrivateRoute";
-// import "./App.css"
 
 
 const router = createBrowserRouter([
@@ -19,7 +18,7 @@ const router = createBrowserRouter([
   {path: "/dashboard",
     element: (
     <>
-    <PrivateRoute adminOnly>
+    <PrivateRoute>
       <Dashboard />
     </PrivateRoute>
     </>

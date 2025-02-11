@@ -11,6 +11,7 @@ function LoginPage() {
   return (
     <>
       <Header />
+      <Header />
 
       {!showRegister ? (
         <>

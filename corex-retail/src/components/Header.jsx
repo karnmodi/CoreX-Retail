@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
-import {useAuth} from '../configs/AuthContext'
-import '../Css/Header.css'; 
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Menu,
+  X,
+  User,
+  Settings,
+  LogOut,
+  ChevronDown,
+  Users,
+  BarChart,
+  FileText,
+  ShieldCheck,
+  Bell,
+  HelpCircle,
+} from "lucide-react";
+import { useAuth } from "../configs/AuthContext";
+import "../CSS/Header.css";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth()
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, userData } = useAuth();
 
   const navLinks = [
-    { to: '/', label: 'Home' },
-    !user && { to: '/login', label: 'Login' },
-    user && { to: '/dashboard', label: 'Dashboard' },
+    { to: "/", label: "Home" },
+    !user && { to: "/login", label: "Login" },
+    user && { to: "/dashboard", label: "Dashboard" },
+    user && { to: "/dashboard", label: userData?.name || "Profile" },
   ].filter(Boolean);
 
   return (
@@ -19,11 +34,15 @@ const Header = () => {
       <div className="header-container">
         <div className="header-content">
           <div className="logo-container">
-            <img src="src\assets\\Website Logo.jpg" alt="Logo" className="logo-image" />
+            <img
+              src="src\assets\\Website Logo.jpg"
+              alt="Logo"
+              className="logo-image"
+            />
           </div>
-          
+
           <button
-            className={`mobile-menu-btn ${isMenuOpen ? 'open' : ''}`}
+            className={`mobile-menu-btn ${isMenuOpen ? "open" : ""}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
@@ -33,7 +52,7 @@ const Header = () => {
             )}
           </button>
 
-          <nav className={`nav-menu ${isMenuOpen ? 'open' : ''}`}>
+          <nav className={`nav-menu ${isMenuOpen ? "open" : ""}`}>
             <ul className="nav-list">
               {navLinks.map((link, index) => (
                 <li key={index}>

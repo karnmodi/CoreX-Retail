@@ -1,27 +1,27 @@
-// Import the functions you need from the SDKs you need
+// firebase.js
+
+// Import the functions you need from the Firebase SDKs
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import {getAuth} from "firebase/auth";
-import {getFirestore} from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Retrieve Firebase configuration from .env variables
 const firebaseConfig = {
-  apiKey: "AIzaSyA7dIuB6BtlKCGZp2mRcnWAf5cCB8Cc1oc",
-  authDomain: "corex-retail.firebaseapp.com",
-  projectId: "corex-retail",
-  storageBucket: "corex-retail.firebasestorage.app",
-  messagingSenderId: "830046181945",
-  appId: "1:830046181945:web:c6b5b39cd8c5a47da3cbe8",
-  measurementId: "G-XTB8S632Y3"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
+// Export services
 export default app;
 export const auth = getAuth(app);
-export const db = getFirestore(app)
+export const db = getFirestore(app);
