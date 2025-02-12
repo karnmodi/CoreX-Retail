@@ -3,7 +3,9 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import LoginPage from "./Pages/LoginPage";
-import Dashboard from "./Pages/Dashboard";
+import DashboardAdmin from "./pages/admin/DashboardAdmin";
+import DashboardManager from "./pages/DashboardManager";
+import DashboardStaff from "./pages/DashboardStaff";
 import { AuthProvider } from "./configs/AuthContext";
 import PrivateRoute from "./configs/PrivateRoute";
 
@@ -15,11 +17,29 @@ const router = createBrowserRouter([
   {path: "/login",
     element: <><LoginPage /></>
   },
-  {path: "/dashboard",
+  {path: "/dashboardAdmin",
     element: (
     <>
     <PrivateRoute>
-      <Dashboard />
+      <DashboardAdmin />
+    </PrivateRoute>
+    </>
+    )
+  },
+  {path: "/dashboardManager",
+    element: (
+    <>
+    <PrivateRoute>
+      <DashboardManager />
+    </PrivateRoute>
+    </>
+    )
+  },
+  {path: "/dashboardStaff",
+    element: (
+    <>
+    <PrivateRoute>
+      <DashboardStaff />
     </PrivateRoute>
     </>
     )
@@ -33,6 +53,7 @@ function App() {
     <>  
     
       <AuthProvider>
+        
       <RouterProvider router = {router}/>
       </AuthProvider>
     </>

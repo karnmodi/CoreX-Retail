@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
-import { useAuth } from "../configs/AuthContext";
+import { useAuth } from "../configs/AuthContext.jsx";
 import Header from "../components/Header.jsx";
 import { useNavigate } from "react-router-dom";
 
-const Dashboard = () => {
+const DashboardManager = () => {
     const { user, userData, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -18,14 +18,19 @@ const Dashboard = () => {
         navigate("/login");
     };
 
+    const navLinks = [
+        {to: "/", label: "Home"},
+        {to: "/login", label: "Login"}
+      ].filter(Boolean)
+
     return (
         <>
-            <Header />
-            <h1>Welcome, {userData?.name || user?.displayName || "Loading..."}</h1>
+            <Header navLinks={navLinks}/>
+            <h1>Welcome Manager, {userData?.firstName + " " + userData?.lastName || user?.displayName || "Loading..."}</h1>
             <p>Email: {user?.email}</p>
             <button onClick={handleLogout}>Log Out</button>
         </>
     );
 };
 
-export default Dashboard;
+export default DashboardManager;

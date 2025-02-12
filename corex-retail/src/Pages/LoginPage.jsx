@@ -7,11 +7,17 @@ import Loginn from "../components/Loginn.jsx";
 
 function LoginPage() {
   const [showRegister, setShowRegister] = useState(false);
+  
+
+  const navLinks = [
+    {to: "/", label: "Home"}
+  ].filter(Boolean)
+
+  
 
   return (
     <>
-      <Header />
-      <Header />
+      <Header navLinks={navLinks} />
 
       {!showRegister ? (
         <>
@@ -29,8 +35,6 @@ function LoginPage() {
         </span>
         </>
       )}
-
-    
     </>
   );
 }
