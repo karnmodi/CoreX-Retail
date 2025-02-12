@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Sidebar from "./sidebar"; 
-import { useSidebar } from "./sidebarContext";
 import '.././css/header.css';
 
 
@@ -13,7 +12,6 @@ const Header = ({ navLinks, buttons }) => {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeSidebarNav, setActiveSidebarNav] = useState(null);
-  // const {toggleSidebar} = useSidebar();
 
   const handleNavClick = (index) => {
     setActiveSidebarNav(index);
