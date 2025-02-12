@@ -9,8 +9,8 @@ import DashboardStaff from "./pages/DashboardStaff";
 import ManageStaff from "./pages/Staff_Management/ManageStaff"; // Import ManageStaff
 import { AuthProvider } from "./configs/AuthContext";
 import PrivateRoute from "./configs/PrivateRoute";
-import navLinksAdmin from "./components/navLinksAdmin";
-import MainLayout from "./components/MainLayout";
+import navLinksAdmin from "./components/NavLinks/navLinksAdmin";
+import MainLayout from "./configs/MainLayout";
 
 function App() {
   const logoSrc = "/assets/WebsiteLogo.jpg"; 

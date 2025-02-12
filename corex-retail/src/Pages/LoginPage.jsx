@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Header from "../components/Header.jsx";
 import Registerr from "../components/Registerr.jsx";
 import Loginn from "../components/Loginn.jsx";
 

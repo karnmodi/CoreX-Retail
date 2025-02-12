@@ -1,11 +1,9 @@
 import React from "react";
 
-function ManageStaff(){
-    return(
-        <>
-        <h1>Manage Staff</h1>
-        </>
-    )
-}
+const StaffPage = () => { 
+  return (
+    <h1>hello Staff</h1>
+  )
+};
 
-export default ManageStaff;
+export default StaffPage;
