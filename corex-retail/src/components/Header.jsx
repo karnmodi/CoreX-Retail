@@ -1,15 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ChevronDown } from "lucide-react";
-import Sidebar from "./sidebar"; 
-import '.././css/header.css';
-
+import Sidebar from "./sidebar";
+import ".././css/header.css";
 
 const Header = ({ navLinks, buttons }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [activeButtonDropdown, setActiveButtonDropdown] = useState(null);
-  
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeSidebarNav, setActiveSidebarNav] = useState(null);
 
@@ -53,10 +52,13 @@ const Header = ({ navLinks, buttons }) => {
                       onMouseEnter={() => setActiveDropdown(null)}
                       onMouseLeave={() => setActiveDropdown(null)}
                     >
-                      <Link 
-                        to={link.to} 
+                      <Link
+                        to={link.to}
                         className="nav-link"
-                        onClick={() => handleNavClick(index)} // Add click handler
+                        onClick={() => {
+                          handleNavClick(index);
+                          setIsMenuOpen(false);
+                        }}
                       >
                         {link.label}
                       </Link>
@@ -65,7 +67,10 @@ const Header = ({ navLinks, buttons }) => {
                       {link.subItems && activeDropdown === index && (
                         <ul className="dropdown-menu">
                           {link.subItems.map((subItem, subIndex) => (
-                            <li key={subIndex} style={{ listStyleType: "none" }}>
+                            <li
+                              key={subIndex}
+                              style={{ listStyleType: "none" }}
+                            >
                               <Link to={subItem.to} className="dropdown-link">
                                 {subItem.label}
                               </Link>

@@ -1,4 +1,4 @@
-"use client"; // Ensure this is added at the top
+"use client";
 
 import React, { useState } from "react";
 import Header from "../components/Header.jsx";
@@ -7,17 +7,9 @@ import Loginn from "../components/Loginn.jsx";
 
 function LoginPage() {
   const [showRegister, setShowRegister] = useState(false);
-  
-
-  const navLinks = [
-    {to: "/", label: "Home"}
-  ].filter(Boolean)
-
-  
 
   return (
     <>
-      <Header navLinks={navLinks} />
 
       {!showRegister ? (
         <>
