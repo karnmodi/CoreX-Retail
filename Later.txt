@@ -1,0 +1,5 @@
+Things to complete later
+
+Make designs responsive
+Through Error while registering the Staff (Dates particularly)
+Performance Score can be modified by direct Page of Team Store manager/ not by adding staff form
