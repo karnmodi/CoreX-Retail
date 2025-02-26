@@ -24,7 +24,7 @@ const Header = ({ navLinks, buttons }) => {
           <div className="header-content">
             <div className="logo-container">
               <a href="/"><img
-                src="src/assets/Website Logo.jpg"
+                src="/Website Logo.jpg"
                 alt="Logo"
                 className="logo-image"
               />

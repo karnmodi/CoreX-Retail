@@ -67,7 +67,6 @@ export const StaffProvider = ({ children }) => {
     setSelectedStaff(null);
   };
 
-
   const getStaffById = async (id) => {
     try {
       const staffDocRef = doc(db,"employees", id);
@@ -127,26 +126,30 @@ export const StaffProvider = ({ children }) => {
     }
   };
 
+  const deleteStaffMember = async (id) => {
+    try {
+      // Retrieve user document from Firestore to get UID
+      const userDoc = await getDoc(doc(db, "employees", id));
+      if (!userDoc.exists()) throw new Error("User not found");
+  
+      const userData = userDoc.data();
+      const uid = userData.id;
+      
+      // Delete from Firestore Database
+      await deleteDoc(doc(db, "employees", id))
 
+      const functions = getFunctions();
+      const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
+      await deleteAuthUser({ uid: id });
+  
+      console.log("User deleted from Firestore and Authentication.");
 
-const deleteStaffMember = async (id, uid) => {
-  try {
-    // Delete from Firestore Database
-    await deleteDoc(doc(db, "employees", id));
-
-    // Delete from Firebase Authentication
-    const functions = getFunctions();
-    const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
-
-    await deleteUserAccount({ uid });
-
-    console.log("User deleted from Firestore and Authentication.");
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    setError(error.message);
-    throw error;
-  }
-};
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
 
   const value = {

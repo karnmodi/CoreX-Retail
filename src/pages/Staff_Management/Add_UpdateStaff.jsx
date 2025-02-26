@@ -407,8 +407,8 @@ const Add_Update_StaffPage = () => {
         alert("Staff Member Successfully Updated.");
         navigate("../manageStaff");
       } else {
-        const user = await addStaffMember(staffData, formState.password);
         staffData.empId = generateEmployeeID();
+        const user = await addStaffMember(staffData, formState.password);
       }
       dispatch({ type: "RESET" });
       setStep(1);
