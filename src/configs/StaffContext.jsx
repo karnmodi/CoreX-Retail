@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./FirebaseConfig";
 import {
   collection,
@@ -12,7 +12,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { createUserWithEmailAndPassword,deleteUser } from "firebase/auth";
+import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 
 const StaffContext = createContext();
 
@@ -69,24 +69,23 @@ export const StaffProvider = ({ children }) => {
 
   const getStaffById = async (id) => {
     try {
-      const staffDocRef = doc(db,"employees", id);
+      const staffDocRef = doc(db, "employees", id);
       const staffDoc = await getDoc(staffDocRef);
 
-      if(staffDoc.exists()){
+      if (staffDoc.exists()) {
         return {
-        id: staffDoc.id,
-        ...staffDoc.data()
+          id: staffDoc.id,
+          ...staffDoc.data(),
         };
-      } else{
+      } else {
         return null;
       }
     } catch (error) {
       console.log("Error Fetching Staff by ID : ", error);
-      setError(error.message)
+      setError(error.message);
       throw error;
-      
     }
-  } 
+  };
 
   const addStaffMember = async (staffData, password) => {
     try {
@@ -97,13 +96,15 @@ export const StaffProvider = ({ children }) => {
       );
 
       const today = new Date();
-      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+      const formattedDate = `${
+        today.getMonth() + 1
+      }/${today.getDate()}/${today.getFullYear()}`;
 
       await setDoc(doc(db, "employees", userCredential.user.uid), {
         ...staffData,
         uid: userCredential.user.uid,
         startDate: formattedDate,
-        createdAt  : serverTimestamp(),
+        createdAt: serverTimestamp(),
       });
 
       return userCredential.user;
@@ -131,26 +132,28 @@ export const StaffProvider = ({ children }) => {
       // Retrieve user document from Firestore to get UID
       const userDoc = await getDoc(doc(db, "employees", id));
       if (!userDoc.exists()) throw new Error("User not found");
-  
+
       const userData = userDoc.data();
       const uid = userData.id;
-      
+
       // Delete from Firestore Database
-      await deleteDoc(doc(db, "employees", id))
 
-      const functions = getFunctions();
-      const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
-      await deleteAuthUser({ uid: id });
-  
-      console.log("User deleted from Firestore and Authentication.");
+      confirm("Are you sure you want to delete this user?")
+        ? [
+            await deleteDoc(doc(db, "employees", id)),
+            console.log("User deleted from Firestore and Authentication."),
+          ]
+        : alert("User deletion cancelled.");
 
+      // const functions = getFunctions();
+      // const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
+      // await deleteAuthUser({ uid: id });
     } catch (error) {
       console.error("Error deleting user:", error);
       setError(error.message);
       throw error;
     }
   };
-
 
   const value = {
     staff,

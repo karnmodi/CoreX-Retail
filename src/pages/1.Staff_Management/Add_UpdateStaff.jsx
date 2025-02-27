@@ -257,7 +257,7 @@ const Add_Update_StaffPage = () => {
           } else {
             setSubmitError("Staff member not found");
             setTimeout(() => {
-              navigate("../manageStaff");
+              navigate("../../staff/manage");
             }, 3000);
           }
         } catch (error) {
@@ -405,16 +405,16 @@ const Add_Update_StaffPage = () => {
 
         await updateStaffMember(documentId, staffData);
         alert("Staff Member Successfully Updated.");
-        navigate("../manageStaff");
+        navigate("../../staff/manage");
       } else {
         staffData.empId = generateEmployeeID();
         const user = await addStaffMember(staffData, formState.password);
+        dispatch({ type: "RESET" });
+        setStep(1);
+        alert("Staff member added successfully.", user);
+        navigate("../../staff/manage");
+        setErrors({});
       }
-      dispatch({ type: "RESET" });
-      setStep(1);
-      setErrors({});
-      alert("Staff member added successfully.", user);
-      navigate("../manageStaff");
     } catch (error) {
       setSubmitError([
         "Error " + (isUpdateMode ? "Updating" : "Adding") + "staff member" &&

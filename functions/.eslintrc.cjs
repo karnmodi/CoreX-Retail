@@ -1,7 +1,7 @@
 module.exports = {
   env: {
     es6: true,
-    node: true,
+    node: true, // Ensures Node.js environment
   },
   parserOptions: {
     ecmaVersion: 2018,
@@ -17,12 +17,16 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.spec.*'],
+      files: ['**/*.js'],
       env: {
-        mocha: true,
+        node: true,
       },
       rules: {},
     },
   ],
-  globals: {},
+  globals: {
+    require: 'readonly', // Explicitly define 'require' as global
+    module: 'readonly',  // Explicitly define 'module' as global
+    exports: 'readonly', // Explicitly define 'exports' as global
+  },
 };

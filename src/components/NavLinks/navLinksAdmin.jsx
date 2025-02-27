@@ -7,16 +7,16 @@ const navLinksAdmin = () => [
     label: "Staff ",
     to: "#",
     subItems: [
-      { to: "./manageStaff", label: "Manage Staff"},
-      { to: "./addUpdateStaff", label: "Add/Update Staff" },
-      { to: "./removeStaff", label: "Remove Staff" },
+      { to: "./staff/manage", label: "Manage Staff"},
+      { to: "./staff/addUpdate", label: "Add/Update Staff" },
+      { to: "./staff/remove", label: "Remove Staff" },
     ],
   },
   {
     label: "Rosters",
     to: "#",
     subItems: [
-      { to: "./createRosters", label: "Create Rosters" },
+      { to: "./rosters/createRosters", label: "Create Rosters" },
       { to: "./approveRosters", label: "Approve Rosters Requests" },
       { to: "./editRosters", label: "Edit Rosters" },
     ],

@@ -66,12 +66,12 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
 
   const handleEditClick = () => {
     onClose();
-    navigate(`../addUpdateStaff/${user.id}`);
+    navigate(`../addUpdate/${user.id}`);
   };
 
   const handleDeleteClick = () => {
     onClose();
-    navigate(`../removeStaff/${user.id}`);
+    navigate(`../remove/${user.id}`);
   };
 
   const handlePrint = () => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useReducer } from "react";
+import { useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useStaff } from "../../configs/StaffContext";
-// import { getFullName } from "../../utils/helpers";
+import { useStaff } from "@/configs/StaffContext";
 import { Button } from "@/components/ui/Button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -63,16 +63,21 @@ const RemoveStaff = () => {
   const navigate = useNavigate();
   const [formState, dispatch] = useReducer(formReducer, initialFormState || {});
   const { deleteStaffMember, getStaffById } = useStaff();
+  const hasRun = useRef(false); 
+  const [submitError, setSubmitError] = useState(""); 
 
-  const [submitError, setSubmitError] = useState(""); // Define submitError state
 
+  
   useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+  
     if (!id) {
       alert("Please select a Staff from the Manage Staff page");
-      navigate("../manageStaff");
+      navigate("../../staff/manage");
       return;
     }
-
+  
     const loadStaffMember = async () => {
       try {
         const staffMember = await getStaffById(id);
@@ -85,7 +90,7 @@ const RemoveStaff = () => {
             maritalStatus: staffMember.maritalDesc || "",
             gender: staffMember.genderCode || "",
             race: staffMember.raceDesc || "",
-
+  
             // Employment Information
             employeeID: staffMember.empId || "",
             classificationType: staffMember.classificationType || "",
@@ -94,7 +99,7 @@ const RemoveStaff = () => {
             employeeStatus: staffMember.employeeStatus || "",
             employeeRating: staffMember.currentEmployeeRating || "",
             performanceScore: staffMember.performanceScore || "",
-
+  
             // Department Information
             department: staffMember.departmentType || "",
             division: staffMember.division || "",
@@ -102,41 +107,44 @@ const RemoveStaff = () => {
             state: staffMember.state || "",
             supervisor: staffMember.supervisor || "",
             payZone: staffMember.payZone || "",
-
+  
             // Dates Information
             exitDate: staffMember.exitDate || "",
             terminationType: staffMember.terminationDescription || "",
-
+  
             documentId: staffMember.id,
-
+  
             // Leave password fields empty in update mode
             password: "••••••••",
             cnfpassword: "••••••••",
           };
-
-          // Ensure dispatch is defined or imported
+  
           dispatch({ type: "LOAD_STAFF_MEMBER", values: staffData });
         } else {
           setSubmitError("Staff member not found");
           setTimeout(() => {
-            navigate("../manageStaff");
+            navigate("../../staff/manage");
           }, 3000);
         }
       } catch (error) {
         setSubmitError("Error loading staff member: " + error.message);
       }
     };
-
+  
     loadStaffMember();
-  }, [id, getStaffById, navigate]);
+  }, []); // Empty dependency array ensures it runs only once
+  
 
   const handleRemove = async () => {
-    try {
-      await deleteStaffMember(id);
-      alert("Staff member removed successfully");
-      navigate("../manageStaff");
+    try{
+      deleteStaffMember(id);
+      // alert("Staff member removed successfully");
+      navigate("../../staff/manage");
+      // console.log("User deleted successfully:", data);
+    
     } catch (error) {
       setSubmitError("Error removing staff member: " + error.message);
+      
     }
   };
 
