@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* MainLayout.css */
+.layout-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+/* Main content styling */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  transition: margin-right 0.3s ease-in-out;
+  margin-right: 0;
+  min-height: calc(100vh - 64px); 
+}
+
+.main-content.sidebar-open {
+  margin-top: 15rem;
+  margin-right: 16rem; 
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content.sidebar-open {
+    margin-right: 0;
+    padding-right: 1rem;
+  }
+  
+  .main-content {
+    width: 100%;
+    padding: 16px;
+  }
+}
