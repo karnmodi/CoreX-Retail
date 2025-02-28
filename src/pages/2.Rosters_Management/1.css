@@ -1,0 +1,41 @@
+/* Add these styles to your CSS file */
+
+.current-time-indicator {
+    height: 0;
+    overflow: visible;
+    position: relative;
+  }
+  
+  .current-time-indicator td {
+    height: 0;
+    padding: 0;
+    border: none;
+  }
+  
+  .current-time-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background-color: red;
+    z-index: 10;
+  }
+  
+  /* Highlight the current time column */
+  th.current-time-column {
+    background-color: rgba(59, 130, 246, 0.1);
+    position: relative;
+  }
+  
+  th.current-time-column::after {
+    content: '⏱️';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: red;
+  }

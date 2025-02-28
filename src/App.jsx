@@ -11,11 +11,12 @@ import PrivateRoute from "./configs/PrivateRoute";
 import navLinksAdmin from "./components/NavLinks/navLinksAdmin";
 import MainLayout from "./configs/MainLayout";
 import { StaffProvider } from "./configs/StaffContext";
+import { RosterProvider } from "./configs/RostersContext";
 import { TooltipProvider } from "./components/ui/tooltip";
 import ManageStaffPage from "./pages/1.Staff_Management/ManageStaff";
 import Add_Update_StaffPage from "./pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "./pages/1.Staff_Management/Remove_Staff";
-import CreateRosters from "./pages/2.Rosters_Management/CreateRosters";
+import RosterManagementPage from "./pages/2.Rosters_Management/ManageRosters";
 
 function App() {
   const logoSrc = "/assets/WebsiteLogo.jpg"; 
@@ -68,7 +69,7 @@ function App() {
         { 
           path: "rosters",
           children: [
-            { path: "CreateRosters", element: <CreateRosters /> },
+            { path: "manageRosters", element: <RosterManagementPage /> },
             { path: "addUpdate/:id?", element: <Add_Update_StaffPage /> }, 
             { path: "remove/:id?", element: <RemoveStaff /> }, 
           ],
@@ -100,7 +101,9 @@ function App() {
     <AuthProvider>
       <TooltipProvider>
       <StaffProvider>
+      <RosterProvider>
       <RouterProvider router={router} />
+      </RosterProvider>
       </StaffProvider>
       </TooltipProvider>
     </AuthProvider>

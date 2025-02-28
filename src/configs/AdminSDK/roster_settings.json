@@ -1,0 +1,22 @@
+[
+    {
+      "id": "default_settings",
+      "businessHours": {
+        "startTime": "09:00",
+        "endTime": "21:00"
+      },
+      "breakDuration": 60,
+      "timeSlotInterval": 30,
+      "daysInAdvance": 14,
+      "minStaffPerShift": 2,
+      "locations": [
+        "42008"
+      ],
+      "departments": [
+        "Retail",
+        "Store Operations",
+        "Management"
+      ],
+      "updatedAt": "2025-02-15T10:00:00.000Z"
+    }
+  ]

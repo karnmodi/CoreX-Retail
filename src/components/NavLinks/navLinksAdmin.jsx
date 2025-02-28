@@ -16,7 +16,7 @@ const navLinksAdmin = () => [
     label: "Rosters",
     to: "#",
     subItems: [
-      { to: "./rosters/createRosters", label: "Create Rosters" },
+      { to: "./rosters/manageRosters", label: "Manage Rosters" },
       { to: "./approveRosters", label: "Approve Rosters Requests" },
       { to: "./editRosters", label: "Edit Rosters" },
     ],
