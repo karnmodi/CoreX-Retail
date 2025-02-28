@@ -801,7 +801,7 @@ const RosterManagementPage = () => {
         </div>
 
         {/* Day View Calendar (Right) */}
-        <div className="w-full md:w-3/4 bg-gray-100 rounded-2xl overflow-x-auto">
+        <div className="w-full md:w-3/4 bg-gray-100 h-1/2 rounded-2xl shadow overflow-x-auto">
           <div className="max-w-screen-lg mx-auto flex sm:flex-row justify-between items-center gap-4 p-2 w-auto whitespace-nowrap sticky left-0 z-30 p-4">
             <ArrowBigLeft
               onClick={handlePreviousDay}
