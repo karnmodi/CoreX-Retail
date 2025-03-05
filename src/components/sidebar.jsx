@@ -1,23 +1,29 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { PanelLeftClose } from 'lucide-react';
-import '../css/sidebar.css';
-import navLinksAdmin from './NavLinks/navLinksAdmin';
+import React from "react";
+import { Link } from "react-router-dom";
+import { PanelLeftClose } from "lucide-react";
+import "../css/sidebar.css";
+import navLinksAdmin from "./NavLinks/navLinksAdmin";
 import LogoutButton from "../configs/Logout";
 
 const Sidebar = ({ isOpen, onClose, activeNavItem, navLinks }) => {
-  const activeNav = Array.isArray(navLinks) ? navLinks.find((_, index) => index === activeNavItem) : null;
-
+  const activeNav = Array.isArray(navLinks)
+    ? navLinks.find((_, index) => index === activeNavItem)
+    : null;
 
   const hasSubItems = activeNav?.subItems?.length > 0;
 
   return (
     <>
       {/* Overlay */}
-      {isOpen && hasSubItems && <div className="sidebar-overlay" onClick={onClose} />}
+      {isOpen && hasSubItems && (
+        <div className="sidebar-overlay" onClick={onClose} />
+      )}
 
       {/* Sidebar */}
-      <div className="sidebar" style={{ width: isOpen && hasSubItems ? '16rem' : '0' }}>
+      <div
+        className="sidebar"
+        style={{ width: isOpen && hasSubItems ? "16rem" : "0" }}
+      >
         {/* Sidebar Header */}
         {hasSubItems && (
           <div className="sidebar-header">
@@ -38,20 +44,28 @@ const Sidebar = ({ isOpen, onClose, activeNavItem, navLinks }) => {
             <ul className="sidebar-nav-list">
               {activeNav.subItems.map((subItem, index) => (
                 <li key={index}>
-                  <Link to={subItem.to} className="sidebar-nav-link" onClick={onClose}>
-                    {subItem.label}
-                  </Link>
+                  {subItem.component ? (
+                    
+                    <div className="sidebar-nav-link w-full flex justify-start py-2 px-4">
+                      {subItem.component}
+                    </div>
+                  ) : (
+                    // Render standard links
+                    <Link
+                      to={subItem.to}
+                      className="sidebar-nav-link w-full flex justify-start py-2 px-4 text-white-700 hover:bg-gray-700 transition-colors"
+                      onClick={onClose}
+                    >
+                      {subItem.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
           </nav>
         )}
 
-
-
-        <footer className='justify-items-end'>
-          <LogoutButton></LogoutButton>
-        </footer>
+        <footer className="justify-items-end"></footer>
       </div>
     </>
   );

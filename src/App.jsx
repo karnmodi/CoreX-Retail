@@ -2,12 +2,12 @@ import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
-import DashboardAdmin from "./pages/0.admin/DashboardAdmin";
+import PrivateRoute from "./configs/PrivateRoute";
 import LoginPage from "./pages/LoginPage";
 import DashboardManager from "./pages/DashboardManager";
 import DashboardStaff from "./pages/DashboardStaff";
 import { AuthProvider } from "./configs/AuthContext";
-import PrivateRoute from "./configs/PrivateRoute";
+import DashboardAdmin from "./pages/0.admin/DashboardAdmin";
 import navLinksAdmin from "./components/NavLinks/navLinksAdmin";
 import MainLayout from "./configs/MainLayout";
 import { StaffProvider } from "./configs/StaffContext";
@@ -18,6 +18,7 @@ import Add_Update_StaffPage from "./pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "./pages/1.Staff_Management/Remove_Staff";
 import RosterManagementPage from "./pages/2.Rosters_Management/ManageRosters";
 import RosterApprovalRequest from "./pages/2.Rosters_Management/requestApproval";
+import ViewInventory from "./pages/3.Invenotry_Management/ViewInventory.jsx";
 
 function App() {
   const logoSrc = "/assets/WebsiteLogo.jpg"; 
@@ -67,13 +68,21 @@ function App() {
           ],
         },
 
-        { 
+        {  // ^ Roster Routes
           path: "rosters",
           children: [
             { path: "manageRosters", element: <RosterManagementPage /> },
             { path: "approveRosters", element: <RosterApprovalRequest /> },
           ],
         },
+
+        {  // ^ Inventory Routes
+          path: "Inventory",
+          children: [
+            { path: "viewInventory", element: <ViewInventory /> },
+          ],
+        },
+
       ],
     },
     

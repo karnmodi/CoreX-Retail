@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import LogoutButton from "@/configs/Logout";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Sidebar from "./sidebar";
 import "../css/header.css";
@@ -23,11 +24,12 @@ const Header = ({ navLinks, buttons }) => {
         <div className="header-container">
           <div className="header-content">
             <div className="logo-container">
-              <a href="/"><img
-                src="/Website Logo.jpg"
+              <a href="/" className="grid grid-cols-2"><img
+                src="/Website_Logo.png"
                 alt="Logo"
-                className="logo-image"
+                className="logo-image width-10 h-10"
               />
+              <span className="text-white">CoreX Retail <br />Solutions</span>
               </a>
             </div>
 
@@ -117,6 +119,7 @@ const Header = ({ navLinks, buttons }) => {
                     </div>
                   ))}
                 </div>
+                  
               </ul>
             </nav>
           </div>

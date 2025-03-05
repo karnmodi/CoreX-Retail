@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import LogoutButton from "../../configs/Logout";
+import LogoutButton from "@/configs/Logout";
 
 const navLinksAdmin = () => [
   { to: "/DashboardAdmin", label: "Dashboard" },
@@ -24,7 +24,7 @@ const navLinksAdmin = () => [
     label: "Inventory",
     to: "#",
     subItems: [
-      { to: "./viewInventory", label: "View Inventory" },
+      { to: "./Inventory/viewInventory", label: "View Inventory" },
       { to: "./createProducts", label: "Product Creation" },
       { to: "./stockUpdates", label: "Stock Updates/Reminders" },
     ],
@@ -53,13 +53,14 @@ const navLinksAdmin = () => [
     subItems: [
       { to: "./reports", label: "Reports" },
       { to: "./requests", label: "Requests" },
-      { to: "./settings", label: "Settings" }, //UserRoles and Permissions
+      { to: "./settings", label: "Settings" }, 
       { to: "./notifications", label: "Notifications" },
       { to: "./profile", label: "Profile" },
-      <LogoutButton></LogoutButton>
-
+      { component: <LogoutButton /> },
     ],
-  },
+  }
+  
+  
 ];
 
 export default navLinksAdmin;
