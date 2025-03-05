@@ -73,7 +73,6 @@ const RosterManagementPage = () => {
   // Get employees working on the selected date
   const employeesWorking = getEmployeeWorkingOnDate(selectedDate);
 
-  // Handle navigation between dates
   const handlePreviousDay = () => {
     changeSelectedDate(subDays(selectedDate, 1));
   };

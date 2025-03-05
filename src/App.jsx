@@ -17,6 +17,7 @@ import ManageStaffPage from "./pages/1.Staff_Management/ManageStaff";
 import Add_Update_StaffPage from "./pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "./pages/1.Staff_Management/Remove_Staff";
 import RosterManagementPage from "./pages/2.Rosters_Management/ManageRosters";
+import RosterApprovalRequest from "./pages/2.Rosters_Management/requestApproval";
 
 function App() {
   const logoSrc = "/assets/WebsiteLogo.jpg"; 
@@ -70,8 +71,7 @@ function App() {
           path: "rosters",
           children: [
             { path: "manageRosters", element: <RosterManagementPage /> },
-            { path: "addUpdate/:id?", element: <Add_Update_StaffPage /> }, 
-            { path: "remove/:id?", element: <RemoveStaff /> }, 
+            { path: "approveRosters", element: <RosterApprovalRequest /> },
           ],
         },
       ],
