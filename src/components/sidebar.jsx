@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { PanelLeftClose } from "lucide-react";
+import { PanelRightClose } from "lucide-react";
 import "../css/sidebar.css";
 import navLinksAdmin from "./NavLinks/navLinksAdmin";
 import LogoutButton from "../configs/Logout";
@@ -26,15 +26,16 @@ const Sidebar = ({ isOpen, onClose, activeNavItem, navLinks }) => {
       >
         {/* Sidebar Header */}
         {hasSubItems && (
-          <div className="sidebar-header">
-            <h2 className="sidebar-title">{activeNav?.label} Management</h2>
+          <div className="sidebar-header gap-5">
             <button
               onClick={onClose}
               className="sidebar-close-btn"
               aria-label="Close sidebar"
             >
-              <PanelLeftClose size={20} />
+              <PanelRightClose size={20} />
             </button>
+
+            <h2 className="sidebar-title">{activeNav?.label} Management</h2>
           </div>
         )}
 

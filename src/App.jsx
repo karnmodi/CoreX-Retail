@@ -18,7 +18,8 @@ import Add_Update_StaffPage from "./pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "./pages/1.Staff_Management/Remove_Staff";
 import RosterManagementPage from "@/pages/2.Rosters_Management/ManageRosters";
 import RosterApprovalRequest from "@/pages/2.Rosters_Management/requestApproval";
-import InventoryLayout from "@/pages/3.Invenotry_Management/ViewInventory.jsx";
+import ViewInventory from "@/pages/3.Invenotry_Management/viewInventory.jsx";
+import CreateProducts from "@/pages/3.Invenotry_Management/CreateProduct.jsx";
 
 function App() {
   const logoSrc = "/assets/WebsiteLogo.jpg";
@@ -84,7 +85,8 @@ function App() {
           // ^ Inventory Routes
           path: "Inventory",
           children: [
-            { path: "viewInventory", element: <InventoryLayout /> },
+            { path: "ViewInventory", element: <ViewInventory /> },
+            { path: "createProducts", element: <CreateProducts /> },
           ],
         },
       ],

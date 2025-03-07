@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableHeader,
@@ -13,10 +12,9 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search } from "lucide-react";
 import FloatingLabelInput from "@/components/small/FloatingLabelInput";
 
-const InventoryLayout = () => {
+const ViewInventory = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [products, setProducts] = useState([]);
@@ -62,7 +60,7 @@ const InventoryLayout = () => {
       <div className="flex-1 p-6 overflow-auto">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Inventory</h1>
-          <Button size="sm">+ Add product</Button>
+          <Button className="text-sm"> + Add product</Button>
         </div>
 
         {/* Search and filters */}
@@ -356,4 +354,4 @@ const InventoryLayout = () => {
   );
 };
 
-export default InventoryLayout;
+export default ViewInventory;
