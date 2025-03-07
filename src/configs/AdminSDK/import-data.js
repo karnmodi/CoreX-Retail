@@ -1,6 +1,6 @@
-// import-data.js
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +16,10 @@ const serviceAccountPath = join(__dirname, 'corex-retails-firebase-adminsdk.json
 try {
   const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
   initializeApp({
-    credential: cert(serviceAccount)
+    credential: cert(serviceAccount),
+    storageBucket: 'corex-retails.firebasestorage.app'
+
+  // Replace with your Firebase Storage bucket name
   });
   console.log('Firebase initialized successfully');
 } catch (error) {
@@ -25,94 +28,84 @@ try {
 }
 
 const db = getFirestore();
+const storage = getStorage().bucket();
 
-// Import shifts collection with auto-generated IDs
-async function importShifts() {
+// Function to upload an image to Firebase Storage and return the download URL
+async function uploadImage(imagePath) {
   try {
-    const shiftsFilePath = join(__dirname, 'shifts_collection.json');
-    const shiftsData = JSON.parse(readFileSync(shiftsFilePath, 'utf8'));
-    
-    console.log('Shifts data loaded successfully');
-    
-    // Log the structure to help debug
-    console.log('Shifts data structure:', 
-      Array.isArray(shiftsData) ? 'Array with ' + shiftsData.length + ' items' : 
-      typeof shiftsData === 'object' ? 'Single object' : typeof shiftsData);
-    
-    if (Array.isArray(shiftsData)) {
-      // Process each document with auto-generated IDs
-      const batch = db.batch();
-      const createdIds = [];
-      
-      for (const doc of shiftsData) {
-        const docData = { ...doc }; // Clone to avoid modifying original
-        
-        // Let Firebase generate the ID by using add() method
-        const docRef = db.collection('shifts').doc();
-        const newId = docRef.id; // This gets the auto-generated ID
-        createdIds.push(newId);
-        
-        // Remove id field if it exists to avoid duplication in Firestore
-        if (docData.id) delete docData.id;
-        
-        batch.set(docRef, docData);
-      }
-      
-      await batch.commit();
-      console.log(`Imported ${shiftsData.length} documents to shifts collection with auto-generated IDs`);
-      console.log('Generated IDs:', createdIds);
-    } else {
-      // If it's a single document
-      const docRef = await db.collection('shifts').add(shiftsData);
-      console.log(`Imported single shifts document with auto-generated ID: ${docRef.id}`);
-    }
+    const fileName = imagePath.split('/').pop();
+    const file = storage.file(fileName);
+
+    await storage.upload(imagePath, {
+      destination: fileName,
+      public: true,
+      metadata: {
+        cacheControl: 'public, max-age=31536000',
+      },
+    });
+
+    const downloadURL = `https://storage.googleapis.com/${storage.name}/${fileName}`;
+    console.log(`Uploaded ${fileName} to ${downloadURL}`);
+    return downloadURL;
   } catch (error) {
-    console.error('Error importing shifts:', error);
+    console.error('Error uploading image:', error);
+    return null;
   }
 }
 
-// Import roster settings collection
-async function importRosterSettings() {
+// Import stock data from CSV
+async function importStock() {
+  const stockFilePath = join(__dirname, 'Book1.csv');
+  const stockData = [];
+
   try {
-    const rosterFilePath = join(__dirname, 'roster_settings.json');
-    const rosterData = JSON.parse(readFileSync(rosterFilePath, 'utf8'));
-    
-    console.log('Roster settings data loaded successfully');
-    
-    // Log the structure to help debug
-    console.log('Roster data structure:', 
-      Array.isArray(rosterData) ? 'Array with ' + rosterData.length + ' items' : 
-      typeof rosterData === 'object' ? 'Single object' : typeof rosterData);
-    
-    if (Array.isArray(rosterData)) {
-      // If it's an array of documents
-      const batch = db.batch();
-      
-      for (const doc of rosterData) {
-        const docData = { ...doc }; // Clone to avoid modifying original
-        
-        // Use doc.id if available, otherwise let Firebase generate one
-        let docRef;
-        if (docData.id) {
-          docRef = db.collection('roster_settings').doc(docData.id);
-          delete docData.id; // Remove id field to avoid duplication
-        } else {
-          docRef = db.collection('roster_settings').doc();
+    const data = readFileSync(stockFilePath, 'utf8').split('\n').slice(1);
+    for (const line of data) {
+      const [Photos, Name, Product, Description, Price] = line.split(',');
+
+      if (Photos && Name && Product && Description && Price) {
+        // Split the Photos column to get multiple image paths
+        const photoPaths = Photos.trim().split('|');
+        const photoURLs = [];
+
+        // Upload each photo and get its download URL
+        for (const path of photoPaths) {
+          const imagePath = join(__dirname, path.trim());
+          const photoURL = await uploadImage(imagePath);
+          if (photoURL) photoURLs.push(photoURL);
         }
-        
-        batch.set(docRef, docData);
-        console.log(`Added roster setting document with ID: ${docRef.id}`);
+
+        // Clean up the Price field by removing '£' and converting to a float
+        const cleanedPrice = parseFloat(Price.replace('£', '').trim());
+
+        if (photoURLs.length > 0) {
+          stockData.push({
+            Photos: photoURLs,  // Save array of URLs
+            Name: Name.trim(),
+            Product: parseInt(Product.trim(), 10),
+            Description: Description.trim(),
+            Price: cleanedPrice,
+          });
+        }
       }
-      
-      await batch.commit();
-      console.log(`Imported ${rosterData.length} documents to roster_settings collection`);
-    } else {
-      // If it's a single document
-      const docRef = await db.collection('roster_settings').add(rosterData);
-      console.log(`Imported single roster_settings document with auto-generated ID: ${docRef.id}`);
     }
+
+    console.log(`Loaded ${stockData.length} items from CSV.`);
+
+    const batch = db.batch();
+    const createdIds = [];
+
+    stockData.forEach((doc) => {
+      const docRef = db.collection('Inventory').doc(); // Auto-generate ID
+      batch.set(docRef, doc);
+      createdIds.push(docRef.id);
+    });
+
+    await batch.commit();
+    console.log(`Imported ${stockData.length} documents to 'stock' collection.`);
+    console.log('Generated IDs:', createdIds);
   } catch (error) {
-    console.error('Error importing roster settings:', error);
+    console.error('Error importing stock data:', error);
   }
 }
 
@@ -120,8 +113,7 @@ async function importRosterSettings() {
 (async () => {
   try {
     console.log('Starting import...');
-    await importShifts();
-    await importRosterSettings();
+    await importStock();
     console.log('Import completed successfully');
   } catch (error) {
     console.error('Import failed:', error);

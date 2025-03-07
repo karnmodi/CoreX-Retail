@@ -16,15 +16,16 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import ManageStaffPage from "./pages/1.Staff_Management/ManageStaff";
 import Add_Update_StaffPage from "./pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "./pages/1.Staff_Management/Remove_Staff";
-import RosterManagementPage from "./pages/2.Rosters_Management/ManageRosters";
-import RosterApprovalRequest from "./pages/2.Rosters_Management/requestApproval";
-import ViewInventory from "./pages/3.Invenotry_Management/ViewInventory.jsx";
+import RosterManagementPage from "@/pages/2.Rosters_Management/ManageRosters";
+import RosterApprovalRequest from "@/pages/2.Rosters_Management/requestApproval";
+import InventoryLayout from "@/pages/3.Invenotry_Management/ViewInventory.jsx";
 
 function App() {
-  const logoSrc = "/assets/WebsiteLogo.jpg"; 
+  const logoSrc = "/assets/WebsiteLogo.jpg";
 
   const router = createBrowserRouter([
-    { // ! Home Page Route
+    {
+      // ! Home Page Route
       path: "/",
       element: (
         <>
@@ -33,7 +34,8 @@ function App() {
         </>
       ),
     },
-    { // ! Login Page Route
+    {
+      // ! Login Page Route
       path: "/login",
       element: (
         <>
@@ -47,7 +49,8 @@ function App() {
         </>
       ),
     },
-    { // ! Admin Dashboard Route
+    {
+      // ! Admin Dashboard Route
       path: "/dashboardAdmin",
       element: (
         <PrivateRoute>
@@ -56,19 +59,20 @@ function App() {
       ),
       children: [
         { path: "", element: <DashboardAdmin /> }, // Default Dashboard
-        
-        
-        { // ^ Staff Routes
+
+        {
+          // ^ Staff Routes
           path: "staff",
           children: [
             { path: "manage", element: <ManageStaffPage /> },
-            { path: "addUpdate", element: <Add_Update_StaffPage /> }, 
-            { path: "addUpdate/:id", element: <Add_Update_StaffPage /> }, 
-            { path: "remove/:id?", element: <RemoveStaff /> }, 
+            { path: "addUpdate", element: <Add_Update_StaffPage /> },
+            { path: "addUpdate/:id", element: <Add_Update_StaffPage /> },
+            { path: "remove/:id?", element: <RemoveStaff /> },
           ],
         },
 
-        {  // ^ Roster Routes
+        {
+          // ^ Roster Routes
           path: "rosters",
           children: [
             { path: "manageRosters", element: <RosterManagementPage /> },
@@ -76,16 +80,15 @@ function App() {
           ],
         },
 
-        {  // ^ Inventory Routes
+        {
+          // ^ Inventory Routes
           path: "Inventory",
           children: [
-            { path: "viewInventory", element: <ViewInventory /> },
+            { path: "viewInventory", element: <InventoryLayout /> },
           ],
         },
-
       ],
     },
-    
 
     {
       path: "/dashboardManager",
@@ -105,15 +108,14 @@ function App() {
     },
   ]);
 
-
   return (
     <AuthProvider>
       <TooltipProvider>
-      <StaffProvider>
-      <RosterProvider>
-      <RouterProvider router={router} />
-      </RosterProvider>
-      </StaffProvider>
+        <StaffProvider>
+          <RosterProvider>
+            <RouterProvider router={router} />
+          </RosterProvider>
+        </StaffProvider>
       </TooltipProvider>
     </AuthProvider>
   );

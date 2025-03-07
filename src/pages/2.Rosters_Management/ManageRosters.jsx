@@ -14,6 +14,8 @@ import {
   Calendar1,
 } from "lucide-react";
 
+
+
 const RosterManagementPage = () => {
   const {
     employees,
@@ -813,9 +815,8 @@ const RosterManagementPage = () => {
                 title="get Back to today"
               >
                 <Calendar1 className="h-5 w-5" />
-              </button>
-              
-              {" "}{format(selectedDate, "EEEE, MMMM d, yyyy")}{" "}
+              </button>{" "}
+              {format(selectedDate, "EEEE, MMMM d, yyyy")}{" "}
               <button
                 onClick={handlePrintRoster}
                 className="ml-2 bg-gray-100 hover:bg-gray-200 p-1 rounded-full"
