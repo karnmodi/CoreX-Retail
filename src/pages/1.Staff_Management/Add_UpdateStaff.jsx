@@ -267,7 +267,7 @@ const Add_Update_StaffPage = () => {
     };
 
     loadStaffMember();
-  }, [id, getStaffById, navigate]);
+  }, [id, navigate]);
 
   const departmentOptions = [];
   if (formState.position === "staff") {
@@ -316,22 +316,26 @@ const Add_Update_StaffPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
+    console.log("Input changed:", name, value);
+    
     if (isUpdateMode && (name === "password" || name === "cnfPassword")) {
       return;
     }
-
+    
+    console.log("Dispatching update for:", name, value);
     dispatch({ type: "UPDATE_FIELD", field: name, value });
-    if (loading)
-      return <div className="text-gray-600">Loading counties...</div>;
-
+    
+    // Remove this if/return statement completely
+    // if (loading)
+    //   return <div className="text-gray-600">Loading counties...</div>;
+    
     setErrors((prevErrors) => {
       const newErrors = ValidateStep(
         step,
         { ...formState, [name]: value },
         isUpdateMode
       );
-
+  
       return {
         ...prevErrors,
         [name]: newErrors[name] || "",

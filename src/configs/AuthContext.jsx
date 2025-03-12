@@ -5,9 +5,10 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
+  getIdToken,
   sendPasswordResetEmail,
+  signOut
 } from "firebase/auth";
-import { signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
@@ -16,14 +17,20 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         await fetchUserData(currentUser.uid);
+        const token = await currentUser.getIdToken();
+        setToken(token);
+        localStorage.setItem("firebaseToken", token);
       } else {
         setUserData(null);
+        setToken(null);
+        localStorage.removeItem("firebaseToken")
       }
       setLoading(false);
     });
@@ -44,21 +51,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // const fetchAllUsers = async () => {
-  //   try {
-  //     const usersRef = collection(db, "employees");
-  //     const snapshot = await getDocs(usersRef);
-  //     const usersList = snapshot.docs.map((doc) => ({
-  //       id: doc.id,
-  //       ...doc.data(),
-  //     }));
-  //     console.log(usersList);
-  //     return usersList;
-  //   } catch (error) {
-  //     console.error("Error fetching users:", error);
-  //     return [];
-  //   }
-  // };
 
   const loginwithEmailPassword = async (email, password) => {
     try {
@@ -70,6 +62,9 @@ export const AuthProvider = ({ children }) => {
       console.log("User Logged In:", userCredentials.user);
 
       setUser(userCredentials.user);
+      const token = await userCredentials.user.getIdToken();
+      setToken(token);
+      localStorage.setItem("firebaseToken", token)
       //await fetchAllUsers(userCredentials.user.uid);
 
       return userCredentials.user;
@@ -100,6 +95,10 @@ export const AuthProvider = ({ children }) => {
       });
 
       await fetchUserData(user.uid);
+      const token = await user.getIdToken();
+      setToken(token);
+      localStorage.setItem("firebaseToken", token);
+
       console.log("User Registered", name, " &", email);
     } catch (error) {
       console.error("Registration Failed:", error.message);
@@ -118,6 +117,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     setUserData(null);
+    setToken(null);
+    localStorage.removeItem("firebaseToken");
     await signOut(auth);
   };
 
@@ -126,6 +127,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         userData,
+        token,
         loginwithEmailPassword,
         registerWithEmailPassword,
         PasswordResetEmail,

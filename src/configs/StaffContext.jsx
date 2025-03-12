@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "../configs/AuthContext"; 
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./FirebaseConfig";
 import {
@@ -11,8 +12,8 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
 import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
+import { getAllEmployees, getEmployeeByID, postStaff, deleteStaff, putStaff } from "../services/staffAPI";
 
 const StaffContext = createContext();
 
@@ -30,32 +31,24 @@ export const StaffProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const {token} = useAuth()
 
   useEffect(() => {
-    const q = query(collection(db, "employees"), orderBy("createdAt", "desc"));
+    if (!token) return;
 
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const staffMembers = [];
-        querySnapshot.forEach((doc) => {
-          staffMembers.push({
-            id: doc.id,
-            ...doc.data(),
-          });
-        });
-        setStaff(staffMembers);
+    const loadUsers = async () => {
+      try {
+        const users = await getAllEmployees(token); // Fetch from Backend API
+        setStaff(users);
         setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching staff: ", error);
+      } catch (error) {
         setError(error.message);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
-  }, []);
+    loadUsers();
+  }, [token]);
 
   const handleRowClick = (staffMember) => {
     setSelectedStaff(staffMember);
@@ -69,89 +62,56 @@ export const StaffProvider = ({ children }) => {
 
   const getStaffById = async (id) => {
     try {
-      const staffDocRef = doc(db, "employees", id);
-      const staffDoc = await getDoc(staffDocRef);
-
-      if (staffDoc.exists()) {
-        return {
-          id: staffDoc.id,
-          ...staffDoc.data(),
-        };
-      } else {
+      const staffDetails = await getEmployeeByID(id, token);
+  
+      if (!staffDetails || Object.keys(staffDetails).length === 0) {
+        console.warn(`No data found for staff ID: ${id}`);
         return null;
       }
+  
+      setSelectedStaff(staffDetails);
+      return staffDetails; 
+
     } catch (error) {
-      console.log("Error Fetching Staff by ID : ", error);
+      console.error("Error fetching staff:", error.message);
       setError(error.message);
-      throw error;
+      return null;
     }
   };
 
-  const addStaffMember = async (staffData, password) => {
+  const addStaffMember = async (staffData) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        staffData.email,
-        password
-      );
-
-      const today = new Date();
-      const formattedDate = `${
-        today.getMonth() + 1
-      }/${today.getDate()}/${today.getFullYear()}`;
-
-      await setDoc(doc(db, "employees", userCredential.user.uid), {
-        ...staffData,
-        uid: userCredential.user.uid,
-        startDate: formattedDate,
-        createdAt: serverTimestamp(),
-      });
-
-      return userCredential.user;
+      const newStaff = await postStaff(staffData, token);
+      setStaff([...staff, newStaff]);
+      
     } catch (error) {
       setError(error.message);
-      throw error;
     }
   };
 
   const updateStaffMember = async (id, updates) => {
     try {
-      const staffRef = doc(db, "employees", id);
-      await updateDoc(staffRef, {
-        ...updates,
-        updatedAt: new Date(),
-      });
+      await putStaff(id, updates, token);
+      setStaff(staff.map((staff) => (staff.id === id ? { ...staff, ...updates } : staff)));
+      
     } catch (error) {
       setError(error.message);
-      throw error;
     }
   };
 
   const deleteStaffMember = async (id) => {
     try {
-      // Retrieve user document from Firestore to get UID
-      const userDoc = await getDoc(doc(db, "employees", id));
-      if (!userDoc.exists()) throw new Error("User not found");
-
-      const userData = userDoc.data();
-      const uid = userData.id;
-
-      // Delete from Firestore Database
 
       confirm("Are you sure you want to delete this user?")
         ? [
-            await deleteDoc(doc(db, "employees", id)),
+            await deleteStaff(id, token),
+            setStaff(staff.filter((staff) => staff.id !== id)),
             console.log("User deleted from Firestore and Authentication."),
           ]
-        : alert("User deletion cancelled.");
-
-      // const functions = getFunctions();
-      // const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
-      // await deleteAuthUser({ uid: id });
+        : alert("User deletion cancelled.");      
+      
     } catch (error) {
-      console.error("Error deleting user:", error);
       setError(error.message);
-      throw error;
     }
   };
 

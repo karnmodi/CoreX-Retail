@@ -63,21 +63,19 @@ const RemoveStaff = () => {
   const navigate = useNavigate();
   const [formState, dispatch] = useReducer(formReducer, initialFormState || {});
   const { deleteStaffMember, getStaffById } = useStaff();
-  const hasRun = useRef(false); 
-  const [submitError, setSubmitError] = useState(""); 
+  const hasRun = useRef(false);
+  const [submitError, setSubmitError] = useState("");
 
-
-  
   useEffect(() => {
     if (hasRun.current) return;
     hasRun.current = true;
-  
+
     if (!id) {
       alert("Please select a Staff from the Manage Staff page");
       navigate("../../staff/manage");
       return;
     }
-  
+
     const loadStaffMember = async () => {
       try {
         const staffMember = await getStaffById(id);
@@ -90,7 +88,7 @@ const RemoveStaff = () => {
             maritalStatus: staffMember.maritalDesc || "",
             gender: staffMember.genderCode || "",
             race: staffMember.raceDesc || "",
-  
+
             // Employment Information
             employeeID: staffMember.empId || "",
             classificationType: staffMember.classificationType || "",
@@ -99,7 +97,7 @@ const RemoveStaff = () => {
             employeeStatus: staffMember.employeeStatus || "",
             employeeRating: staffMember.currentEmployeeRating || "",
             performanceScore: staffMember.performanceScore || "",
-  
+
             // Department Information
             department: staffMember.departmentType || "",
             division: staffMember.division || "",
@@ -107,18 +105,18 @@ const RemoveStaff = () => {
             state: staffMember.state || "",
             supervisor: staffMember.supervisor || "",
             payZone: staffMember.payZone || "",
-  
+
             // Dates Information
             exitDate: staffMember.exitDate || "",
             terminationType: staffMember.terminationDescription || "",
-  
+
             documentId: staffMember.id,
-  
+
             // Leave password fields empty in update mode
             password: "••••••••",
             cnfpassword: "••••••••",
           };
-  
+
           dispatch({ type: "LOAD_STAFF_MEMBER", values: staffData });
         } else {
           setSubmitError("Staff member not found");
@@ -130,21 +128,21 @@ const RemoveStaff = () => {
         setSubmitError("Error loading staff member: " + error.message);
       }
     };
-  
+
     loadStaffMember();
-  }, []); // Empty dependency array ensures it runs only once
-  
+  }, []);
 
   const handleRemove = async () => {
-    try{
-      deleteStaffMember(id);
-      // alert("Staff member removed successfully");
+    try {
+      if (!id) {
+        setSubmitError("Invalid staff ID.");
+        return;
+      }
+      await deleteStaffMember(id);
       navigate("../../staff/manage");
-      // console.log("User deleted successfully:", data);
-    
+      
     } catch (error) {
       setSubmitError("Error removing staff member: " + error.message);
-      
     }
   };
 

@@ -272,7 +272,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               <div class="label">Created At</div>
               <div class="value">${
                 user.createdAt
-                  ? new Date(user.createdAt.toDate()).toLocaleDateString()
+                  ? new Date(user.createdAt) //.toDate()).toLocaleDateString()
                   : "N/A"
               }</div>
             </div>
@@ -464,7 +464,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               label="Last Update Date"
               value={
                 user.updatedAt
-                  ? user.updatedAt.toDate().toLocaleDateString("en-GB")
+                  ? user.updatedAt //.toDate().toLocaleDateString("en-GB")
                   : "N/A"
               }
             />
@@ -480,7 +480,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               label="Created At"
               value={
                 user.createdAt
-                  ? user.createdAt.toDate().toLocaleDateString("en-GB")
+                  ? user.createdAt //.toDate().toLocaleDateString("en-GB")
                   : "N/A"
               }
             />
