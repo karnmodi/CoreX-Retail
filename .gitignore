@@ -27,3 +27,4 @@ dist-ssr
 corex-retails-firebase-adminsdk.json
 *-firebase-adminsdk*.json
 *.env
+corex-retail-backend/src/config/serviceAccountKey.json
