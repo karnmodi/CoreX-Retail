@@ -7,6 +7,7 @@ dotenv.config();
 // const { db, auth } = require("./src/config/firebase");
 const staffRoutes = require("./src/routes/staffRoutes")
 const authRoutes = require("./src/routes/authRoutes")
+const inventoryRoutes = require("./src/routes/inventoryRoutes")
 
 const app = express();
 app.use(cors());
@@ -19,8 +20,9 @@ app.get("/", (req, res) => {
   res.send("CoreX Retail Backend is running...");
 });
 
-app.use("/employees", staffRoutes)
 app.use("/auth", authRoutes)
+app.use("/employees", staffRoutes)
+app.use("/inventory", inventoryRoutes)
 
 // Start Server
 app.listen(PORT, () => {

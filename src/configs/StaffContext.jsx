@@ -1,18 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "../configs/AuthContext"; 
-import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
-import { auth, db } from "./FirebaseConfig";
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { getAllEmployees, getEmployeeByID, postStaff, deleteStaff, putStaff } from "../services/staffAPI";
 
 const StaffContext = createContext();

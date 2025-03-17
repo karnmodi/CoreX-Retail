@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../configs/AuthContext.jsx";
 import Header from "../components/Header.jsx";
 import { useNavigate } from "react-router-dom";
-import fetchProducts from '@/configs/InventoryContext';
+// import fetchProducts from '@/configs/InventoryContext';
 
 const DashboardManager = () => {
   const { user, userData, logout } = useAuth();

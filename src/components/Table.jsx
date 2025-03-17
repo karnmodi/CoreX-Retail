@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import {
   Table,
@@ -17,6 +17,12 @@ const TableData = ({ data, columns, title, onRowClick }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const RowsPerPage = 8;
+
+  useEffect(() => {
+    if (!isSearchVisible) {
+      setSearchText("");
+    }
+  }, [isSearchVisible]);
 
   const toggleSearch = () => {
     setIsSearchVisible(!isSearchVisible);
@@ -94,7 +100,7 @@ const TableData = ({ data, columns, title, onRowClick }) => {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className={`w-full border rounded-2xl pr-8 ${
-                isSearchVisible ? 'block' : 'hidden'
+                isSearchVisible ? `block` : 'hidden'
               }`}
             />
             {isSearchVisible && (

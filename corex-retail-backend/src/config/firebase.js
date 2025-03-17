@@ -9,9 +9,14 @@ const serviceAccount = require(path.resolve(__dirname, process.env.FIREBASE_KEY_
 // Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  
 });
 
 const db = admin.firestore(); 
 const auth = admin.auth(); 
+const storage = admin.storage().bucket();
 
-module.exports = { db, auth };
+console.log("✅ Firebase initialized with bucket:", process.env.FIREBASE_STORAGE_BUCKET);
+
+module.exports = { db, auth, storage };

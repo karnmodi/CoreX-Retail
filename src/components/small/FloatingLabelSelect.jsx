@@ -19,7 +19,7 @@ const FloatingLabelSelect = ({
         value={value}
         onChange={onChange}
         required={required}
-        className={`peer w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors appearance-none bg-white ${
+        className={`peer w-full pl-4 pr-10 py-2 border bg-gray-100 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors appearance-none bg-white ${
           error ? 'border-red-500' : ''
         } ${className}`}
       >
@@ -32,7 +32,7 @@ const FloatingLabelSelect = ({
       </select>
       <label
         htmlFor={id}
-        className="absolute left-2 -top-2 bg-white px-1 text-gray-600 text-sm transition-all
+        className="absolute left-1 -top-2 bg-white rounded-2xl px-1 text-gray-600 text-sm transition-all
                  peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
                  peer-placeholder-shown:top-2 peer-focus:-top-2 peer-focus:text-gray-600
                  peer-focus:text-sm z-10"

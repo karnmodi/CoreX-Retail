@@ -12,7 +12,9 @@ import navLinksAdmin from "./components/NavLinks/navLinksAdmin";
 import MainLayout from "./configs/MainLayout";
 import { StaffProvider } from "./configs/StaffContext";
 import { RosterProvider } from "./configs/RostersContext";
+import { InventoryProvider } from "./configs/InventoryContext";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { ToastProvider } from "./components/ui/use-toast";
 import ManageStaffPage from "./pages/1.Staff_Management/ManageStaff";
 import Add_Update_StaffPage from "./pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "./pages/1.Staff_Management/Remove_Staff";
@@ -112,13 +114,17 @@ function App() {
 
   return (
     <AuthProvider>
-      <TooltipProvider>
-        <StaffProvider>
-          <RosterProvider>
-            <RouterProvider router={router} />
-          </RosterProvider>
-        </StaffProvider>
-      </TooltipProvider>
+      <ToastProvider>
+        <TooltipProvider>
+          <StaffProvider>
+            <InventoryProvider>
+              <RosterProvider>
+                <RouterProvider router={router} />
+              </RosterProvider>
+            </InventoryProvider>
+          </StaffProvider>
+        </TooltipProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }
