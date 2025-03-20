@@ -6,13 +6,11 @@ const addStaff_BE = async (req, res) => {
   try {
     const { firstName, lastName, email, role, genderCode, startDate, employeeType, password } = req.body;
 
-    // Create user in Firebase Authentication
     const userRecord = await auth.createUser({ email, password });
 
-    // Firestore document ID must match the Firebase Auth UID
     const staffRef = db.collection("employees").doc(userRecord.uid);
     await staffRef.set({
-      uid: userRecord.uid,  // Ensure UID is stored properly
+      uid: userRecord.uid,  
       firstName,
       lastName,
       email,
@@ -27,7 +25,7 @@ const addStaff_BE = async (req, res) => {
 
   } catch (e) {
     console.error("Error adding staff:", e.message);
-    res.status(500).json({ error: e.message });  // Corrected error handling
+    res.status(500).json({ error: e.message });  
   }
 };
 

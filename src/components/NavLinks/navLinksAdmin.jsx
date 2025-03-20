@@ -8,7 +8,7 @@ const navLinksAdmin = () => [
     to: "#",
     subItems: [
       { to: "./staff/manage", label: "Manage Staff"},
-      { to: "./staff/addUpdate", label: "Add/Update Staff" },
+      { to: "./staff/addUpdate", label: "Add/Update Staff"},
       { to: "./staff/remove", label: "Remove Staff" },
     ],
   },
@@ -33,9 +33,10 @@ const navLinksAdmin = () => [
     label: "Sales",
     to: "#",
     subItems: [
-      { to: "./dailySales", label: "Daily Sales" },
-      { to: "./salesTarget", label: "Sales Targets" },
-      { to: "./salesOverview", label: "Sales Overview" },
+      { to: "./sales/salesDaily", label: "Daily Sales" },
+      { to: "./sales/salesTarget", label: "Sales Targets" },
+      { to: "./sales/salesOverview", label: "Sales Overview" },
+      { to: "./sales/salesDashboard", label: "Sales Dashboard" },
     ],
   },
   {

@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useAuth } from "../configs/AuthContext"; 
-import { getAllEmployees, getEmployeeByID, postStaff, deleteStaff, putStaff } from "../services/staffAPI";
+import { useAuth } from "../configs/AuthContext";
+import {
+  getAllEmployees,
+  getEmployeeByID,
+  postStaff,
+  deleteStaff,
+  putStaff,
+} from "../services/staffAPI";
 
 const StaffContext = createContext();
 
@@ -18,14 +24,16 @@ export const StaffProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const {token} = useAuth()
+  const { token } = useAuth();
 
   useEffect(() => {
     if (!token) return;
+    console.log("Token in StaffContext (Frontend):", token);
+    
 
     const loadUsers = async () => {
       try {
-        const users = await getAllEmployees(token); // Fetch from Backend API
+        const users = await getAllEmployees(token);
         setStaff(users);
         setLoading(false);
       } catch (error) {
@@ -50,15 +58,14 @@ export const StaffProvider = ({ children }) => {
   const getStaffById = async (id) => {
     try {
       const staffDetails = await getEmployeeByID(id, token);
-  
+
       if (!staffDetails || Object.keys(staffDetails).length === 0) {
         console.warn(`No data found for staff ID: ${id}`);
         return null;
       }
-  
-      setSelectedStaff(staffDetails);
-      return staffDetails; 
 
+      setSelectedStaff(staffDetails);
+      return staffDetails;
     } catch (error) {
       console.error("Error fetching staff:", error.message);
       setError(error.message);
@@ -70,7 +77,6 @@ export const StaffProvider = ({ children }) => {
     try {
       const newStaff = await postStaff(staffData, token);
       setStaff([...staff, newStaff]);
-      
     } catch (error) {
       setError(error.message);
     }
@@ -79,8 +85,11 @@ export const StaffProvider = ({ children }) => {
   const updateStaffMember = async (id, updates) => {
     try {
       await putStaff(id, updates, token);
-      setStaff(staff.map((staff) => (staff.id === id ? { ...staff, ...updates } : staff)));
-      
+      setStaff(
+        staff.map((staff) =>
+          staff.id === id ? { ...staff, ...updates } : staff
+        )
+      );
     } catch (error) {
       setError(error.message);
     }
@@ -88,15 +97,13 @@ export const StaffProvider = ({ children }) => {
 
   const deleteStaffMember = async (id) => {
     try {
-
       confirm("Are you sure you want to delete this user?")
         ? [
             await deleteStaff(id, token),
             setStaff(staff.filter((staff) => staff.id !== id)),
             console.log("User deleted from Firestore and Authentication."),
           ]
-        : alert("User deletion cancelled.");      
-      
+        : alert("User deletion cancelled.");
     } catch (error) {
       setError(error.message);
     }

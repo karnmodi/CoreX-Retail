@@ -65,7 +65,8 @@ const getAllProducts_BE = async (req, res) => {
 };
 
 // 📌 Get Product by ID
-const getProductById_BE = async (req, res) => {
+const 
+getProductById_BE = async (req, res) => {
   try {
     const id = req.params.id;
     const productRef = db.collection("inventory").doc(id);
@@ -81,7 +82,6 @@ const getProductById_BE = async (req, res) => {
 };
 
 // 📌 Update Product
-// Updated updateProduct_BE function to handle both image additions and deletions
 const updateProduct_BE = async (req, res) => {
   try {
     const id = req.params.id;

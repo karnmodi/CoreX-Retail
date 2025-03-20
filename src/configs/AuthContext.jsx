@@ -5,11 +5,12 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
-  getIdToken,
   sendPasswordResetEmail,
-  signOut
+  signOut,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { getUserData } from "../services/authAPI";
 
 const AuthContext = createContext();
 
@@ -17,25 +18,27 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("jwtToken"));
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        await fetchUserData(currentUser.uid);
-        const token = await currentUser.getIdToken();
-        setToken(token);
-        localStorage.setItem("firebaseToken", token);
-      } else {
-        setUserData(null);
-        setToken(null);
-        localStorage.removeItem("firebaseToken")
+      if (currentUser && token) {
+        try {
+          const userDetails = await getUserData(token, currentUser.uid);
+          console.log("✅ Fetched user data:", userDetails);
+          setUserData(userDetails);
+        } catch (error) {
+          console.error("Error fetching user data:", error.message);
+        }
+      }else{
+        setUser(null);
       }
       setLoading(false);
     });
+
     return () => unsubscribe();
-  }, []);
+  }, [token]);
 
   const fetchUserData = async (uid) => {
     try {
@@ -51,25 +54,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-
   const loginwithEmailPassword = async (email, password) => {
     try {
-      const userCredentials = await signInWithEmailAndPassword(
+      const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-      console.log("User Logged In:", userCredentials.user);
+      const user = userCredential.user;
+      const firebaseToken = await user.getIdToken();
 
-      setUser(userCredentials.user);
-      const token = await userCredentials.user.getIdToken();
-      setToken(token);
-      localStorage.setItem("firebaseToken", token)
-      //await fetchAllUsers(userCredentials.user.uid);
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firebaseToken }),
+      });
 
-      return userCredentials.user;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Backend login failed");
+
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("firebaseToken", firebaseToken);
+
+      setToken(data.token);
+      setUserData(data);
+      return data;
     } catch (error) {
-      console.error(error.message);
+      console.error("Login error:", error.message);
       throw error;
     }
   };
@@ -110,15 +121,16 @@ export const AuthProvider = ({ children }) => {
     try {
       await sendPasswordResetEmail(auth, email);
       alert("Password reset email sent successfully!");
-  } catch (error) {
+    } catch (error) {
       alert(`Error: ${error.code} - ${error.message}`);
-  }
+    }
   };
 
   const logout = async () => {
     setUserData(null);
     setToken(null);
     localStorage.removeItem("firebaseToken");
+    localStorage.removeItem("jwtToken");
     await signOut(auth);
   };
 
