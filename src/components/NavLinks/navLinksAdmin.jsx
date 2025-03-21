@@ -8,7 +8,7 @@ const navLinksAdmin = () => [
     to: "#",
     subItems: [
       { to: "./staff/manage", label: "Manage Staff"},
-      { to: "./staff/addUpdate", label: "Add/Update Staff"},
+      { to: "./staff/addUpdate", label: "Staff Creation"},
       { to: "./staff/remove", label: "Remove Staff" },
     ],
   },

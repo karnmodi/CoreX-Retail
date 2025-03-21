@@ -172,26 +172,15 @@ const ViewInventory = () => {
         Object.keys(productData).forEach(key => {
           formData.append(key, productData[key]);
         });
-        
-        // IMPORTANT: We need to modify how we're handling images based on your backend
-        
-        // Since your backend replaces all images when new ones are uploaded,
-        // we need to:
-        // 1. If only deleting images (no new uploads), send the updated images list
-        // 2. If uploading new images, we need to send both new uploads and existing images
+       
         
         if (newImages.length > 0) {
-          // Add existing images we want to keep
-          // Your backend needs to be modified to handle this case correctly
           formData.append('existingImages', JSON.stringify(currentImages));
           
-          // Add new image files
           newImages.forEach(img => {
             formData.append('images', img.file);
           });
         } else if (imagesToDelete.length > 0) {
-          // If we're only removing images without adding new ones,
-          // we need to pass the updated images array
           formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
           formData.append('existingImages', JSON.stringify(currentImages));
         }
@@ -239,16 +228,14 @@ const ViewInventory = () => {
       }));
   }, [product]);
 
-  const categoryOptions = useMemo(() => {
-    const uniqueCategories = [...new Set(product.map((item) => item.category))];
-    return uniqueCategories
-      .filter((category) => category)
-      .map((category) => ({
-        value: category,
-        label: category,
-      }));
-  }, [product]);
-
+  const categoryOptions = [
+    { value: "Phones", label: "Phones" },
+    { value: "Tabs", label: "Tabs" },
+    { value: "Watches", label: "Watches" },
+    { value: "Earbuds", label: "Earbuds" },
+    { value: "Others", label: "Others" },
+  ];
+  
   const stockOptions = useMemo(() => {
     return [
       { value: "lessThan10", label: "Less than 10 units" },
@@ -340,6 +327,7 @@ const ViewInventory = () => {
   };
 
   const handleEditChange = (e) => {
+    
     const { name, value } = e.target;
 
     // Make sure editedInventory is initialized
@@ -506,7 +494,7 @@ const ViewInventory = () => {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search by name, SKU or description..."
+            placeholder="Search by name or ..."
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

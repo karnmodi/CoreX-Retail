@@ -221,7 +221,7 @@ const Add_Update_StaffPage = () => {
               lastName: staffMember.lastName || "",
               email: staffMember.email || "",
               dateOfBirth: staffMember.dateOfBirth || "",
-              maritalStatus: staffMember.maritalDesc || "",
+              maritalStatus: staffMember.maritalStatus || "",
               gender: staffMember.genderCode || "",
               race: staffMember.raceDesc || "",
 
@@ -378,7 +378,7 @@ const Add_Update_StaffPage = () => {
         lastName: formState.lastName,
         email: formState.email,
         dateOfBirth: formState.dateOfBirth,
-        maritalDesc: formState.maritalStatus,
+        maritalStatus: formState.maritalStatus,
         genderCode: formState.gender,
         raceDesc: formState.race,
 

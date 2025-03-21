@@ -29,7 +29,6 @@ export const StaffProvider = ({ children }) => {
   useEffect(() => {
     if (!token) return;
     console.log("Token in StaffContext (Frontend):", token);
-    
 
     const loadUsers = async () => {
       try {
@@ -75,22 +74,51 @@ export const StaffProvider = ({ children }) => {
 
   const addStaffMember = async (staffData) => {
     try {
+      if (!staffData || Object.keys(staffData).length === 0) {
+        console.error("Error: staffData is empty or undefined", staffData);
+        setError("Staff data is missing");
+        return;
+      }
+
+      console.log("Adding Staff Member: ", staffData);
+
       const newStaff = await postStaff(staffData, token);
-      setStaff([...staff, newStaff]);
+
+      if (!newStaff) {
+        console.error("Error: No response received from API");
+        setError("Failed to add staff");
+        return;
+      }
+
+      setStaff((prevStaff) => [...prevStaff, newStaff]);
+
+      console.log("Staff added successfully:", newStaff);
     } catch (error) {
+      console.error("Error adding staff:", error.message);
       setError(error.message);
     }
   };
 
   const updateStaffMember = async (id, updates) => {
     try {
-      await putStaff(id, updates, token);
-      setStaff(
-        staff.map((staff) =>
-          staff.id === id ? { ...staff, ...updates } : staff
+      if (!id || Object.keys(updates).length === 0) {
+        console.warn("Warning: Empty update object. Skipping API call.");
+        return;
+      }
+      const updatedData = await putStaff(id, updates, token);
+
+      if (!updatedData) {
+        console.warn("Warning: No updated data returned from API");
+        return;
+      }
+
+      setStaff((prevStaff) =>
+        prevStaff.map((staff) =>
+          staff.id === id ? { ...staff, ...updatedData } : staff
         )
       );
     } catch (error) {
+      console.error("Error loading staff data:", error.message);
       setError(error.message);
     }
   };

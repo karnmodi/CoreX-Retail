@@ -1,48 +1,29 @@
 const { db, storage } = require("../config/firebase");
+const {
+  validateInventoryItem,
+  prepareInventoryItem
+} = require("../models/inventorySchema");
 
 // 📌 Add New Product
 const addProduct_BE = async (req, res) => {
   try {
-    const {
-      productName,
-      category,
-      status = "Active",
-      currentStock,
-      reorderPoint,
-      reorderQuantity,
-      leadTimeDays,
-      costPrice,
-      sellingPrice,
-      margin,
-      weightKg,
-      dimensions,
-      storageLocation,
-      expirationDate,
-    } = req.body;
+    const productData = prepareInventoryItem(req.body);
+
+    const validation = validateInventoryItem(productData);
+    if (!validation.valid) {
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validation.errors 
+      });
+    }
 
     const images = req.files ? await uploadImages_BE(req.files) : [];
+    productData.images = images;
 
     const productRef = db.collection("inventory").doc();
-    await productRef.set({
-      id: productRef.id,
-      productName,
-      category,
-      status,
-      currentStock: parseInt(currentStock) || 0,
-      reorderPoint: parseInt(reorderPoint) || 0,
-      reorderQuantity: parseInt(reorderQuantity) || 0,
-      leadTimeDays: parseInt(leadTimeDays) || 0,
-      costPrice: parseFloat(costPrice) || 0.0,
-      sellingPrice: parseFloat(sellingPrice) || 0.0,
-      margin: parseFloat(margin) || 0.0,
-      weightKg: parseFloat(weightKg) || 0.0,
-      dimensions: dimensions || "",
-      storageLocation: storageLocation || "",
-      expirationDate: expirationDate ? new Date(expirationDate) : null,
-      images,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    productData.id = productRef.id;
+    
+    await productRef.set(productData);
 
     res.status(201).json({ message: "Product added successfully!", id: productRef.id });
   } catch (error) {
@@ -65,107 +46,95 @@ const getAllProducts_BE = async (req, res) => {
 };
 
 // 📌 Get Product by ID
-const 
-getProductById_BE = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const productRef = db.collection("inventory").doc(id);
-    const docSnapshot = await productRef.get();
+const
+  getProductById_BE = async (req, res) => {
+    try {
+      const id = req.params.id;
+      const productRef = db.collection("inventory").doc(id);
+      const docSnapshot = await productRef.get();
 
-    if (!docSnapshot.exists) return res.status(404).json({ message: "Product not found" });
+      if (!docSnapshot.exists) return res.status(404).json({ message: "Product not found" });
 
-    res.json({ id: docSnapshot.id, ...docSnapshot.data() });
-  } catch (error) {
-    console.error("Error fetching product:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
+      res.json({ id: docSnapshot.id, ...docSnapshot.data() });
+    } catch (error) {
+      console.error("Error fetching product:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  };
 
 // 📌 Update Product
 const updateProduct_BE = async (req, res) => {
   try {
     const id = req.params.id;
-    const updates = req.body;
-
+    
+    // Get the current product data
     const productRef = db.collection("inventory").doc(id);
     const docSnapshot = await productRef.get();
+    
     if (!docSnapshot.exists) {
       return res.status(404).json({ error: "Product not found" });
     }
-
+    
     // Get current product data
     const currentProduct = docSnapshot.data();
-
-    // Handle images - three scenarios:
-    // 1. New images uploaded (req.files exists) - potentially adding to existing
-    // 2. Images to delete (updates.imagesToDelete exists) - removing some existing
-    // 3. Existing images list provided (updates.existingImages exists) - explicit list
-
+    
+    const updates = { ...req.body };
+    
     let images = currentProduct.images || [];
 
-    // Case 1: If new images are uploaded
     if (req.files && req.files.length > 0) {
       const newImageUrls = await uploadImages_BE(req.files);
 
-      // If existingImages is provided, use that list + new images
       if (updates.existingImages) {
         const existingImages = JSON.parse(updates.existingImages);
         images = [...existingImages, ...newImageUrls];
       } else {
-        // Otherwise add new images to existing images
         images = [...images, ...newImageUrls];
       }
-    }
-    // Case 2: If images to delete are specified
-    else if (updates.imagesToDelete) {
+    } else if (updates.imagesToDelete) {
       const imagesToDelete = JSON.parse(updates.imagesToDelete);
-
-      // Delete the images from storage
       await deleteImages_BE(imagesToDelete);
-
-      // Filter out deleted images
       images = images.filter(url => !imagesToDelete.includes(url));
 
-      // If existingImages is also provided, use that exact list
       if (updates.existingImages) {
         images = JSON.parse(updates.existingImages);
       }
-    }
-    // Case 3: If only existingImages is specified (explicit list with no additions/deletions)
-    else if (updates.existingImages) {
+    } else if (updates.existingImages) {
       const newImagesList = JSON.parse(updates.existingImages);
-
-      // Find images that need to be deleted
       const imagesToDelete = images.filter(url => !newImagesList.includes(url));
+      
       if (imagesToDelete.length > 0) {
         await deleteImages_BE(imagesToDelete);
       }
 
-      // Use the provided list
       images = newImagesList;
     }
 
-    // Remove these fields from updates since we've handled them separately
     delete updates.imagesToDelete;
     delete updates.existingImages;
-
-    // Update the product
-    await productRef.update({
-      ...updates,
-      images,
-      updatedAt: new Date(),
-    });
-
-    // Return the updated product
-    const updatedProduct = {
-      id,
+    
+    const completeUpdates = prepareInventoryItem({
       ...currentProduct,
       ...updates,
-      images,
-      updatedAt: new Date()
-    };
+      images
+    });
+    
+    // Validate the updated data
+    const validation = validateInventoryItem(completeUpdates);
+    if (!validation.valid) {
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validation.errors 
+      });
+    }
 
-    res.json(updatedProduct);
+    // Update the product
+    await productRef.update(completeUpdates);
+
+    res.json({
+      id,
+      ...completeUpdates
+    });
   } catch (error) {
     console.error("Error updating product:", error.message);
     res.status(500).json({ error: error.message });
