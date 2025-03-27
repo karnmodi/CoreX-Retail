@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useRoster } from "@/configs/RostersContext";
+import { useRoster } from "../../configs/RostersContext";
 import { format, addDays, subDays } from "date-fns";
 import FloatingLabelInput from "../../components/small/FloatingLabelInput";
 import {
@@ -23,7 +23,7 @@ const RosterManagementPage = () => {
     selectedDate,
     businessHours,
     loading,
-    getEmployeeWorkingOnDate,
+    fetchShiftsForDate,
     changeSelectedDate,
     addShift,
     updateShift,
@@ -73,7 +73,15 @@ const RosterManagementPage = () => {
   const timeSlots = generateTimeSlots();
 
   // Get employees working on the selected date
-  const employeesWorking = getEmployeeWorkingOnDate(selectedDate);
+  const employeesWorking = employees.filter((employee) =>
+    shifts.some((shift) =>
+      typeof shift.employeeId === "string"
+        ? shift.employeeId === employee.id
+        : shift.employeeId?.uid === employee.id
+    )
+  );
+  
+  
 
   const handlePreviousDay = () => {
     changeSelectedDate(subDays(selectedDate, 1));

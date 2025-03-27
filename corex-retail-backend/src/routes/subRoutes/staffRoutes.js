@@ -1,6 +1,6 @@
 const express = require("express");
-const {getAllStaff_BE, addStaff_BE, updateStaff_BE, getStaffById_BE, deleteStaff_BE} = require("../controllers/staffController");
-const verifyToken = require("../middleware/auth");
+const {getAllStaff_BE, addStaff_BE, updateStaff_BE, getStaffById_BE, deleteStaff_BE} = require("../../controllers/staffController");
+const verifyToken = require("../../middleware/auth");
 
 const router = express.Router();
 

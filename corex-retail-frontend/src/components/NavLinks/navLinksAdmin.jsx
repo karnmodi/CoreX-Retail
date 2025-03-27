@@ -40,15 +40,6 @@ const navLinksAdmin = () => [
     ],
   },
   {
-    label: "Orders",
-    to: "#",
-    subItems: [
-      { to: "./manageOrders", label: "Manage Orders" },
-      { to: "./findOrders", label: "Find Orders" },
-      { to: "./deleteOrder", label: "Delete Orders" },
-    ],
-  },
-  {
     label: "More",
     to: "#",
     subItems: [

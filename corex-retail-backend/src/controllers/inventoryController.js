@@ -113,7 +113,7 @@ const updateProduct_BE = async (req, res) => {
     delete updates.imagesToDelete;
     delete updates.existingImages;
     
-    const completeUpdates = prepareInventoryItem({
+const completeUpdates = prepareInventoryItem({
       ...currentProduct,
       ...updates,
       images

@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
-const { addProduct_BE, getAllProducts_BE, getProductById_BE, updateProduct_BE, deleteProduct_BE } = require("../controllers/inventoryController");
-const  verifyToken  = require("../middleware/auth");
+const { addProduct_BE, getAllProducts_BE, getProductById_BE, updateProduct_BE, deleteProduct_BE } = require("../../controllers/inventoryController");
+const  verifyToken  = require("../../middleware/auth");
 
 const router = express.Router();
 
