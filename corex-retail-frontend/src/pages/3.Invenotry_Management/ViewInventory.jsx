@@ -94,14 +94,11 @@ const ViewInventory = () => {
     if (!isEditing) return;
     
     if (isNewImage) {
-      // Remove from new images
       setNewImages(prev => {
-        // Release the object URL before removing from state
         URL.revokeObjectURL(prev[index].preview);
         return prev.filter((_, i) => i !== index);
       });
     } else {
-      // Remove from existing images in editedInventory
       setEditedInventory(prev => {
         const updatedImages = [...prev.images];
         updatedImages.splice(index, 1);
@@ -141,7 +138,6 @@ const ViewInventory = () => {
     try {
       setIsSubmitting(true);
       
-      // Create a base product data object
       const productData = {
         productName: editedInventory.productName || editedInventory.name || '',
         category: editedInventory.category || '',
@@ -154,21 +150,17 @@ const ViewInventory = () => {
         sellingPrice: parseFloat(editedInventory.sellingPrice || editedInventory.price) || 0,
       };
       
-      // Check what's changed with images
       const originalImages = selectedInventory.images || [];
       const currentImages = editedInventory.images || [];
       
-      // Find images that were removed
       const imagesToDelete = originalImages.filter(
         img => !currentImages.includes(img)
       );
       
-      // Always use FormData when there are image operations
       if (newImages.length > 0 || imagesToDelete.length > 0) {
         console.log("Updating product with image changes");
         const formData = new FormData();
         
-        // Add all product data fields to FormData
         Object.keys(productData).forEach(key => {
           formData.append(key, productData[key]);
         });
@@ -187,7 +179,6 @@ const ViewInventory = () => {
         
         await updateInventory(selectedInventory.id, formData);
       } else {
-        // No image changes, just update the regular data
         console.log("Updating product with no image changes");
         await updateInventory(selectedInventory.id, productData);
       }

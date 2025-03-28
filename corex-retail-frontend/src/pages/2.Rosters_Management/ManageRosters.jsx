@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useRoster } from "../../configs/RostersContext";
 import { format, addDays, subDays } from "date-fns";
+import { Button } from "../../components/ui/Button";
 import FloatingLabelInput from "../../components/small/FloatingLabelInput";
+import LoadingSpinner from "../../components/Loading";
 import {
   Pencil,
   Trash2,
@@ -13,8 +15,6 @@ import {
   Printer,
   Calendar1,
 } from "lucide-react";
-
-
 
 const RosterManagementPage = () => {
   const {
@@ -41,9 +41,13 @@ const RosterManagementPage = () => {
     notes: "",
   });
 
+  const getShiftUID = (shift) =>
+    typeof shift.employeeId === "string"
+      ? shift.employeeId
+      : shift.employeeId?.uid || "";
+
   const [editingShift, setEditingShift] = useState(null);
 
-  // Generate time slots for the day view
   const generateTimeSlots = () => {
     const slots = [];
     const [startHour, startMinute] = businessHours.startTime
@@ -74,18 +78,13 @@ const RosterManagementPage = () => {
 
   // Get employees working on the selected date
   const employeesWorking = employees.filter((employee) =>
-    shifts.some((shift) =>
-      typeof shift.employeeId === "string"
-        ? shift.employeeId === employee.id
-        : shift.employeeId?.uid === employee.id
-    )
+    shifts.some((shift) => getShiftUID(shift) === employee.id)
   );
-  
-  
 
   const handlePreviousDay = () => {
     changeSelectedDate(subDays(selectedDate, 1));
   };
+
   const handleToday = () => {
     changeSelectedDate(new Date());
   };
@@ -96,46 +95,66 @@ const RosterManagementPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
+  
     const businessStart = businessHours.startTime || "09:00";
-    const businessEnd = businessHours.endTime || "18:00";
-    const ShiftDuration = businessHours.duration || 8;
-
-    if (
-      name === "startTime" &&
-      (value < businessStart || value > businessEnd)
-    ) {
-      alert(
-        `Start time must be within business hours (${businessStart} - ${businessEnd}).`
-      );
-      return;
-    }
-
+    const businessEnd = businessHours.endTime || "20:00";
+    const maxDuration = businessHours.duration || 8;
+  
+    const toMinutes = (time) => {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    };
+  
+    const toHHMM = (totalMins) => {
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    };
+  
     let updatedShiftForm = { ...shiftForm, [name]: value };
-
+  
     if (name === "startTime") {
-      let [startHours, startMinutes] = value.split(":").map(Number);
-      let endHours = startHours + ShiftDuration;
-      let endMinutes = startMinutes;
-
-      const [maxHours, maxMinutes] = businessEnd.split(":").map(Number);
-      if (
-        endHours > maxHours ||
-        (endHours === maxHours && endMinutes > maxMinutes)
-      ) {
-        endHours = maxHours;
-        endMinutes = maxMinutes;
+      const startMins = toMinutes(value);
+      const businessStartMins = toMinutes(businessStart);
+      const businessEndMins = toMinutes(businessEnd);
+  
+      if (startMins < businessStartMins || startMins >= businessEndMins) {
+        return;
+        // alert(`Start time must be within business hours (${businessStart} - ${businessEnd}).`);
       }
-
-      const formattedEndTime = `${String(endHours).padStart(2, "0")}:${String(
-        endMinutes
-      ).padStart(2, "0")}`;
-      updatedShiftForm.endTime = formattedEndTime;
+  
+      // Auto-calculate endTime
+      const endMins = Math.min(startMins + maxDuration * 60, businessEndMins);
+      updatedShiftForm.endTime = toHHMM(endMins);
     }
-
+  
+    if (name === "endTime") {
+      const startTime = shiftForm.startTime || businessStart;
+      const startMins = toMinutes(startTime);
+      const endMins = toMinutes(value);
+      const businessEndMins = toMinutes(businessEnd);
+  
+      if (endMins < startMins) {
+        alert("End time cannot be earlier than start time.");
+        return;
+      }
+  
+      const duration = endMins - startMins;
+  
+      if (duration > maxDuration * 60) {
+        alert(`Shift duration cannot exceed ${maxDuration} hours.`);
+        return;
+      }
+  
+      if (endMins > businessEndMins) {
+        alert(`End time must be within business hours (up to ${businessEnd}).`);
+        return;
+      }
+    }
+  
     setShiftForm(updatedShiftForm);
   };
-
+  
   const handleAddShift = async (e) => {
     e.preventDefault();
 
@@ -169,6 +188,7 @@ const RosterManagementPage = () => {
     setEditingShift(shift.id);
     setShiftForm({
       employeeId: shift.employeeId,
+      username: shift.employeeId.username,
       startTime: shift.startTime,
       endTime: shift.endTime,
       notes: shift.notes,
@@ -229,7 +249,6 @@ const RosterManagementPage = () => {
       return;
     }
 
-    // Calculate the current date and time for the timestamp
     const currentDateTime = new Date();
     const formattedDateTime = `${currentDateTime.toLocaleDateString()} ${currentDateTime.toLocaleTimeString()}`;
 
@@ -375,10 +394,7 @@ const RosterManagementPage = () => {
       }
     `;
 
-    // Create a mapping of employee IDs to fixed colors for consistency
     const employeeColors = {
-      // You can customize these colors or keep your existing system
-      // This is a fallback in case your getRandomColor function doesn't work as expected in print
       0: "shift-pink",
       1: "shift-blue",
       2: "shift-green",
@@ -386,7 +402,6 @@ const RosterManagementPage = () => {
       4: "shift-purple",
     };
 
-    // Get color mapping for each employee in case more are needed
     employeesWorking.forEach((employee, index) => {
       if (!employeeColors[employee.id]) {
         employeeColors[employee.id] = `shift-${
@@ -399,7 +414,6 @@ const RosterManagementPage = () => {
       return employeeColors[employeeId] || "shift-blue";
     };
 
-    // Group shifts by employee for detail view
     const employeeShifts = {};
     employeesWorking.forEach((employee) => {
       const employeeId = employee.id;
@@ -581,7 +595,12 @@ const RosterManagementPage = () => {
 
   const findShiftForTimeSlot = (employeeId, timeSlot) => {
     return shifts.find((shift) => {
-      if (shift.employeeId !== employeeId) return false;
+      const shiftUID =
+        typeof shift.employeeId === "string"
+          ? shift.employeeId
+          : shift.employeeId?.uid;
+
+      if (shiftUID !== employeeId) return false;
 
       const [slotHour, slotMinute] = timeSlot.split(":").map(Number);
       const [startHour, startMinute] = shift.startTime.split(":").map(Number);
@@ -655,7 +674,7 @@ const RosterManagementPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        Loading...
+        <LoadingSpinner />
       </div>
     );
   }
@@ -672,7 +691,9 @@ const RosterManagementPage = () => {
           <div className="mt-6 p-4 bg-white rounded shadow">
             <div className="flex justify-between">
               <h4 className="font-medium mb-3">
-                {editingShift ? "Edit Shift" : "Add New Shift"}
+                {editingShift
+                  ? `Edit Shift of :  ${shiftForm.username}`
+                  : "Add New Shift"}
               </h4>
             </div>
             <form onSubmit={editingShift ? handleUpdateShift : handleAddShift}>
@@ -720,9 +741,8 @@ const RosterManagementPage = () => {
                   type="time"
                   name="endTime"
                   value={shiftForm.endTime}
-                  // onChange={handleInputChange}
+                  onChange={handleInputChange}
                   className="w-full p-2 border rounded bg-gray-100"
-                  readOnly
                 />
               </div>
 
@@ -742,7 +762,8 @@ const RosterManagementPage = () => {
                   {editingShift ? (
                     <Save className="w-8 h-8" label="Update Shift" />
                   ) : (
-                    <BadgePlus className="w-8 h-8" />
+                    // <BadgePlus className="w-8 h-8" />
+                    <Button>Add</Button>
                   )}
                 </button>
 
@@ -779,7 +800,7 @@ const RosterManagementPage = () => {
                   </div>
                   <div className="text-sm text-gray-600">
                     {shifts
-                      .filter((shift) => shift.employeeId === employee.id)
+                      .filter((shift) => getShiftUID(shift) === employee.id)
                       .map((shift) => (
                         <div
                           key={shift.id}
