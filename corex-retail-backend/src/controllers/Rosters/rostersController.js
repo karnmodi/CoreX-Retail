@@ -155,7 +155,6 @@ const getWorkingEmployeesByDate_BE = async (req, res) => {
       .where("date", "==", date)
       .get();
 
-    console.log(`📅 Found ${shiftsSnapshot.size} shift(s) for ${date}`);
 
     if (shiftsSnapshot.empty) {
       return res.status(200).json([]);
