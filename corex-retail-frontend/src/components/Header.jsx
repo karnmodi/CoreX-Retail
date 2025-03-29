@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import LogoutButton from "@/configs/Logout";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Sidebar from "./sidebar";
-import "../css/header.css";
+import "../css/Header.css";
 
 const Header = ({ navLinks, buttons }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useReducer } from "react";
 import { useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStaff } from "@/configs/StaffContext";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 

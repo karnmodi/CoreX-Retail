@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalesHeader } from '../../components/SalesHeader';
 import { SalesOverviewChart } from "@/components/charts/SalesOverviewChart";
-import { ProductSalesDistribution } from "@/components/charts/ProductSalesDistribution";
+import { ProductSalesDistribution } from "@/components/charts/productSalesDistribution";
 import { SalesTargetProgress } from "@/components/charts/SalesTargetProgress";
 import { SalesForecastChart } from "@/components/charts/SalesForecastChart";
 
