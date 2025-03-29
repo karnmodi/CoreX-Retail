@@ -13,7 +13,7 @@ import Add_Update_StaffPage from "../pages/1.Staff_Management/Add_UpdateStaff";
 import RemoveStaff from "../pages/1.Staff_Management/Remove_Staff";
 import RosterManagementPage from "@/pages/2.Rosters_Management/ManageRosters";
 import RosterApprovalRequest from "@/pages/2.Rosters_Management/requestApproval";
-import ViewInventory from "../pages/3.Invenotry_Management/viewInventory.jsx";
+import ViewInventory from "../pages/3.Invenotry_Management/ViewInventory.jsx";
 import CreateProducts from "@/pages/3.Invenotry_Management/CreateProduct.jsx";
 import SalesOverview from "../pages/4.Sales_Management/SalesOverview";
 import SalesDaily from "../pages/4.Sales_Management/SalesDaily";

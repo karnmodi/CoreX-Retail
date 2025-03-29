@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from '../components/Header';
 import { Menu } from 'lucide-react'; 
-import '../css/MainLayout.css';
+import '../css/mainLayout.css';
 import Sidebar from '../components/sidebar';
 
 const MainLayout = ({ navLinks, buttons }) => {
