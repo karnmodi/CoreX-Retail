@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const authRoutes = require("./subRoutes/authRoutes");
-const staffRoutes = require("./SubRoutes/staffRoutes");
+const staffRoutes = require("./subRoutes/staffRoutes");
 const inventoryRoutes = require("./subRoutes/inventoryRoutes");
 const rostersRoutes = require("./subRoutes/rostersRoutes");
 
