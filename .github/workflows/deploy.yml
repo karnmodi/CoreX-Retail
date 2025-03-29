@@ -1,0 +1,28 @@
+name: CoreX-Retail Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Add EC2 to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to EC2
+        run: |
+          rsync -avz --exclude 'node_modules' --exclude '.git' ./ ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/var/www/corex-retail/
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "cd /var/www/corex-retail && bash deploy.sh"
