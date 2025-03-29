@@ -13,10 +13,10 @@ router.get("/", (req, res) => {
   });
 });
 
-router.use("api/auth", authRoutes);
-router.use("api/employees", staffRoutes);
-router.use("api/inventory", inventoryRoutes);
-router.use("api/rosters", rostersRoutes);
+router.use("auth", authRoutes);
+router.use("employees", staffRoutes);
+router.use("inventory", inventoryRoutes);
+router.use("rosters", rostersRoutes);
 
 // 404 Handler - Page Not Found
 router.use((req, res, next) => {
