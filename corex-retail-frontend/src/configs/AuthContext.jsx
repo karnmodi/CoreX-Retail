@@ -56,31 +56,42 @@ export const AuthProvider = ({ children }) => {
 
   const loginwithEmailPassword = async (email, password) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      // Firebase authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const firebaseToken = await user.getIdToken();
-
+  
+      // API call with better error handling
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          // Adding Accept header to explicitly request JSON
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ firebaseToken }),
       });
-
+  
+      // Check response type before parsing
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        // Log the actual response text for debugging
+        const text = await response.text();
+        console.error("Received non-JSON response:", text);
+        throw new Error(`Expected JSON response but got ${contentType}`);
+      }
+  
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Backend login failed");
-
+  
       localStorage.setItem("jwtToken", data.token);
       localStorage.setItem("firebaseToken", firebaseToken);
-
+  
       setToken(data.token);
       setUserData(data);
       return data;
     } catch (error) {
-      console.error("Login error:", error.message);
+      console.error("Login error:", error);
       throw error;
     }
   };
