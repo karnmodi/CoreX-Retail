@@ -13,7 +13,7 @@ app.use(express.json());
 
 const routes = require("./src/routes/mainRoute");
 
-app.use("/", routes);
+app.use("/api", routes);
 
 // Start server
 app.listen(PORT, () => {
