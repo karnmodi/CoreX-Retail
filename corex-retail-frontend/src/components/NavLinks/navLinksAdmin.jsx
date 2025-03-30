@@ -24,8 +24,8 @@ const navLinksAdmin = () => [
     label: "Inventory",
     to: "#",
     subItems: [
-      { to: "./Inventory/viewInventory", label: "View Inventory" },
-      { to: "./Inventory/createProducts", label: "Product Creation" },
+      { to: "./inventory/viewInventory", label: "View Inventory" },
+      { to: "./inventory/createProducts", label: "Product Creation" },
       { to: "./stockUpdates", label: "Stock Updates/Reminders" },
     ],
   },
@@ -43,11 +43,11 @@ const navLinksAdmin = () => [
     label: "More",
     to: "#",
     subItems: [
-      { to: "./reports", label: "Reports" },
-      { to: "./requests", label: "Requests" },
-      { to: "./settings", label: "Settings" }, 
-      { to: "./notifications", label: "Notifications" },
-      { to: "./profile", label: "Profile" },
+      { to: "./more/reports", label: "Reports" },
+      { to: "./more/requests", label: "Requests" },
+      { to: "./more/settings", label: "Settings" }, 
+      { to: "./more/notifications", label: "Notifications" },
+      { to: "./more/profile", label: "Profile" },
       { component: <LogoutButton /> },
     ],
   }

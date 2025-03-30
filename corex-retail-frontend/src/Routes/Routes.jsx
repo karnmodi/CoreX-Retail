@@ -19,6 +19,11 @@ import SalesOverview from "../pages/4.Sales_Management/SalesOverview";
 import SalesDaily from "../pages/4.Sales_Management/SalesDaily";
 import SalesTargetsPage from "../pages/4.Sales_Management/SalesTarget";
 import SalesDashboard from "../pages/4.Sales_Management/SalesDashboard";
+import ReportsPage from "../pages/5.More/1.Reports.jsx";
+import RequestsPage from "../pages/5.More/2.Requests.jsx";
+import ProfilePage from "../pages/5.More/5.Profile.jsx";
+import SettingsPage from "../pages/5.More/3.Settings.jsx";
+import NotificationsPage from "../pages/5.More/4.Notifications.jsx";
 
 const logoSrc = "/assets/WebsiteLogo.jpg";
 
@@ -65,7 +70,7 @@ const rosterRoutes = [
 
 // Inventory management routes
 const inventoryRoutes = [
-  { path: "ViewInventory", element: <ViewInventory /> },
+  { path: "viewInventory", element: <ViewInventory /> },
   { path: "createProducts", element: <CreateProducts /> },
 ];
 
@@ -75,6 +80,15 @@ const salesRoutes = [
   { path: "salesTarget", element: <SalesTargetsPage /> },
   { path: "salesDaily", element: <SalesDaily /> },
   { path: "salesDashboard", element: <SalesDashboard /> },
+];
+
+// More Routes
+const moreRoutes = [
+  {path: "reports", element: <ReportsPage />},
+  {path: "requests", element: <RequestsPage />},
+  {path: "settings", element: <SettingsPage />},
+  {path: "notifications", element: <NotificationsPage />},
+  {path: "profile", element: <ProfilePage />},
 ];
 
 // Admin dashboard routes
@@ -96,12 +110,16 @@ const adminRoutes = {
       children: rosterRoutes,
     },
     {
-      path: "Inventory",
+      path: "inventory",
       children: inventoryRoutes,
     },
     {
       path: "sales",
       children: salesRoutes,
+    },
+    {
+      path: "more",
+      children: moreRoutes,
     },
   ],
 };

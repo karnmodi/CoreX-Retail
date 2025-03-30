@@ -693,7 +693,7 @@ const RosterManagementPage = () => {
               <h4 className="font-medium mb-3">
                 {editingShift
                   ? `Edit Shift of :  ${shiftForm.username}`
-                  : "Add New Shift"}
+                  : `Add New Shift : ${format(selectedDate, "dd-MMM-yyyy")}`}
               </h4>
             </div>
             <form onSubmit={editingShift ? handleUpdateShift : handleAddShift}>
@@ -760,7 +760,8 @@ const RosterManagementPage = () => {
               <div className="flex justify-between">
                 <button className="text-black-300 hover:text-black-700">
                   {editingShift ? (
-                    <Save className="w-8 h-8" label="Update Shift" />
+                    // <Save className="w-8 h-8" label="Update Shift" />
+                    <button>Update Shift</button>
                   ) : (
                     // <BadgePlus className="w-8 h-8" />
                     <Button>Add</Button>
