@@ -24,12 +24,18 @@ const Header = ({ navLinks, buttons }) => {
         <div className="header-container">
           <div className="header-content">
             <div className="logo-container">
-              <a href="/" className="grid grid-cols-2"><img
-                src="/Website_Logo.png"
-                alt="Logo"
-                className="logo-image width-10 h-10"
-              />
-              <span className="text-white">CoreX Retail <br />Solutions</span>
+              <a href="/" className="flex items-center">
+                <div className="flex justify-center items-center w-14 h-10 mr-2">
+                  <img
+                    src="/Website_Logo.png"
+                    alt="Logo"
+                    className="m-3 logo-image h-10 w-10"
+                  />
+                </div>
+                <span className="text-white text-lg leading-tight">
+                  CoreX Retail <br />
+                  Solutions
+                </span>
               </a>
             </div>
 
@@ -119,7 +125,6 @@ const Header = ({ navLinks, buttons }) => {
                     </div>
                   ))}
                 </div>
-                  
               </ul>
             </nav>
           </div>

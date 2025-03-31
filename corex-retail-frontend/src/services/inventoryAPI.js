@@ -32,6 +32,47 @@ export const getProductByID = async (id, token) => {
     return await response.json();
 }
 
+
+export const getInventoryValue = async (token) => {
+  try {
+      const response = await fetch(`${API_BASE_URL}/inventory/value`, {
+          method: "GET",
+          headers: {
+              Authorization: `Bearer ${token}`
+          }
+      });
+
+      if (!response.ok) {
+          throw new Error("Failed to fetch inventory value data");
+      }
+      return await response.json();
+  } catch (error) {
+      console.error("Error fetching inventory value:", error);
+      throw error;
+  }
+};
+
+// Calculate inventory value locally (fallback if API fails)
+export const calculateInventoryValue = (products) => {
+  // Calculate current total inventory value (cost × quantity)
+  const currentValue = products.reduce((total, product) => {
+      const stockValue = (product.currentStock || 0) * (product.costPrice || 0);
+      return total + stockValue;
+  }, 0);
+
+  // Calculate total number of items in stock
+  const totalItems = products.reduce((sum, product) => sum + (product.currentStock || 0), 0);
+
+  return {
+      currentValue: parseFloat(currentValue.toFixed(2)),
+      previousValue: 0, 
+      change: 0,
+      percentChange: 0,
+      totalItems,
+      productCount: products.length
+  };
+};
+
 export const addProduct = async (productData, token) => {
     const formData = new FormData();
 

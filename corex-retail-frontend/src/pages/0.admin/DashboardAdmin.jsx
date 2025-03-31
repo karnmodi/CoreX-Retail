@@ -45,6 +45,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import LoadingSpinner from "../../components/Loading.jsx";
+import { useStaff } from "../../configs/StaffContext.jsx";
 
 // Import icons from lucide-react
 import {
@@ -52,21 +54,45 @@ import {
   Bell,
   Calendar,
   Cog,
-  DollarSign,
   FileText,
-  LogOut,
   Package,
-  PieChart,
+  PoundSterling,
   Settings,
   ShoppingBag,
   TrendingUp,
   User,
   Users,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
+import { useInventory } from "../../configs/InventoryContext";
+import { useToast } from "../../components/ui/use-toast.jsx";
 
 const DashboardAdmin = () => {
   const { user, userData, logout } = useAuth();
   const navigate = useNavigate();
+  const { staff, newStaffCount } = useStaff();
+  const { inventoryValue, formatCurrency, refreshInventoryValue } = useInventory();
+  const { toast } = useToast();
+
+  const getChangeColor = () => {
+    if (inventoryValue.change > 0 ) return "text-green-600";
+    if (inventoryValue.change < 0) return "text-red-600";
+    return "text-gray-500";
+  };
+
+  const formatChange = () => {
+    const prefix = inventoryValue.change >= 0 ? "+" : "";
+    return `${prefix}${formatCurrency(inventoryValue.change)} since last month`;
+  };
+
+  const handleValueRefresh = () => {
+    refreshInventoryValue();
+    toast({
+      title: "Refreshing",
+      description: "Updating inventory value data...",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
@@ -75,15 +101,12 @@ const DashboardAdmin = () => {
           <h1 className="text-3xl font-bold text-primary">
             Welcome,
             <span className="text-red-500 font-bold"> Admin </span>
-            <span class name="text-blue font-bold">
+            <span className="text-blue font-bold">
               {userData?.firstName + " " + userData?.lastName ||
-                user?.displayName ||
-                "Loading..."}
+                user?.displayName || <LoadingSpinner />}
             </span>
           </h1>
-          <p className="text-muted-foreground">
-            Email: karanmodi3282@gmail.com
-          </p>
+          <p className="text-muted-foreground">{userData?.email || "Not Found"}</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -93,9 +116,9 @@ const DashboardAdmin = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">42</div>
+              <div className="text-2xl font-bold">{staff.length}</div>
               <p className="text-xs text-muted-foreground">
-                +2 since last month
+                +{newStaffCount} since last month
               </p>
             </CardContent>
           </Card>
@@ -118,22 +141,60 @@ const DashboardAdmin = () => {
               <CardTitle className="text-sm font-medium">
                 Inventory Value
               </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleValueRefresh}
+                  disabled={inventoryValue.isLoading}
+                  className="p-0 h-8 w-8"
+                >
+                  {inventoryValue.isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$245,678</div>
-              <p className="text-xs text-muted-foreground">
-                +$12,345 since last month
-              </p>
+              {inventoryValue.isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">
+                    Loading...
+                  </span>
+                </div>
+              ) : inventoryValue.error ? (
+                <div className="text-sm text-red-500">Error loading data</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(inventoryValue.currentValue)}
+                  </div>
+                  <p className={`text-xs ${getChangeColor()}`}>
+                    {formatChange()}
+                    {inventoryValue.percentChange !== 0 && (
+                      <span className="ml-1">
+                        ({inventoryValue.percentChange > 0 ? "+" : ""}
+                        {inventoryValue.percentChange.toFixed(1)}%)
+                      </span>
+                    )}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
+
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <PoundSterling className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$89,432</div>
+              <div className="text-2xl font-bold">£89,432</div>
               <p className="text-xs text-muted-foreground">
                 +12% from last month
               </p>
@@ -218,48 +279,9 @@ const DashboardAdmin = () => {
           </Card>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">Management</h2>
+        <h2 className="text-2xl font-bold mb-4">Reports & Requests</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Management</CardTitle>
-              <CardDescription>Manage your business operations</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="flex items-center gap-4">
-                <Cog className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Business Operations</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage locations and departments
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Users className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Staff Management</p>
-                  <p className="text-sm text-muted-foreground">
-                    Oversee employee information
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Inventory Control</p>
-                  <p className="text-sm text-muted-foreground">
-                    Track and manage products
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                <Link to="/management">Go to Management</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+
 
           <Card>
             <CardHeader className="pb-3">
@@ -297,7 +319,7 @@ const DashboardAdmin = () => {
             </CardContent>
             <CardFooter>
               <Button className="w-full">
-                <Link to="/reports">Go to Reports</Link>
+                <Link to="./more/reports">Go to Reports</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -338,10 +360,11 @@ const DashboardAdmin = () => {
             </CardContent>
             <CardFooter>
               <Button className="w-full">
-                <Link to="/requests">Go to Requests</Link>
+                <Link to="./more/requests">Go to Requests</Link>
               </Button>
             </CardFooter>
           </Card>
+
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
@@ -357,7 +380,7 @@ const DashboardAdmin = () => {
             </CardContent>
             <CardFooter>
               <Button className="w-full">
-                <Link to="/settings">Go to Settings</Link>
+                <Link to="./more/settings">Go to Settings</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -374,7 +397,7 @@ const DashboardAdmin = () => {
             </CardContent>
             <CardFooter>
               <Button className="w-full">
-                <Link to="/notifications">Go to Notifications</Link>
+                <Link to="./more/notifications">Go to Notifications</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -391,7 +414,7 @@ const DashboardAdmin = () => {
             </CardContent>
             <CardFooter>
               <Button className="w-full">
-                <Link to="/profile">Go to Profile</Link>
+                <Link to="./more/profile">Go to Profile</Link>
               </Button>
             </CardFooter>
           </Card>

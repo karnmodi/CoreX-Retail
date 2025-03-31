@@ -223,7 +223,7 @@ export const useRoster = () => {
 export const RosterProvider = ({ children }) => {
   const [employees, setEmployees] = useState([]);
   const [shifts, setShifts] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date("2025-03-30"));
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
   const [businessHours, setBusinessHours] = useState({

@@ -192,4 +192,96 @@ const deleteImages_BE = async (imageUrls) => {
   }
 };
 
-module.exports = { addProduct_BE, getAllProducts_BE, getProductById_BE, updateProduct_BE, deleteProduct_BE };
+// Get Inventory Value Summary
+const getInventoryValue_BE = async (req, res) => {
+  try {
+    // Get all products with quantity and cost information
+    const snapshot = await db.collection("inventory").get();
+    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Calculate current inventory value
+    const currentValue = products.reduce((total, product) => {
+      const stockValue = (product.currentStock || 0) * (product.costPrice || 0);
+      return total + stockValue;
+    }, 0);
+
+    // Get last month's date
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    // Try to get last month's inventory snapshot from history collection (if exists)
+    let previousValue = 0;
+    let change = 0;
+    
+    try {
+      const historySnapshot = await db.collection("inventory_history")
+        .where("date", "<=", lastMonth)
+        .orderBy("date", "desc")
+        .limit(1)
+        .get();
+      
+      if (!historySnapshot.empty) {
+        previousValue = historySnapshot.docs[0].data().totalValue || 0;
+        change = currentValue - previousValue;
+      } else {
+        // If no history exists, we'll create a record for comparison next month
+        await saveCurrentInventorySnapshot(products, currentValue);
+      }
+    } catch (historyError) {
+      console.error("Error getting inventory history:", historyError);
+      // Still proceed with current value calculation
+    }
+
+    // Calculate percentage change
+    const percentChange = previousValue > 0 ? (change / previousValue) * 100 : 0;
+
+    // Return the inventory value data
+    res.status(200).json({
+      currentValue: parseFloat(currentValue.toFixed(2)),
+      previousValue: parseFloat(previousValue.toFixed(2)),
+      change: parseFloat(change.toFixed(2)),
+      percentChange: parseFloat(percentChange.toFixed(2)),
+      totalItems: products.reduce((sum, product) => sum + (product.currentStock || 0), 0),
+      productCount: products.length
+    });
+  } catch (error) {
+    console.error("Error calculating inventory value:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Helper function to save current inventory snapshot for future comparison
+const saveCurrentInventorySnapshot = async (products, totalValue) => {
+  try {
+    // Check if we already have a snapshot for this month
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    const existingSnapshot = await db.collection("inventory_history")
+      .where("date", ">=", startOfMonth)
+      .where("date", "<=", endOfMonth)
+      .get();
+    
+    if (!existingSnapshot.empty) {
+      // We already have a snapshot this month, no need to create another
+      return;
+    }
+    
+    const totalItems = products.reduce((sum, product) => sum + (product.currentStock || 0), 0);
+    
+    await db.collection("inventory_history").add({
+      date: new Date(),
+      totalValue,
+      totalItems,
+      productCount: products.length
+    });
+    
+    console.log("Saved inventory snapshot for:", new Date().toISOString().split('T')[0]);
+  } catch (error) {
+    console.error("Error saving inventory snapshot:", error);
+  }
+};
+
+
+module.exports = { addProduct_BE, getAllProducts_BE, getProductById_BE, updateProduct_BE, deleteProduct_BE, getInventoryValue_BE  };

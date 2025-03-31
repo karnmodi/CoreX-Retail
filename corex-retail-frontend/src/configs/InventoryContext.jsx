@@ -6,7 +6,10 @@ import {
   addProduct,
   deleteProduct,
   updateProduct,
+  getInventoryValue,
+  calculateInventoryValue
 } from "../services/inventoryAPI";
+
 
 const InventoryContext = createContext();
 
@@ -26,6 +29,17 @@ export const InventoryProvider = ({ children }) => {
   const [selectedInventory, setSelectedInventory] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [refreshValueTrigger, setRefreshValueTrigger] = useState(0);
+  const [inventoryValue, setInventoryValue] = useState({
+    currentValue: 0,
+    previousValue: 0,
+    change: 0,
+    percentChange: 0,
+    totalItems: 0,
+    productCount: 0,
+    isLoading: true,
+    error: null
+  });
   const { token } = useAuth();
 
   // Fetch all products
@@ -46,6 +60,45 @@ export const InventoryProvider = ({ children }) => {
     };
     loadInventory();
   }, [token, refreshTrigger]);
+
+  // Fetch inventory value data
+  useEffect(() => {
+    if (!token) return;
+
+    const loadInventoryValue = async () => {
+      setInventoryValue(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      try {
+        // Try to get data from API
+        const valueData = await getInventoryValue(token);
+        setInventoryValue({
+          ...valueData,
+          isLoading: false,
+          error: null
+        });
+      } catch (e) {
+        console.warn("Falling back to local calculation for inventory value:", e);
+        
+        // Fall back to local calculation if API fails
+        if (product.length > 0) {
+          const calculatedValue = calculateInventoryValue(product);
+          setInventoryValue({
+            ...calculatedValue,
+            isLoading: false,
+            error: null
+          });
+        } else {
+          setInventoryValue(prev => ({
+            ...prev,
+            isLoading: false,
+            error: e.message
+          }));
+        }
+      }
+    };
+    
+    loadInventoryValue();
+  }, [token, product, refreshTrigger, refreshValueTrigger]);
 
   // Fetch single product detail
   const fetchProductDetails = async (id) => {
@@ -179,6 +232,19 @@ export const InventoryProvider = ({ children }) => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const refreshInventoryValue = () => {
+    setRefreshValueTrigger((prev) => prev + 1);
+  };
+
+  // Format currency for display
+  const formatCurrency = (amount, currencySymbol = '£') => {
+    if (typeof amount !== 'number' || isNaN(amount)) return `${currencySymbol}0.00`;
+    return `${currencySymbol}${amount.toLocaleString('en-GB', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+  };
+
   const value = {
     product,
     loading,
@@ -193,6 +259,9 @@ export const InventoryProvider = ({ children }) => {
     updateInventory,
     removeProduct,
     refreshInventory,
+    refreshInventoryValue,
+    inventoryValue,
+    formatCurrency
   };
 
   return (

@@ -75,6 +75,13 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
   };
 
   const handlePrint = () => {
+    // Create the employee name for filename
+    const employeeName = getFullName(user.firstName, user.lastName).replace(
+      /\s+/g,
+      "_"
+    );
+    const filename = `Employee_${user.empId}_${employeeName}`;
+
     const printContent = `
       <html>
         <head>
@@ -82,6 +89,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
             user.firstName,
             user.lastName
           )}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
             body {
               font-family: system-ui, -apple-system, sans-serif;
@@ -155,6 +163,15 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               body {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
+              }
+            }
+            /* Mobile responsiveness */
+            @media screen and (max-width: 640px) {
+              .grid {
+                grid-template-columns: 1fr;
+              }
+              .section-title {
+                grid-column: span 1;
               }
             }
           </style>
@@ -300,18 +317,97 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
       </html>
     `;
 
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.onload = () => {
-      printWindow.print();
-      printWindow.onafterprint = () => printWindow.close();
-    };
+    // Method 1: Try to use the browser's print functionality first
+    try {
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+
+      // Added a download button for mobile users
+      const downloadButton = printWindow.document.createElement("button");
+      downloadButton.innerHTML = "Download PDF";
+      downloadButton.style.cssText =
+        "position: fixed; top: 10px; right: 10px; padding: 10px; background: #4338ca; color: white; border: none; border-radius: 4px; z-index: 9999;";
+      downloadButton.onclick = () => {
+        // Use html2canvas and jsPDF for download option
+        import("html2canvas")
+          .then((html2canvasModule) => {
+            const html2canvas = html2canvasModule.default;
+            return import("jspdf").then((jsPDFModule) => {
+              const { jsPDF } = jsPDFModule.default;
+
+              const element = printWindow.document.body;
+              html2canvas(element).then((canvas) => {
+                const imgData = canvas.toDataURL("image/png");
+                const pdf = new jsPDF("p", "mm", "a4");
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`${filename}.pdf`);
+              });
+            });
+          })
+          .catch((error) => {
+            console.error("Error loading libraries:", error);
+            alert(
+              "Could not load PDF generation libraries. Please try again or use the print function."
+            );
+          });
+      };
+
+      printWindow.document.body.appendChild(downloadButton);
+
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          if (!/Mobi|Android/i.test(navigator.userAgent)) {
+            printWindow.onafterprint = () => printWindow.close();
+          }
+        }, 1000);
+      };
+    } catch (error) {
+      console.error("Print window failed:", error);
+      generatePDF();
+    }
+
+    function generatePDF() {
+      Promise.all([import("html2canvas"), import("jspdf")])
+        .then(([html2canvasModule, jsPDFModule]) => {
+          const html2canvas = html2canvasModule.default;
+          const { jsPDF } = jsPDFModule.default;
+
+          const container = document.createElement("div");
+          container.innerHTML = printContent;
+          container.style.position = "absolute";
+          container.style.left = "-9999px";
+          document.body.appendChild(container);
+
+          html2canvas(container).then((canvas) => {
+            document.body.removeChild(container);
+
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`${filename}.pdf`);
+          });
+        })
+        .catch((error) => {
+          console.error("PDF generation failed:", error);
+          alert(
+            "Could not generate PDF. Please try a different browser or device."
+          );
+        });
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose} className="rounded-xl">
-      <DialogContent className="max-w-3xl bg-white rounded-2xl shadow-2xl border-0 rounded-xl overflow-y-auto max-h-[90vh]">
+      <DialogContent className="max-w-2xl bg-white rounded-2xl shadow-2xl border-0 rounded-xl overflow-y-auto max-h-[80vh]">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -319,7 +415,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
                 <span className="text-red-800">#{user.empId}</span>
                 <span>{getFullName(user.firstName, user.lastName)}</span>
               </DialogTitle>
-              
+
               <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
                 <Badge
                   className={`${getRoleBadgeColor(
@@ -338,7 +434,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
                 </Badge>
               </div>
             </div>
-  
+
             <div className="flex items-center gap-2 mt-3 sm:mt-0">
               <button // Print Button
                 onClick={handlePrint}
@@ -350,7 +446,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               >
                 <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-  
+
               <button
                 onClick={handleEditClick}
                 title={`Edit ${getFullName(user.firstName, user.lastName)}`}
@@ -366,7 +462,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               >
                 <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-  
+
               <button // Close Button
                 onClick={onClose}
                 className="hover:bg-white/80 rounded-xl p-2 transition-colors duration-200"
@@ -376,7 +472,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
             </div>
           </div>
         </div>
-  
+
         <div className="px-4 py-2 sm:px-6 sm:py-4">
           {/* Personal Information of Employee */}
           <EmployeeSection
@@ -401,7 +497,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
             <InfoItem label="Marital Status" value={user.maritalDesc} />
             <InfoItem label="Race" value={user.raceDesc} />
           </EmployeeSection>
-  
+
           {/* Employee Information Section */}
           <EmployeeSection
             title="Employment Information"
@@ -429,7 +525,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               </div>
             )}
           </EmployeeSection>
-  
+
           {/* Department Information of Employee */}
           <EmployeeSection
             title="Department Information"
@@ -443,17 +539,12 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
             <InfoItem label="Supervisor" value={user.supervisor} />
             {user.payZone && (
               <InfoItem
-                label={
-                  <InfoTag
-                    text="Payzone"
-                    tooltipText={tooltipText()}
-                  />
-                }
+                label={<InfoTag text="Payzone" tooltipText={tooltipText()} />}
                 value={user.payZone}
               />
             )}
           </EmployeeSection>
-  
+
           {/* Dates Information of Employee */}
           <EmployeeSection
             title="Dates Information"
@@ -497,7 +588,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 };
 
 export default UserDetailsDialog;

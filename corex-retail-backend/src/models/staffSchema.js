@@ -27,7 +27,7 @@ const employeeSchema = {
     employeeStatus: {
       type: 'string',
       required: true,
-      enum: ['active', 'inactive', 'on leave', 'terminated'],
+      enum: ['active', 'inactive', 'leave of absence', 'voluntarily terminated', 'terminated for cause'],
       default: 'active'
     },
     employeeType: {

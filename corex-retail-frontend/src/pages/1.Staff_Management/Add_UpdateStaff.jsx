@@ -10,16 +10,17 @@ import { useStaff } from "../../configs/StaffContext";
 import { getFullName } from "../../utils/helpers";
 import { AlertCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const initialFormState = {
-  firstName: "Karan",
-  lastName: "Modi",
-  email: "karan@gmail.com",
+  firstName: "",
+  lastName: "",
+  email: "",
   dateOfBirth: "",
   maritalStatus: "",
   gender: "",
-  password: "12345678",
-  cnfPassword: "12345678",
+  password: "",
+  cnfPassword: "",
   race: "",
 
   //Employment Information
@@ -168,6 +169,7 @@ const ValidateStep = (step, formState, isUpdateMode) => {
 
       if (!formState.race) errors.race = "Please select race";
       break;
+
     case 4:
       if (!formState.classificationType)
         errors.classificationType = "Please select classification type";
@@ -362,16 +364,16 @@ const Add_Update_StaffPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError("");
-
+  
     try {
       const stepErrors = ValidateStep(step, formState, isUpdateMode);
-
+  
       if (Object.keys(stepErrors).length > 0) {
         setErrors(stepErrors);
         setIsSubmitting(false);
         return;
       }
-
+  
       const staffData = {
         // Personal information
         firstName: formState.firstName,
@@ -381,16 +383,15 @@ const Add_Update_StaffPage = () => {
         maritalStatus: formState.maritalStatus,
         genderCode: formState.gender,
         raceDesc: formState.race,
-
+  
         // Employment Information
-        // empId: generateEmployeeID(),
         classificationType: formState.classificationType,
         employeeType: formState.employeeType,
         role: formState.position,
         employeeStatus: formState.employeeStatus,
         currentEmployeeRating: formState.employeeRating,
         performanceScore: formState.performanceScore,
-
+  
         // Department Information
         departmentType: formState.department,
         division: formState.division,
@@ -398,32 +399,42 @@ const Add_Update_StaffPage = () => {
         state: formState.state,
         supervisor: formState.supervisor,
         payZone: formState.payZone,
-
+  
         // Dates Information
         terminationDescription: formState.terminationType,
         terminationType: "unk",
       };
-
+  
       if (isUpdateMode) {
         const documentId = formState.documentId || id;
-
         await updateStaffMember(documentId, staffData);
         alert("Staff Member Successfully Updated.");
         navigate("../../staff/manage");
       } else {
         staffData.empId = generateEmployeeID();
-        const user = await addStaffMember(staffData, formState.password);
+        
+        // Include password directly in staffData
+        staffData.password = formState.password;
+        
+        // Log the payload to verify both fields are present
+        console.log("Sending user creation payload:", JSON.stringify({
+          ...staffData,
+          password: "********" // Mask password in logs
+        }, null, 2));
+  
+        // Just pass staffData which now includes the password
+        const user = await addStaffMember(staffData);
         dispatch({ type: "RESET" });
         setStep(1);
-        alert("Staff member added successfully.", user);
+        alert("Staff member added successfully.");
         navigate("../../staff/manage");
         setErrors({});
       }
     } catch (error) {
-      setSubmitError([
-        "Error " + (isUpdateMode ? "Updating" : "Adding") + "staff member" &&
-          error.message,
-      ]);
+      setSubmitError(
+        "Error " + (isUpdateMode ? "Updating" : "Adding") + " staff member: " + 
+        (error.message || "Unknown error")
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -949,7 +960,7 @@ const Add_Update_StaffPage = () => {
                       type="button"
                       onClick={nextStep}
                       className="flex items-center ml-auto"
-                      disabled={!isStepValid()}
+                      // disabled={isStepValid()}
                     >
                       Next
                       <ArrowRight className="w-4 h-4 ml-2" />

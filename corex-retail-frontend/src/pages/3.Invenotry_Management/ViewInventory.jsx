@@ -59,19 +59,22 @@ const ViewInventory = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [imagesToDelete, setImagesToDelete] = useState([]);
 
-  // Initialize edited inventory when a product is selected
   useEffect(() => {
     return () => {
-      if (selectedInventory) {
-        setEditedInventory({ ...selectedInventory });
-      }
+      // Only clean up image URLs on unmount
       newImages.forEach((img) => {
         if (img.preview) {
           URL.revokeObjectURL(img.preview);
         }
       });
     };
-  }, [selectedInventory, newImages]);
+  }, [newImages]);
+
+  useEffect(() => {
+    if (selectedInventory) {
+      setEditedInventory({ ...selectedInventory });
+    }
+  }, [selectedInventory]);
 
   const handleImageSelect = (e) => {
     if (!isEditing) return;
@@ -92,19 +95,19 @@ const ViewInventory = () => {
   // Add this function to remove an image
   const handleRemoveImage = (index, isNewImage = false) => {
     if (!isEditing) return;
-    
+
     if (isNewImage) {
-      setNewImages(prev => {
+      setNewImages((prev) => {
         URL.revokeObjectURL(prev[index].preview);
         return prev.filter((_, i) => i !== index);
       });
     } else {
-      setEditedInventory(prev => {
+      setEditedInventory((prev) => {
         const updatedImages = [...prev.images];
         updatedImages.splice(index, 1);
         return {
           ...prev,
-          images: updatedImages
+          images: updatedImages,
         };
       });
     }
@@ -134,75 +137,86 @@ const ViewInventory = () => {
 
   const handleSaveChanges = async () => {
     if (!editedInventory || !selectedInventory) return;
-    
+
     try {
       setIsSubmitting(true);
-      
+
       const productData = {
-        productName: editedInventory.productName || editedInventory.name || '',
-        category: editedInventory.category || '',
-        status: editedInventory.status || 'Active',
+        productName: editedInventory.productName || editedInventory.name || "",
+        category: editedInventory.category || "",
+        status: editedInventory.status || "Active",
         currentStock: parseInt(editedInventory.currentStock) || 0,
-        reorderPoint: parseInt(editedInventory.reorder_point || editedInventory.reorderPoint) || 0,
-        reorderQuantity: parseInt(editedInventory.reorder_quantity || editedInventory.reorderQuantity) || 0,
-        leadTimeDays: parseInt(editedInventory.lead_time_days || editedInventory.leadTimeDays) || 0,
-        costPrice: parseFloat(editedInventory.cost || editedInventory.costPrice) || 0,
-        sellingPrice: parseFloat(editedInventory.sellingPrice || editedInventory.price) || 0,
+        reorderPoint:
+          parseInt(
+            editedInventory.reorder_point || editedInventory.reorderPoint
+          ) || 0,
+        reorderQuantity:
+          parseInt(
+            editedInventory.reorder_quantity || editedInventory.reorderQuantity
+          ) || 0,
+        leadTimeDays:
+          parseInt(
+            editedInventory.lead_time_days || editedInventory.leadTimeDays
+          ) || 0,
+        costPrice: parseFloat(editedInventory.costPrice) || 0,
+        sellingPrice: parseFloat(editedInventory.sellingPrice) || 0,
       };
-      
+
       const originalImages = selectedInventory.images || [];
       const currentImages = editedInventory.images || [];
-      
+
       const imagesToDelete = originalImages.filter(
-        img => !currentImages.includes(img)
+        (img) => !currentImages.includes(img)
       );
-      
+
       if (newImages.length > 0 || imagesToDelete.length > 0) {
         console.log("Updating product with image changes");
         const formData = new FormData();
-        
-        Object.keys(productData).forEach(key => {
+
+        Object.keys(productData).forEach((key) => {
           formData.append(key, productData[key]);
         });
-       
-        
+
         if (newImages.length > 0) {
-          formData.append('existingImages', JSON.stringify(currentImages));
-          
-          newImages.forEach(img => {
-            formData.append('images', img.file);
+          formData.append("existingImages", JSON.stringify(currentImages));
+
+          newImages.forEach((img) => {
+            formData.append("images", img.file);
           });
         } else if (imagesToDelete.length > 0) {
-          formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
-          formData.append('existingImages', JSON.stringify(currentImages));
+          formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+          formData.append("existingImages", JSON.stringify(currentImages));
         }
-        
+
         await updateInventory(selectedInventory.id, formData);
+        console.log("Product Cost Price Updated: ", formData.costPrice);
       } else {
         console.log("Updating product with no image changes");
         await updateInventory(selectedInventory.id, productData);
       }
-      
+
       // Success handling
       setNewImages([]);
       setImagesToDelete([]);
       setIsEditing(false);
-      
+
       toast({
         title: "Changes saved",
         description: "Product updated successfully",
-        variant: "success"
+        variant: "success",
       });
-      
+
       // Refresh to get the latest data
       refreshInventory();
     } catch (error) {
       console.error("Error saving product:", error);
-      
+
       toast({
         title: "Error",
-        description: `Failed to save changes: ${error.message || "Unknown error"}`,
-        variant: "destructive"
+        description: `Failed to save changes: ${
+          error.message || "Unknown error"
+        }`,
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -226,7 +240,7 @@ const ViewInventory = () => {
     { value: "Earbuds", label: "Earbuds" },
     { value: "Others", label: "Others" },
   ];
-  
+
   const stockOptions = useMemo(() => {
     return [
       { value: "lessThan10", label: "Less than 10 units" },
@@ -289,7 +303,8 @@ const ViewInventory = () => {
   const handleProductSelect = (item) => {
     handleRowClick(item);
     setIsMobileDetailsOpen(true);
-    setCurrentImageIndex(0); // Reset image index when selecting new product
+    setIsEditing(false);
+    setCurrentImageIndex(0);
   };
 
   // Reset all filters
@@ -318,10 +333,8 @@ const ViewInventory = () => {
   };
 
   const handleEditChange = (e) => {
-    
     const { name, value } = e.target;
 
-    // Make sure editedInventory is initialized
     if (!editedInventory) {
       setEditedInventory({
         ...selectedInventory,
@@ -334,16 +347,16 @@ const ViewInventory = () => {
 
     updatedInventory[name] = value;
 
-    // Map form field names to schema property names
     switch (name) {
-      case "price":
       case "sellingPrice":
         updatedInventory.sellingPrice = value;
+        updatedInventory.sellingPrice = parseFloat(value);
         break;
-      case "cost":
+
       case "costPrice":
-        updatedInventory.cost = value;
-        updatedInventory.costPrice = value;
+        updatedInventory.costPrice = isNaN(parseFloat(value))
+          ? 0
+          : parseFloat(value);
         break;
 
       // Stock fields
@@ -542,7 +555,9 @@ const ViewInventory = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={resetFilters}
+              onClick={() => {
+                closeProductDetails();
+              }}
               className="text-blue-500 hover:text-blue-700"
             >
               <XIcon className="h-3 w-3 mr-1" /> Clear all
@@ -681,13 +696,14 @@ const ViewInventory = () => {
                             <div className="text-sm font-medium text-gray-900">
                               {formatPrice(item.sellingPrice || item.costPrice)}
                             </div>
-                            {item.cost && (
+                            {item.costPrice && (
                               <div className="text-xs text-green-600">
-                                Profit: £ {" "} 
+                                Profit: £{" "}
                                 {calculateProfit(
                                   item.sellingPrice || item.costprice,
-                                  item.cost
-                                )} / Pc
+                                  item.costPrice
+                                )}{" "}
+                                / Pc
                               </div>
                             )}
                           </td>
@@ -741,7 +757,9 @@ const ViewInventory = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={resetFilters}
+                              onClick={() => {
+                                resetFilters();
+                              }}
                             >
                               Clear Filters
                             </Button>
@@ -766,16 +784,53 @@ const ViewInventory = () => {
         {/* Product Details Section for Mobile - Appears as a modal */}
         {showDetails && selectedInventory && isMobileDetailsOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center lg:hidden">
-            <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-auto m-4">
+            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-auto m-4">
               <div className="flex justify-between items-center p-4 border-b">
                 <h2 className="text-lg font-medium">Product Details</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsMobileDetailsOpen(false)}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  {!isEditing ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditing(true);
+                        setEditedInventory({ ...selectedInventory }); // Ensure data is copied
+                      }}
+                      className="flex items-center"
+                    >
+                      <Edit className="h-4 w-4 mr-1" /> Edit
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSaveChanges}
+                      className="flex items-center"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />{" "}
+                          Saving...
+                        </>
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsMobileDetailsOpen(false);
+                      setIsEditing(false);
+                    }}
+                    className="rounded-full h-8 w-8 p-0 hover:bg-gray-100"
+                    disabled={isSubmitting}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="p-4">
@@ -790,18 +845,35 @@ const ViewInventory = () => {
                         className="max-w-full max-h-full object-contain"
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        No image available
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <div className="mb-2">No image available</div>
+                        {isEditing && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-500 border-blue-300"
+                            onClick={() =>
+                              document
+                                .getElementById("mobile-image-upload-input")
+                                .click()
+                            }
+                          >
+                            <Upload className="h-4 w-4 mr-1" /> Upload Image
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
+
+                  {/* Image navigation */}
                   {selectedInventory.images &&
                     selectedInventory.images.length > 1 && (
-                      <div className="flex justify-between items-center gap-2">
+                      <div className="flex justify-between items-center gap-2 mb-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={handlePrevImage}
+                          disabled={isSubmitting}
                         >
                           <ArrowBigLeft className="h-4 w-4" />
                         </Button>
@@ -813,11 +885,135 @@ const ViewInventory = () => {
                           variant="outline"
                           size="sm"
                           onClick={handleNextImage}
+                          disabled={isSubmitting}
                         >
                           <ArrowBigRight className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
+
+                  {/* Image upload section - only visible in edit mode */}
+                  {isEditing && (
+                    <div className="space-y-3 mt-3">
+                      {/* Upload button */}
+                      <label className="flex items-center justify-center gap-2 w-full py-2 border border-dashed border-gray-300 rounded-md text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
+                        <Upload className="h-4 w-4" />
+                        {selectedInventory.images &&
+                        selectedInventory.images.length > 0
+                          ? "Add more images"
+                          : "Upload product images"}
+                        <input
+                          id="mobile-image-upload-input"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={handleImageSelect}
+                          disabled={isSubmitting}
+                        />
+                      </label>
+
+                      {/* New images preview */}
+                      {newImages.length > 0 && (
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-xs text-gray-500">New Images</p>
+                            <p className="text-xs text-blue-500">
+                              {newImages.length} new file(s)
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {newImages.map((img, idx) => (
+                              <div
+                                key={`new-${idx}`}
+                                className="relative group"
+                              >
+                                <div className="w-full h-16 border rounded-md overflow-hidden">
+                                  <img
+                                    src={img.preview}
+                                    alt={`New image ${idx + 1}`}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => handleRemoveImage(idx, true)}
+                                  disabled={isSubmitting}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Existing images management */}
+                      {selectedInventory.images &&
+                        selectedInventory.images.length > 0 &&
+                        editedInventory?.images?.length > 0 && (
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <p className="text-xs text-gray-500">
+                                Current Images
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {editedInventory.images.length} images
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {editedInventory.images.map((img, idx) => (
+                                <div
+                                  key={`existing-${idx}`}
+                                  className="relative group"
+                                >
+                                  <div
+                                    className={`w-full h-16 border rounded-md overflow-hidden ${
+                                      idx === currentImageIndex
+                                        ? "ring-2 ring-blue-500"
+                                        : ""
+                                    }`}
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`Image ${idx + 1}`}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() =>
+                                      handleRemoveImage(idx, false)
+                                    }
+                                    disabled={isSubmitting}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Upload progress bar */}
+                      {isUploading && (
+                        <div className="mt-2">
+                          <div className="text-xs text-gray-500 mb-1 flex justify-between">
+                            <span>Uploading images...</span>
+                            <span>{uploadProgress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div
+                              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Product Details for Mobile */}
@@ -828,9 +1024,18 @@ const ViewInventory = () => {
                     </label>
                     <input
                       type="text"
+                      name="productName"
                       className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                      value={getProductName(selectedInventory)}
-                      readOnly
+                      value={
+                        isEditing
+                          ? editedInventory?.productName ||
+                            editedInventory?.name ||
+                            ""
+                          : getProductName(selectedInventory)
+                      }
+                      onChange={handleEditChange}
+                      readOnly={!isEditing}
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -839,24 +1044,48 @@ const ViewInventory = () => {
                       <label className="block text-xs text-gray-500 mb-1">
                         Category
                       </label>
-                      <input
-                        type="text"
+                      <select
+                        name="category"
                         className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                        value={selectedInventory.category || "-"}
-                        readOnly
-                      />
+                        value={
+                          isEditing
+                            ? editedInventory?.category || ""
+                            : selectedInventory.category || ""
+                        }
+                        onChange={handleEditChange}
+                        disabled={!isEditing || isSubmitting}
+                      >
+                        <option value="">No Category</option>
+                        {categoryOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">
                         Stock
                       </label>
                       <input
-                        type="text"
-                        className={`w-full px-3 py-2 border border-gray-200 rounded-md text-sm ${getStockLevelColor(
-                          selectedInventory.currentStock || 0
-                        )}`}
-                        value={selectedInventory.currentStock || 0}
-                        readOnly
+                        type="number"
+                        name="currentStock"
+                        className={`w-full px-3 py-2 border border-gray-200 rounded-md text-sm ${
+                          !isEditing
+                            ? getStockLevelColor(
+                                selectedInventory.currentStock || 0
+                              )
+                            : ""
+                        }`}
+                        value={
+                          isEditing
+                            ? editedInventory?.currentStock || 0
+                            : selectedInventory.currentStock || 0
+                        }
+                        onChange={handleEditChange}
+                        readOnly={!isEditing}
+                        disabled={isSubmitting}
+                        min="0"
                       />
                     </div>
                   </div>
@@ -867,13 +1096,23 @@ const ViewInventory = () => {
                         Price
                       </label>
                       <input
-                        type="text"
+                        type="number"
+                        name="sellingPrice"
                         className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                        value={formatPrice(
-                          selectedInventory.costprice ||
-                            selectedInventory.sellingPrice
-                        )}
-                        readOnly
+                        value={
+                          isEditing
+                            ? editedInventory?.sellingPrice ||
+                              editedInventory?.sellingPrice ||
+                              ""
+                            : selectedInventory.sellingPrice ||
+                              selectedInventory.sellingPrice ||
+                              ""
+                        }
+                        onChange={handleEditChange}
+                        readOnly={!isEditing}
+                        disabled={isSubmitting}
+                        min="0"
+                        step="0.01"
                       />
                     </div>
                     <div>
@@ -881,31 +1120,152 @@ const ViewInventory = () => {
                         Cost
                       </label>
                       <input
-                        type="text"
+                        type="number"
+                        name="costPrice"
                         className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                        value={formatPrice(selectedInventory.cost)}
-                        readOnly
+                        value={
+                          isEditing
+                            ? editedInventory?.costPrice || ""
+                            : selectedInventory.costPrice || ""
+                        }
+                        onChange={handleEditChange}
+                        readOnly={!isEditing}
+                        disabled={isSubmitting}
+                        min="0"
+                        step="0.01"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                      Status
-                    </label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      <Badge
-                        variant="outline"
-                        className={`${
-                          selectedInventory.status === "Active"
-                            ? "bg-green-50 text-green-700"
-                            : selectedInventory.status === "Inactive"
-                            ? "bg-gray-100 text-gray-700"
-                            : "bg-yellow-50 text-yellow-700"
-                        }`}
+                  {(isEditing ||
+                    (selectedInventory.sellingPrice &&
+                      selectedInventory.costPrice)) && (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Profit Margin
+                      </label>
+                      <div className="flex items-center">
+                        <div
+                          className={`w-full px-3 py-2 border border-gray-200 rounded-md text-sm ${
+                            !isEditing ? "bg-gray-50" : ""
+                          }`}
+                        >
+                          {isEditing
+                            ? calculateMargin(
+                                editedInventory?.sellingPrice ||
+                                  editedInventory?.sellingPrice,
+                                editedInventory?.costPrice
+                              )?.toFixed(2)
+                            : calculateMargin(
+                                selectedInventory.sellingPrice ||
+                                  selectedInventory.sellingPrice,
+                                selectedInventory.costPrice
+                              )?.toFixed(2)}
+                          %
+                        </div>
+                        <span className="ml-2 text-sm text-green-600">
+                          {isEditing
+                            ? formatPrice(
+                                calculateProfit(
+                                  editedInventory?.sellingPrice ||
+                                    editedInventory?.sellingPrice,
+                                  editedInventory?.costPrice
+                                )
+                              )
+                            : formatPrice(
+                                calculateProfit(
+                                  selectedInventory.sellingPrice ||
+                                    selectedInventory.sellingPrice,
+                                  selectedInventory.costPrice
+                                )
+                              )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                        value={
+                          isEditing
+                            ? editedInventory?.status || ""
+                            : selectedInventory.status || ""
+                        }
+                        onChange={handleEditChange}
+                        disabled={!isEditing || isSubmitting}
                       >
-                        {selectedInventory.status || "Unknown"}
-                      </Badge>
+                        <option value="">Select Status</option>
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        name="sku"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                        value={
+                          isEditing
+                            ? editedInventory?.sku || ""
+                            : selectedInventory.sku || ""
+                        }
+                        onChange={handleEditChange}
+                        readOnly={!isEditing}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Reorder Point
+                      </label>
+                      <input
+                        type="number"
+                        name="reorder_point"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                        value={
+                          isEditing
+                            ? editedInventory?.reorder_point || ""
+                            : selectedInventory.reorder_point || ""
+                        }
+                        onChange={handleEditChange}
+                        readOnly={!isEditing}
+                        disabled={isSubmitting}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Reorder Quantity
+                      </label>
+                      <input
+                        type="number"
+                        name="reorder_quantity"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                        value={
+                          isEditing
+                            ? editedInventory?.reorder_quantity || ""
+                            : selectedInventory.reorder_quantity || ""
+                        }
+                        onChange={handleEditChange}
+                        readOnly={!isEditing}
+                        disabled={isSubmitting}
+                        min="0"
+                      />
                     </div>
                   </div>
 
@@ -913,42 +1273,104 @@ const ViewInventory = () => {
                     <label className="block text-xs text-gray-500 mb-1">
                       Tags
                     </label>
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    <div className="flex flex-wrap gap-2 mt-1 border border-gray-200 rounded-md p-2 min-h-[42px]">
                       {selectedInventory.tags &&
                         selectedInventory.tags.map((tag, idx) => (
                           <Badge
                             key={idx}
                             variant="outline"
-                            className="bg-gray-100 text-gray-700"
+                            className="bg-gray-100 text-gray-700 flex items-center"
                           >
                             {tag}
+                            {isEditing && (
+                              <button
+                                type="button"
+                                className="ml-1 text-gray-500 hover:text-gray-700"
+                                onClick={() => {
+                                  if (!isEditing) return;
+                                  const updatedTags = [
+                                    ...editedInventory.tags,
+                                  ].filter((t) => t !== tag);
+                                  setEditedInventory({
+                                    ...editedInventory,
+                                    tags: updatedTags,
+                                  });
+                                }}
+                                disabled={isSubmitting}
+                              >
+                                &times;
+                              </button>
+                            )}
                           </Badge>
                         ))}
                       {(!selectedInventory.tags ||
                         selectedInventory.tags.length === 0) && (
                         <span className="text-sm text-gray-500">No tags</span>
                       )}
+                      {isEditing && (
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Add tag..."
+                            className="text-sm border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 py-0.5 w-24"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && e.target.value.trim()) {
+                                e.preventDefault();
+                                const newTag = e.target.value.trim();
+                                const currentTags = editedInventory.tags || [];
+                                if (!currentTags.includes(newTag)) {
+                                  setEditedInventory({
+                                    ...editedInventory,
+                                    tags: [...currentTags, newTag],
+                                  });
+                                }
+                                e.target.value = "";
+                              }
+                            }}
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6 flex justify-between items-center">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      navigate(`../editProduct/${selectedInventory.id}`)
-                    }
-                    className="flex items-center gap-1"
-                  >
-                    <Edit className="h-4 w-4" /> Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setDeleteConfirmOpen(true)}
-                    className="flex items-center gap-1"
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete
-                  </Button>
+                  {!isEditing ? (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        navigate(`../editProduct/${selectedInventory.id}`)
+                      }
+                      className="flex items-center gap-1"
+                      disabled={isSubmitting}
+                    >
+                      <Settings className="h-4 w-4" /> Advanced edit
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditedInventory({ ...selectedInventory });
+                      }}
+                      className="flex items-center gap-1"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+
+                  {!isEditing && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setDeleteConfirmOpen(true)}
+                      disabled={isSubmitting}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" /> Delete
+                    </Button>
+                  )}
                 </div>
 
                 {/* Delete confirmation for mobile */}
@@ -958,14 +1380,16 @@ const ViewInventory = () => {
                       Confirm Deletion
                     </h4>
                     <p className="text-sm text-red-600 mb-4">
-                      Are you sure you want to delete this product? This action
-                      cannot be undone.
+                      Are you sure you want to delete "
+                      {getProductName(selectedInventory)}"? This action cannot
+                      be undone.
                     </p>
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setDeleteConfirmOpen(false)}
+                        disabled={isSubmitting}
                       >
                         Cancel
                       </Button>
@@ -973,8 +1397,18 @@ const ViewInventory = () => {
                         variant="destructive"
                         size="sm"
                         onClick={handleDeleteProduct}
+                        disabled={isSubmitting}
                       >
-                        Delete Product
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />{" "}
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4 mr-1" /> Delete Product
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -985,6 +1419,7 @@ const ViewInventory = () => {
         )}
       </div>
 
+      {/*  For Desktop View */}
       {showDetails && selectedInventory && (
         <div className="hidden lg:block w-96 bg-white border-l border-gray-200 overflow-auto">
           <div className="p-6">
@@ -1289,12 +1724,8 @@ const ViewInventory = () => {
                     className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
                     value={
                       isEditing
-                        ? editedInventory?.sellingPrice ||
-                          editedInventory?.price ||
-                          ""
-                        : selectedInventory.sellingPrice ||
-                          selectedInventory.price ||
-                          ""
+                        ? editedInventory?.sellingPrice || ""
+                        : selectedInventory.sellingPrice || ""
                     }
                     onChange={handleEditChange}
                     readOnly={!isEditing}
@@ -1309,12 +1740,12 @@ const ViewInventory = () => {
                   </label>
                   <input
                     type="number"
-                    name="cost"
+                    name="costPrice"
                     className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
                     value={
                       isEditing
-                        ? editedInventory?.cost || ""
-                        : selectedInventory.cost || ""
+                        ? editedInventory?.costPrice || ""
+                        : selectedInventory.costPrice || ""
                     }
                     onChange={handleEditChange}
                     readOnly={!isEditing}
@@ -1326,7 +1757,8 @@ const ViewInventory = () => {
               </div>
 
               {(isEditing ||
-                (selectedInventory.sellingPrice && selectedInventory.cost)) && (
+                (selectedInventory.sellingPrice &&
+                  selectedInventory.costPrice)) && (
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">
                     Profit Margin
@@ -1340,13 +1772,13 @@ const ViewInventory = () => {
                       {isEditing
                         ? calculateMargin(
                             editedInventory?.sellingPrice ||
-                              editedInventory?.price,
-                            editedInventory?.cost
+                              editedInventory?.sellingPrice,
+                            editedInventory?.costPrice
                           )?.toFixed(2)
                         : calculateMargin(
                             selectedInventory.sellingPrice ||
-                              selectedInventory.price,
-                            selectedInventory.cost
+                              selectedInventory.sellingPrice,
+                            selectedInventory.costPrice
                           )?.toFixed(2)}
                       %
                     </div>
@@ -1355,15 +1787,15 @@ const ViewInventory = () => {
                         ? formatPrice(
                             calculateProfit(
                               editedInventory?.sellingPrice ||
-                                editedInventory?.price,
-                              editedInventory?.cost
+                                editedInventory?.sellingPrice,
+                              editedInventory?.costPrice
                             )
                           )
                         : formatPrice(
                             calculateProfit(
                               selectedInventory.sellingPrice ||
-                                selectedInventory.price,
-                              selectedInventory.cost
+                                selectedInventory.sellingPrice,
+                              selectedInventory.costPrice
                             )
                           )}
                     </span>
@@ -1556,8 +1988,6 @@ const ViewInventory = () => {
                   <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               )}
-
-              
             </div>
 
             {/* Delete confirmation */}

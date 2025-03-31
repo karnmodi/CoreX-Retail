@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
-const { addProduct_BE, getAllProducts_BE, getProductById_BE, updateProduct_BE, deleteProduct_BE } = require("../../controllers/inventoryController");
-const  verifyToken  = require("../../middleware/auth");
+const { addProduct_BE, getAllProducts_BE, getProductById_BE, updateProduct_BE, deleteProduct_BE, getInventoryValue_BE } = require("../../controllers/inventoryController");
+const verifyToken = require("../../middleware/auth");
 
 const router = express.Router();
 
@@ -9,6 +9,7 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+router.get("/value",verifyToken, getInventoryValue_BE);
 router.post("/", verifyToken, upload.array("images", 5), addProduct_BE);
 router.get("/", verifyToken, getAllProducts_BE);
 router.get("/:id", verifyToken, getProductById_BE);

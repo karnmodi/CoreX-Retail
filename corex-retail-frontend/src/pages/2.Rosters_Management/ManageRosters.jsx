@@ -760,11 +760,10 @@ const RosterManagementPage = () => {
               <div className="flex justify-between">
                 <button className="text-black-300 hover:text-black-700">
                   {editingShift ? (
-                    // <Save className="w-8 h-8" label="Update Shift" />
-                    <button>Update Shift</button>
+                    "updateShift"
                   ) : (
                     // <BadgePlus className="w-8 h-8" />
-                    <Button>Add</Button>
+                   "Add Shift"
                   )}
                 </button>
 

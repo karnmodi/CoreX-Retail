@@ -24,6 +24,7 @@ export const StaffProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [newStaffCount, setNewStaffCount] = useState(0);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -34,6 +35,23 @@ export const StaffProvider = ({ children }) => {
       try {
         const users = await getAllEmployees(token);
         setStaff(users);
+        
+        // Calculate new staff in the last month
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        
+        // Assuming each staff member has a 'createdAt' or similar date field
+        // If your API returns a different date field, adjust accordingly
+        const recentlyAddedStaff = users.filter(user => {
+          // Check if createdAt exists and is a valid date string
+          if (user.createdAt) {
+            const createdDate = new Date(user.createdAt);
+            return createdDate >= oneMonthAgo;
+          }
+          return false;
+        });
+        
+        setNewStaffCount(recentlyAddedStaff.length);
         setLoading(false);
       } catch (error) {
         setError(error.message);
@@ -82,7 +100,13 @@ export const StaffProvider = ({ children }) => {
 
       console.log("Adding Staff Member: ", staffData);
 
-      const newStaff = await postStaff(staffData, token);
+      // Add createdAt timestamp if not already present
+      const staffWithTimestamp = {
+        ...staffData,
+        createdAt: staffData.createdAt || new Date().toISOString(),
+      };
+
+      const newStaff = await postStaff(staffWithTimestamp, token);
 
       if (!newStaff) {
         console.error("Error: No response received from API");
@@ -91,6 +115,14 @@ export const StaffProvider = ({ children }) => {
       }
 
       setStaff((prevStaff) => [...prevStaff, newStaff]);
+      
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      
+      const createdDate = new Date(newStaff.createdAt);
+      if (createdDate >= oneMonthAgo) {
+        setNewStaffCount(prev => prev + 1);
+      }
 
       console.log("Staff added successfully:", newStaff);
     } catch (error) {
@@ -129,6 +161,21 @@ export const StaffProvider = ({ children }) => {
         ? [
             await deleteStaff(id, token),
             setStaff(staff.filter((staff) => staff.id !== id)),
+            
+            // If the deleted staff was added in the last month, update the count
+            (() => {
+              const deletedStaff = staff.find(s => s.id === id);
+              if (deletedStaff && deletedStaff.createdAt) {
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                const createdDate = new Date(deletedStaff.createdAt);
+                
+                if (createdDate >= oneMonthAgo) {
+                  setNewStaffCount(prev => Math.max(0, prev - 1));
+                }
+              }
+            })(),
+            
             console.log("User deleted from Firestore and Authentication."),
           ]
         : alert("User deletion cancelled.");
@@ -149,6 +196,7 @@ export const StaffProvider = ({ children }) => {
     addStaffMember,
     updateStaffMember,
     deleteStaffMember,
+    newStaffCount,
   };
 
   return (

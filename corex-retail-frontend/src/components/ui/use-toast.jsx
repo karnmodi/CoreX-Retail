@@ -10,23 +10,23 @@ const ToastContext = createContext({
 // Toast types and their corresponding styles
 const TOAST_TYPES = {
   default: {
-    className: "bg-white border-gray-200 text-gray-900",
+    className: "bg-white rounded-xl border-gray-500 text-gray-900",
     icon: <Info className="h-5 w-5 text-blue-500" />,
   },
   success: {
-    className: "bg-green-50 border-green-200 text-green-800",
+    className: "bg-green-50 rounded-xl border-green-500 text-green-800",
     icon: <CheckCircle className="h-5 w-5 text-green-500" />,
   },
   error: {
-    className: "bg-red-50 border-red-200 text-red-800",
+    className: "bg-red-50 rounded-xl border-red-500 text-red-800",
     icon: <AlertCircle className="h-5 w-5 text-red-500" />,
   },
   warning: {
-    className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    className: "bg-yellow-50 rounded-xl border-yellow-500 text-yellow-800",
     icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
   },
   loading: {
-    className: "bg-white border-gray-200 text-gray-900",
+    className: "bg-white rounded-xl border-gray-500 text-gray-900",
     icon: <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />,
   },
 };

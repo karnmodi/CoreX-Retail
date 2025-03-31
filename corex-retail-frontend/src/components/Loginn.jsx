@@ -3,36 +3,45 @@ import { useAuth } from "../configs/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/Loading";
 
 function Loginn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { PasswordResetEmail, loginwithEmailPassword, userData } =
-    useAuth();
+  const { PasswordResetEmail, loginwithEmailPassword, userData } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await loginwithEmailPassword(email, password);
-      alert("Login Successful.");
+      setLoginSuccess(true);
     } catch (e) {
       alert("Error : " + e.message);
+      setLoading(false);
     }
   };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await PasswordResetEmail(email);
       alert("Reset Password Link sent Successfully");
     } catch (e) {
       alert("Error : " + e.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (userData?.role) {
+      setLoading(true);
+      
       if (userData?.role == "admin") {
         navigate("/dashboardAdmin");
       } else if (userData?.role == "store manager") {
@@ -42,6 +51,15 @@ function Loginn() {
       }
     }
   }, [userData, navigate]);
+
+  // If login successful but waiting for role check/navigation, show full page spinner
+  if (loginSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
@@ -71,6 +89,7 @@ function Loginn() {
                     className="peer w-full pl-5 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors placeholder-transparent"
                     placeholder=" "
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                   />
                   <label
                     htmlFor="Email_Input"
@@ -95,6 +114,7 @@ function Loginn() {
                     className="peer w-full pl-5 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors placeholder-transparent"
                     placeholder=" "
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
                   />
                   <label
                     htmlFor="Login_Password_Input"
@@ -115,6 +135,7 @@ function Loginn() {
                     name="remember-me"
                     type="checkbox"
                     className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300"
+                    disabled={loading}
                   />
                   <label
                     htmlFor="RememberMe"
@@ -129,6 +150,7 @@ function Loginn() {
                     type="button"
                     onClick={handleResetPassword}
                     className="font-medium text-blue-500 hover:text-blue-600 transition-colors"
+                    disabled={loading}
                   >
                     Forgot your password?
                   </button>
@@ -138,8 +160,16 @@ function Loginn() {
               <Button
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                disabled={loading}
               >
-                Sign in
+                {loading ? (
+                  <div className="flex items-center">
+                    {/* <LoadingSpinner size="sm" /> */}
+                    <span className="ml-2">Signing in...</span>
+                  </div>
+                ) : (
+                  "Sign in"
+                )}
               </Button>
             </form>
           </div>
