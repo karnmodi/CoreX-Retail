@@ -407,7 +407,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose} className="rounded-xl">
-      <DialogContent className="max-w-2xl bg-white rounded-2xl shadow-2xl border-0 rounded-xl overflow-y-auto max-h-[80vh]">
+      <DialogContent className="max-w-2xl bg-white rounded-2xl shadow-2xl border-0 rounded-xl overflow-y-auto max-h-[70vh]">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

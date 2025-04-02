@@ -23,6 +23,13 @@ import { Upload, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useInventory } from "../../configs/InventoryContext";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 const ViewInventory = () => {
   const {
@@ -49,6 +56,7 @@ const ViewInventory = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedStock, setSelectedStock] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [sortOption, setSortOption] = useState("Name (A-Z)");
   const [isMobileDetailsOpen, setIsMobileDetailsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +69,6 @@ const ViewInventory = () => {
 
   useEffect(() => {
     return () => {
-      // Only clean up image URLs on unmount
       newImages.forEach((img) => {
         if (img.preview) {
           URL.revokeObjectURL(img.preview);
@@ -92,7 +99,6 @@ const ViewInventory = () => {
     setNewImages((prev) => [...prev, ...imagesPreviews]);
   };
 
-  // Add this function to remove an image
   const handleRemoveImage = (index, isNewImage = false) => {
     if (!isEditing) return;
 
@@ -146,18 +152,9 @@ const ViewInventory = () => {
         category: editedInventory.category || "",
         status: editedInventory.status || "Active",
         currentStock: parseInt(editedInventory.currentStock) || 0,
-        reorderPoint:
-          parseInt(
-            editedInventory.reorder_point || editedInventory.reorderPoint
-          ) || 0,
-        reorderQuantity:
-          parseInt(
-            editedInventory.reorder_quantity || editedInventory.reorderQuantity
-          ) || 0,
-        leadTimeDays:
-          parseInt(
-            editedInventory.lead_time_days || editedInventory.leadTimeDays
-          ) || 0,
+        reorderPoint: parseInt(editedInventory.reorderPoint) || 0,
+        reorderQuantity: parseInt(editedInventory.reorderQuantity) || 0,
+        leadTimeDays: parseInt(editedInventory.leadTimeDays) || 0,
         costPrice: parseFloat(editedInventory.costPrice) || 0,
         sellingPrice: parseFloat(editedInventory.sellingPrice) || 0,
       };
@@ -165,37 +162,26 @@ const ViewInventory = () => {
       const originalImages = selectedInventory.images || [];
       const currentImages = editedInventory.images || [];
 
-      const imagesToDelete = originalImages.filter(
-        (img) => !currentImages.includes(img)
-      );
+      const formData = new FormData();
 
-      if (newImages.length > 0 || imagesToDelete.length > 0) {
-        console.log("Updating product with image changes");
-        const formData = new FormData();
+      Object.keys(productData).forEach((key) => {
+        formData.append(key, productData[key]);
+      });
 
-        Object.keys(productData).forEach((key) => {
-          formData.append(key, productData[key]);
+      formData.append("existingImages", JSON.stringify(currentImages));
+
+      if (newImages.length > 0) {
+        newImages.forEach((img) => {
+          formData.append("images", img.file);
         });
-
-        if (newImages.length > 0) {
-          formData.append("existingImages", JSON.stringify(currentImages));
-
-          newImages.forEach((img) => {
-            formData.append("images", img.file);
-          });
-        } else if (imagesToDelete.length > 0) {
-          formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
-          formData.append("existingImages", JSON.stringify(currentImages));
-        }
-
-        await updateInventory(selectedInventory.id, formData);
-        console.log("Product Cost Price Updated: ", formData.costPrice);
-      } else {
-        console.log("Updating product with no image changes");
-        await updateInventory(selectedInventory.id, productData);
       }
 
-      // Success handling
+      if (imagesToDelete.length > 0) {
+        formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      }
+
+      await updateInventory(selectedInventory.id, formData);
+
       setNewImages([]);
       setImagesToDelete([]);
       setIsEditing(false);
@@ -206,7 +192,6 @@ const ViewInventory = () => {
         variant: "success",
       });
 
-      // Refresh to get the latest data
       refreshInventory();
     } catch (error) {
       console.error("Error saving product:", error);
@@ -223,15 +208,12 @@ const ViewInventory = () => {
     }
   };
 
-  const statusOptions = useMemo(() => {
-    const uniqueStatuses = [...new Set(product.map((item) => item.status))];
-    return uniqueStatuses
-      .filter((status) => status)
-      .map((status) => ({
-        value: status,
-        label: status,
-      }));
-  }, [product]);
+  const statusOptions = [
+    { value: "Active", label: "Active" },
+    { value: "Inactive", label: "Inactive" },
+    { value: "Discontinued", label: "Discontinued" },
+    { value: "Out of Stock", label: "Out of Stock" },
+  ];
 
   const categoryOptions = [
     { value: "Phones", label: "Phones" },
@@ -251,8 +233,9 @@ const ViewInventory = () => {
   }, []);
 
   // Apply filters to products
-  const filteredProducts = useMemo(() => {
-    return product.filter((item) => {
+  const filteredAndSortedProducts = useMemo(() => {
+    // First, filter the products
+    const filteredProducts = product.filter((item) => {
       // Search query filter
       const matchesSearch =
         searchQuery === "" ||
@@ -281,9 +264,39 @@ const ViewInventory = () => {
 
       return matchesSearch && matchesCategory && matchesStock && matchesStatus;
     });
-  }, [product, searchQuery, selectedCategory, selectedStock, selectedStatus]);
 
-  // Handle image navigation
+    // Then, sort the filtered products
+    return [...filteredProducts].sort((a, b) => {
+      switch (sortOption) {
+        case "Name (A-Z)":
+          return (a.productName || a.name || "").localeCompare(
+            b.productName || b.name || ""
+          );
+        case "Name (Z-A)":
+          return (b.productName || b.name || "").localeCompare(
+            a.productName || a.name || ""
+          );
+        case "Stock (Low to High)":
+          return (a.currentStock || 0) - (b.currentStock || 0);
+        case "Stock (High to Low)":
+          return (b.currentStock || 0) - (a.currentStock || 0);
+        case "Price (Low to High)":
+          return (a.sellingPrice || 0) - (b.sellingPrice || 0);
+        case "Price (High to Low)":
+          return (b.sellingPrice || 0) - (a.sellingPrice || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [
+    product,
+    searchQuery,
+    selectedCategory,
+    selectedStock,
+    selectedStatus,
+    sortOption,
+  ]);
+
   const handleNextImage = () => {
     if (selectedInventory?.images?.length > 0) {
       setCurrentImageIndex((prevIndex) =>
@@ -313,6 +326,7 @@ const ViewInventory = () => {
     setSelectedCategory("");
     setSelectedStock("");
     setSelectedStatus("");
+    setSortOption("Name (A-Z)");
   };
 
   // Close product details panel
@@ -466,7 +480,7 @@ const ViewInventory = () => {
               Inventory Management
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              {filteredProducts.length} products found
+              {filteredAndSortedProducts.length} products found
             </p>
           </div>
           <div className="flex gap-2">
@@ -551,12 +565,15 @@ const ViewInventory = () => {
           {(searchQuery ||
             selectedCategory ||
             selectedStatus ||
-            selectedStock) && (
+            selectedStock ||
+            sortOption !== "Name (A-Z)") && ( // Change the default sort option condition
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 closeProductDetails();
+                resetFilters();
+                setSortOption("Name (A-Z)"); // Reset to default sort
               }}
               className="text-blue-500 hover:text-blue-700"
             >
@@ -589,17 +606,30 @@ const ViewInventory = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sort By
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Sort By:
                   </label>
-                  <select className="w-full px-3 py-2 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="name_asc">Name (A-Z)</option>
-                    <option value="name_desc">Name (Z-A)</option>
-                    <option value="stock_asc">Stock (Low to High)</option>
-                    <option value="stock_desc">Stock (High to Low)</option>
-                    <option value="price_asc">Price (Low to High)</option>
-                    <option value="price_desc">Price (High to Low)</option>
-                  </select>
+                  <Select value={sortOption} onValueChange={setSortOption}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Sort By" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Name (A-Z)">Name (A-Z)</SelectItem>
+                      <SelectItem value="Name (Z-A)">Name (Z-A)</SelectItem>
+                      <SelectItem value="Stock (Low to High)">
+                        Stock (Low to High)
+                      </SelectItem>
+                      <SelectItem value="Stock (High to Low)">
+                        Stock (High to Low)
+                      </SelectItem>
+                      <SelectItem value="Price (Low to High)">
+                        Price (Low to High)
+                      </SelectItem>
+                      <SelectItem value="Price (High to Low)">
+                        Price (High to Low)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -633,8 +663,8 @@ const ViewInventory = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProducts.length > 0 ? (
-                      filteredProducts.map((item, index) => (
+                    {filteredAndSortedProducts.length > 0 ? (
+                      filteredAndSortedProducts.map((item, index) => (
                         <tr
                           key={item.id || index}
                           className={`border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors ${
@@ -784,7 +814,7 @@ const ViewInventory = () => {
         {/* Product Details Section for Mobile - Appears as a modal */}
         {showDetails && selectedInventory && isMobileDetailsOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center lg:hidden">
-            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-auto m-4">
+            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[70vh] overflow-auto m-4">
               <div className="flex justify-between items-center p-4 border-b">
                 <h2 className="text-lg font-medium">Product Details</h2>
                 <div className="flex gap-2">
@@ -794,7 +824,7 @@ const ViewInventory = () => {
                       size="sm"
                       onClick={() => {
                         setIsEditing(true);
-                        setEditedInventory({ ...selectedInventory }); // Ensure data is copied
+                        setEditedInventory({ ...selectedInventory });
                       }}
                       className="flex items-center"
                     >
@@ -1266,71 +1296,6 @@ const ViewInventory = () => {
                         disabled={isSubmitting}
                         min="0"
                       />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                      Tags
-                    </label>
-                    <div className="flex flex-wrap gap-2 mt-1 border border-gray-200 rounded-md p-2 min-h-[42px]">
-                      {selectedInventory.tags &&
-                        selectedInventory.tags.map((tag, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className="bg-gray-100 text-gray-700 flex items-center"
-                          >
-                            {tag}
-                            {isEditing && (
-                              <button
-                                type="button"
-                                className="ml-1 text-gray-500 hover:text-gray-700"
-                                onClick={() => {
-                                  if (!isEditing) return;
-                                  const updatedTags = [
-                                    ...editedInventory.tags,
-                                  ].filter((t) => t !== tag);
-                                  setEditedInventory({
-                                    ...editedInventory,
-                                    tags: updatedTags,
-                                  });
-                                }}
-                                disabled={isSubmitting}
-                              >
-                                &times;
-                              </button>
-                            )}
-                          </Badge>
-                        ))}
-                      {(!selectedInventory.tags ||
-                        selectedInventory.tags.length === 0) && (
-                        <span className="text-sm text-gray-500">No tags</span>
-                      )}
-                      {isEditing && (
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Add tag..."
-                            className="text-sm border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 py-0.5 w-24"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && e.target.value.trim()) {
-                                e.preventDefault();
-                                const newTag = e.target.value.trim();
-                                const currentTags = editedInventory.tags || [];
-                                if (!currentTags.includes(newTag)) {
-                                  setEditedInventory({
-                                    ...editedInventory,
-                                    tags: [...currentTags, newTag],
-                                  });
-                                }
-                                e.target.value = "";
-                              }
-                            }}
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1827,24 +1792,6 @@ const ViewInventory = () => {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    SKU
-                  </label>
-                  <input
-                    type="text"
-                    name="sku"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                    value={
-                      isEditing
-                        ? editedInventory?.sku || ""
-                        : selectedInventory.sku || ""
-                    }
-                    onChange={handleEditChange}
-                    readOnly={!isEditing}
-                    disabled={isSubmitting}
-                  />
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1858,8 +1805,8 @@ const ViewInventory = () => {
                     className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
                     value={
                       isEditing
-                        ? editedInventory?.reorder_point || ""
-                        : selectedInventory.reorder_point || ""
+                        ? editedInventory?.reorderPoint || ""
+                        : selectedInventory.reorderPoint || ""
                     }
                     onChange={handleEditChange}
                     readOnly={!isEditing}
@@ -1877,77 +1824,14 @@ const ViewInventory = () => {
                     className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
                     value={
                       isEditing
-                        ? editedInventory?.reorder_quantity || ""
-                        : selectedInventory.reorder_quantity || ""
+                        ? editedInventory?.reorderQuantity || ""
+                        : selectedInventory.reorderQuantity || ""
                     }
                     onChange={handleEditChange}
                     readOnly={!isEditing}
                     disabled={isSubmitting}
                     min="0"
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Tags</label>
-                <div className="flex flex-wrap gap-2 mt-1 border border-gray-200 rounded-md p-2 min-h-[42px]">
-                  {selectedInventory.tags &&
-                    selectedInventory.tags.map((tag, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="outline"
-                        className="bg-gray-100 text-gray-700 flex items-center"
-                      >
-                        {tag}
-                        {isEditing && (
-                          <button
-                            type="button"
-                            className="ml-1 text-gray-500 hover:text-gray-700"
-                            onClick={() => {
-                              if (!isEditing) return;
-                              const updatedTags = [
-                                ...editedInventory.tags,
-                              ].filter((t) => t !== tag);
-                              setEditedInventory({
-                                ...editedInventory,
-                                tags: updatedTags,
-                              });
-                            }}
-                            disabled={isSubmitting}
-                          >
-                            &times;
-                          </button>
-                        )}
-                      </Badge>
-                    ))}
-                  {(!selectedInventory.tags ||
-                    selectedInventory.tags.length === 0) && (
-                    <span className="text-sm text-gray-500">No tags</span>
-                  )}
-                  {isEditing && (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Add tag..."
-                        className="text-sm border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 py-0.5 w-24"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && e.target.value.trim()) {
-                            e.preventDefault();
-                            const newTag = e.target.value.trim();
-                            const currentTags = editedInventory.tags || [];
-                            if (!currentTags.includes(newTag)) {
-                              setEditedInventory({
-                                ...editedInventory,
-                                tags: [...currentTags, newTag],
-                              });
-                            }
-                            e.target.value = "";
-                          }
-                        }}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

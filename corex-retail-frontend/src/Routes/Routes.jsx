@@ -24,6 +24,7 @@ import RequestsPage from "../pages/5.More/2.Requests.jsx";
 import ProfilePage from "../pages/5.More/5.Profile.jsx";
 import SettingsPage from "../pages/5.More/3.Settings.jsx";
 import NotificationsPage from "../pages/5.More/4.Notifications.jsx";
+import StockUpdateReminder from "../pages/3.Invenotry_Management/StockUpdates.jsx";
 
 const logoSrc = "/assets/WebsiteLogo.jpg";
 
@@ -72,6 +73,8 @@ const rosterRoutes = [
 const inventoryRoutes = [
   { path: "viewInventory", element: <ViewInventory /> },
   { path: "createProducts", element: <CreateProducts /> },
+  { path: "stockUpdates", element: <StockUpdateReminder /> },
+  { path: "editProduct/:id", element: <CreateProducts /> },
 ];
 
 // Sales management routes

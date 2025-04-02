@@ -26,7 +26,7 @@ const navLinksAdmin = () => [
     subItems: [
       { to: "./inventory/viewInventory", label: "View Inventory" },
       { to: "./inventory/createProducts", label: "Product Creation" },
-      { to: "./stockUpdates", label: "Stock Updates/Reminders" },
+      { to: "./inventory/stockUpdates", label: "Stock Updates/Reminders" },
     ],
   },
   {

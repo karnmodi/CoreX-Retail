@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 import { Check, ChevronDown } from "lucide-react";
 
 // Simple utility function to join classnames
@@ -15,16 +21,19 @@ const SelectContext = createContext({
   disabled: false,
 });
 
-const Select = ({ 
-  children, 
-  value, 
-  defaultValue, 
-  onValueChange, 
+const Select = ({
+  children,
+  value,
+  defaultValue,
+  onValueChange,
   disabled = false,
-  ...props 
+  className,
+  ...props
 }) => {
   const [open, setOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(value || defaultValue || "");
+  const [selectedValue, setSelectedValue] = useState(
+    value ?? defaultValue ?? ""
+  );
 
   // Update internal state when value prop changes
   useEffect(() => {
@@ -44,16 +53,16 @@ const Select = ({
   };
 
   return (
-    <SelectContext.Provider 
-      value={{ 
-        open, 
-        setOpen, 
-        value: selectedValue, 
+    <SelectContext.Provider
+      value={{
+        open,
+        setOpen,
+        value: selectedValue,
         onValueChange: handleValueChange,
-        disabled
+        disabled,
       }}
     >
-      <div className="relative w-full" {...props}>
+      <div className={cn("relative w-full", className)} {...props}>
         {children}
       </div>
     </SelectContext.Provider>
@@ -96,12 +105,17 @@ const SelectValue = ({ placeholder, className, ...props }) => {
 
   return (
     <span className={cn("flex truncate", className)} {...props}>
-      {value ? value : placeholder}
+      {value || placeholder}
     </span>
   );
 };
 
-const SelectContent = ({ children, className, position = "popper", ...props }) => {
+const SelectContent = ({
+  children,
+  className,
+  position = "popper",
+  ...props
+}) => {
   const { open, setOpen } = useContext(SelectContext);
   const contentRef = useRef(null);
   const triggerRef = useRef(null);
@@ -109,7 +123,7 @@ const SelectContent = ({ children, className, position = "popper", ...props }) =
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
-        contentRef.current && 
+        contentRef.current &&
         !contentRef.current.contains(event.target) &&
         triggerRef.current &&
         !triggerRef.current.contains(event.target)
@@ -147,19 +161,17 @@ const SelectContent = ({ children, className, position = "popper", ...props }) =
       )}
       {...props}
     >
-      <div className="max-h-[250px] overflow-auto p-1">
-        {children}
-      </div>
+      <div className="max-h-[250px] overflow-auto p-1">{children}</div>
     </div>
   );
 };
 
-const SelectItem = ({ 
-  children, 
-  value, 
-  className, 
+const SelectItem = ({
+  children,
+  value,
+  className,
   disabled = false,
-  ...props 
+  ...props
 }) => {
   const { onValueChange, value: selectedValue } = useContext(SelectContext);
   const isSelected = selectedValue === value;
@@ -177,17 +189,28 @@ const SelectItem = ({
       aria-disabled={disabled}
       onClick={handleClick}
       className={cn(
-        "bg-white rounded-2xl relative flex cursor-default select-none items-center py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground",
-        disabled && "pointer-events-none opacity-50",
+        "relative flex items-center justify-between py-2 px-3 text-sm",
+        "hover:bg-gray-100 dark:hover:bg-gray-800", // Visible hover state
+        isSelected ? "bg-blue-50 text-blue-600" : "bg-white hover:bg-gray-100",
+        disabled
+          ? "pointer-events-none opacity-50 cursor-not-allowed"
+          : "cursor-pointer",
         className
       )}
       {...props}
     >
-      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-        {isSelected && <Check className="h-4 w-4" />}
-      </span>
-      <span className="truncate">{children}</span>
+      <div className="flex items-center">
+        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+          {isSelected && <Check className="h-4 w-4 text-blue-600" />}
+        </span>
+        <span className="pl-5">{children}</span>
+      </div>
+      {props.category && (
+        <span className="text-xs text-gray-500 ml-2">{props.category}</span>
+      )}
+      {props.stock && (
+        <span className="text-xs text-green-600 ml-2">{props.stock} units</span>
+      )}
     </div>
   );
 };

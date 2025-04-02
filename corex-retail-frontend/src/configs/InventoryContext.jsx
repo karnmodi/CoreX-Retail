@@ -7,15 +7,18 @@ import {
   deleteProduct,
   updateProduct,
   getInventoryValue,
-  calculateInventoryValue
+  calculateInventoryValue,
+  getLowStockProducts,
+  updateProductStock,
 } from "../services/inventoryAPI";
-
+import { useToast } from "../components/ui/use-toast";
+import { duration } from "moment/moment";
 
 const InventoryContext = createContext();
 
 export const useInventory = () => {
   const context = useContext(InventoryContext);
-
+  
   if (!context) {
     throw new Error("useInventory must be used within InventoryProvider");
   }
@@ -30,6 +33,8 @@ export const InventoryProvider = ({ children }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [refreshValueTrigger, setRefreshValueTrigger] = useState(0);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const { toast } = useToast();
   const [inventoryValue, setInventoryValue] = useState({
     currentValue: 0,
     previousValue: 0,
@@ -38,7 +43,7 @@ export const InventoryProvider = ({ children }) => {
     totalItems: 0,
     productCount: 0,
     isLoading: true,
-    error: null
+    error: null,
   });
   const { token } = useAuth();
 
@@ -66,37 +71,40 @@ export const InventoryProvider = ({ children }) => {
     if (!token) return;
 
     const loadInventoryValue = async () => {
-      setInventoryValue(prev => ({ ...prev, isLoading: true, error: null }));
-      
+      setInventoryValue((prev) => ({ ...prev, isLoading: true, error: null }));
+
       try {
         // Try to get data from API
         const valueData = await getInventoryValue(token);
         setInventoryValue({
           ...valueData,
           isLoading: false,
-          error: null
+          error: null,
         });
       } catch (e) {
-        console.warn("Falling back to local calculation for inventory value:", e);
-        
+        console.warn(
+          "Falling back to local calculation for inventory value:",
+          e
+        );
+
         // Fall back to local calculation if API fails
         if (product.length > 0) {
           const calculatedValue = calculateInventoryValue(product);
           setInventoryValue({
             ...calculatedValue,
             isLoading: false,
-            error: null
+            error: null,
           });
         } else {
-          setInventoryValue(prev => ({
+          setInventoryValue((prev) => ({
             ...prev,
             isLoading: false,
-            error: e.message
+            error: e.message,
           }));
         }
       }
     };
-    
+
     loadInventoryValue();
   }, [token, product, refreshTrigger, refreshValueTrigger]);
 
@@ -113,9 +121,67 @@ export const InventoryProvider = ({ children }) => {
     }
   };
 
+  const fetchLowStockProducts = async () => {
+    if (!token) return;
+
+    try {
+      const response = await getLowStockProducts(token);
+      setLowStockProducts(response.products || []);
+      return response.products;
+    } catch (error) {
+      console.error("Error fetching low stock products:", error);
+      return [];
+    }
+  };
+
+  const updateInventoryStock = async (id, stockData) => {
+    try {
+      const loadingToastId = toast({
+        title: "Updating Stock",
+        description: "Adjusting product stock...",
+        variant: "loading",
+        duration: "100",
+      });
+
+      const updatedProduct = await updateProductStock(id, stockData, token);
+
+      // Update product in the main product list
+      setProduct((prevProducts) =>
+        prevProducts.map((product) =>
+          product.id === id
+            ? { ...product, currentStock: updatedProduct.currentStock }
+            : product
+        )
+      );
+
+      const changeDescription =
+        stockData.action === "add"
+          ? `Added ${stockData.stockQuantity} units`
+          : `Removed ${stockData.stockQuantity} units`;
+
+      // Update toast to success
+      toast({
+        title: "Stock Updated",
+        description: `${updatedProduct.productName}: ${changeDescription}`,
+        variant: "success",
+      });
+
+      // Refresh low stock products
+      await fetchLowStockProducts();
+
+      return updatedProduct;
+    } catch (error) {
+      toast({
+        title: "Stock Update Failed",
+        description: error.message,
+        variant: "error",
+      });
+      throw error;
+    }
+  };
+
   // Handle row click to show product details
   const handleRowClick = async (productData) => {
-    // If we have full product data, use it directly
     if (productData && Object.keys(productData).length > 0) {
       setSelectedInventory(productData);
       setShowDetails(true);
@@ -150,12 +216,44 @@ export const InventoryProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log("Creating product with data:", productData);
+
+      if (productData instanceof FormData) {
+        console.log("FormData contents:");
+        for (let [key, value] of productData.entries()) {
+          console.log(`${key}: ${value}`);
+        }
+      } else {
+        console.log("Object data:", productData);
+      }
+
       const newProduct = await addProduct(productData, token);
-      setProduct([...product, newProduct]);
-      setRefreshTrigger((prev) => prev + 1);
+      console.log("New product added:", newProduct);
+
+      if (newProduct && newProduct.id) {
+        setProduct((prevProducts) => {
+          const existingIndex = prevProducts.findIndex(
+            (p) => p.id === newProduct.id
+          );
+          if (existingIndex >= 0) {
+            const updatedProducts = [...prevProducts];
+            updatedProducts[existingIndex] = newProduct;
+            return updatedProducts;
+          } else {
+            return [...prevProducts, newProduct];
+          }
+        });
+
+        setRefreshTrigger((prev) => prev + 1);
+      } else {
+        console.warn("Product was created but no ID was returned:", newProduct);
+        setRefreshTrigger((prev) => prev + 1);
+      }
+
       return newProduct;
     } catch (error) {
-      setError(error.message);
+      console.error("Error creating product:", error);
+      setError(error.message || "Failed to create product");
       throw error;
     } finally {
       setLoading(false);
@@ -169,21 +267,16 @@ export const InventoryProvider = ({ children }) => {
     try {
       console.log("Updating product:", id);
 
-      // Call the API to update the product
       const updatedProduct = await updateProduct(id, updates, token);
 
-      // Update the product list after successful update
       setProduct((prevProducts) =>
         prevProducts.map((product) =>
           product.id === id ? { ...product, ...updates } : product
         )
       );
 
-      // Update the selected inventory if it's being viewed
       if (selectedInventory && selectedInventory.id === id) {
-        // If updates is FormData, we need to handle differently
         if (updates instanceof FormData) {
-          // After update, get the full updated product
           const refreshedProduct = await getProductByID(id, token);
           setSelectedInventory(refreshedProduct);
         } else {
@@ -237,11 +330,12 @@ export const InventoryProvider = ({ children }) => {
   };
 
   // Format currency for display
-  const formatCurrency = (amount, currencySymbol = '£') => {
-    if (typeof amount !== 'number' || isNaN(amount)) return `${currencySymbol}0.00`;
-    return `${currencySymbol}${amount.toLocaleString('en-GB', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
+  const formatCurrency = (amount, currencySymbol = "£") => {
+    if (typeof amount !== "number" || isNaN(amount))
+      return `${currencySymbol}0.00`;
+    return `${currencySymbol}${amount.toLocaleString("en-GB", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     })}`;
   };
 
@@ -261,7 +355,10 @@ export const InventoryProvider = ({ children }) => {
     refreshInventory,
     refreshInventoryValue,
     inventoryValue,
-    formatCurrency
+    formatCurrency,
+    lowStockProducts,
+    fetchLowStockProducts,
+    updateInventoryStock,
   };
 
   return (
