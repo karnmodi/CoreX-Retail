@@ -258,3 +258,20 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: thin; /* Thin scrollbar on Firefox */
+    scrollbar-color: rgba(0,0,0,0.2) transparent; /* Scrollbar color */
+  }
+
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 6px; /* Horizontal scrollbar height */
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
+  }
+}

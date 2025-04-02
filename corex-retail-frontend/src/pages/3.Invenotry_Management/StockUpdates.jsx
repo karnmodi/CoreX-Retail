@@ -1,38 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  AlertCircle, 
-  Package, 
-  RefreshCw, 
-  TrendingUp, 
-  TrendingDown, 
-  Archive 
+import {
+  AlertCircle,
+  Package,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Archive,
 } from "lucide-react";
 import { useInventory } from "../../configs/InventoryContext";
-import { useToast } from "@/components/ui/use-toast"; 
+import { useToast } from "@/components/ui/use-toast";
 
 const StockUpdateReminder = () => {
-  const { 
-    lowStockProducts, 
-    fetchLowStockProducts, 
-    updateInventoryStock 
-  } = useInventory();
-  
+  const { lowStockProducts, fetchLowStockProducts, updateInventoryStock } =
+    useInventory();
+
   const { toast } = useToast();
-  
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [updateQuantity, setUpdateQuantity] = useState(0);
 
@@ -46,15 +43,12 @@ const StockUpdateReminder = () => {
     try {
       const updatedProduct = await updateInventoryStock(selectedProduct.id, {
         stockQuantity: updateQuantity,
-        action: 'add'
+        action: "add",
       });
-      
-      // Reset states
+
       setSelectedProduct(null);
       setUpdateQuantity(0);
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   };
 
   const totalLowStockItems = lowStockProducts.length;
@@ -72,18 +66,28 @@ const StockUpdateReminder = () => {
               <AlertCircle className="mr-2 text-yellow-500" />
               Low Stock Reminder
             </CardTitle>
-            <div className="flex space-x-4">
+            <div className="grid grid-cols-2 md:flex md:space-x-4 gap-2 md:gap-0">
               <div className="flex items-center space-x-2 bg-blue-50 p-2 rounded-lg">
-                <Package className="h-5 w-5 text-blue-500" />
-                <span className="text-sm font-medium">
-                  Low Stock Products: {totalLowStockItems}
-                </span>
+                <Package className="h-4 w-4 md:h-5 md:w-5 text-blue-500 flex-shrink-0" />
+                <div className="flex flex-col md:flex-row items-start md:items-center">
+                  <span className="text-xs md:text-sm font-medium mr-1">
+                    Low Stock
+                  </span>
+                  <span className="text-sm md:text-base font-bold text-blue-600">
+                    {totalLowStockItems}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center space-x-2 bg-red-50 p-2 rounded-lg">
-                <Archive className="h-5 w-5 text-red-500" />
-                <span className="text-sm font-medium">
-                  Total Missing Stock: {totalMissingStock} units
-                </span>
+                <Archive className="h-4 w-4 md:h-5 md:w-5 text-red-500 flex-shrink-0" />
+                <div className="flex flex-col md:flex-row items-start md:items-center">
+                  <span className="text-xs md:text-sm font-medium mr-1">
+                    Missing Stock
+                  </span>
+                  <span className="text-sm md:text-base font-bold text-red-600">
+                    {totalMissingStock} units
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -112,9 +116,17 @@ const StockUpdateReminder = () => {
                     const stockNeeded = 10 - (product.currentStock || 0);
                     return (
                       <tr key={product.id} className="border-b">
-                        <td className="py-2">{product.productName || product.name}</td>
                         <td className="py-2">
-                          <span className={`font-bold ${(product.currentStock || 0) < 5 ? 'text-red-500' : 'text-yellow-500'}`}>
+                          {product.productName || product.name}
+                        </td>
+                        <td className="py-2">
+                          <span
+                            className={`font-bold ${
+                              (product.currentStock || 0) < 5
+                                ? "text-red-500"
+                                : "text-yellow-500"
+                            }`}
+                          >
                             {product.currentStock || 0}
                           </span>
                         </td>
@@ -139,17 +151,17 @@ const StockUpdateReminder = () => {
                           </div>
                         </td>
                         <td className="py-2">
-                          <AlertDialog >
+                          <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => {
                                   setSelectedProduct(product);
                                   setUpdateQuantity(stockNeeded);
                                 }}
                               >
-                                <RefreshCw className="mr-2 h-4 w-4" /> 
+                                <RefreshCw className="mr-2 h-4 w-4" />
                                 Restock
                               </Button>
                             </AlertDialogTrigger>
@@ -163,17 +175,19 @@ const StockUpdateReminder = () => {
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <div className="flex items-center space-x-2 py-4">
-                                <Input 
-                                  type="number" 
+                                <Input
+                                  type="number"
                                   placeholder="Enter quantity"
                                   value={updateQuantity}
-                                  onChange={(e) => setUpdateQuantity(Number(e.target.value))}
+                                  onChange={(e) =>
+                                    setUpdateQuantity(Number(e.target.value))
+                                  }
                                   min="0"
                                 />
                               </div>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
+                                <AlertDialogAction
                                   onClick={handleStockUpdate}
                                   disabled={updateQuantity <= 0}
                                 >

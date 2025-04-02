@@ -1,0 +1,9 @@
+#!/bin/sh
+# Get the current date and time
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+
+# Update a version file or create one if it doesn't exist
+echo "Last Updated: $TIMESTAMP" > LAST_UPDATED.txt
+
+# Stage the LAST_UPDATED.txt file
+git add LAST_UPDATED.txt

@@ -639,9 +639,9 @@ const ViewInventory = () => {
         {/* Inventory Table Card */}
         <Card className="mb-4 border border-gray-200 shadow-sm">
           <CardContent className="p-0">
-            <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-220px)]">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse overflow-y-auto">
+            <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-220px)] w-full">
+              <div className="overflow-x-auto touch-pan-x scroll-smooth scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300">
+                <table className="w-full min-w-[900px] border-collapse">
                   <thead className="sticky top-0 bg-white z-10">
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
