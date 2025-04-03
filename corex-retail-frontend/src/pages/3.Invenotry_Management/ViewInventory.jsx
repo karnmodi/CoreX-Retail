@@ -1388,8 +1388,8 @@ const ViewInventory = () => {
       {showDetails && selectedInventory && (
         <div className="hidden lg:block w-96 bg-white border-l border-gray-200 overflow-auto">
           <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">Product Details</h2>
+            <div className="flex justify-between items-center mb-4">Product Details
+              <h2 className="text-lg font-medium"></h2>
               <div className="flex gap-2">
                 {!isEditing ? (
                   <Button

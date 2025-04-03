@@ -19,7 +19,7 @@ function Footer() {
   }, []);
 
   return (
-    <footer>
+    <footer className="text-xs text-gray-500 text-center p-2">
       Last Updated: {lastUpdated}
     </footer>
   );

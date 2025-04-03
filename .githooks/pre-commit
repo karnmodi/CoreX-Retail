@@ -1,9 +1,18 @@
-#!/bin/sh
-# Get the current date and time
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+#!/bin/bash
 
-# Update a version file or create one if it doesn't exist
-echo "Last Updated: $TIMESTAMP" > LAST_UPDATED.txt
+# Get current timestamp
+TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-# Stage the LAST_UPDATED.txt file
-git add LAST_UPDATED.txt
+# Path to the frontend public folder
+LAST_UPDATED_FILE="corex-retail-frontend/public/LAST_UPDATED.txt"
+
+# Ensure the directory exists
+mkdir -p "$(dirname "$LAST_UPDATED_FILE")"
+
+# Write timestamp
+echo "Last Updated: $TIMESTAMP" > "$LAST_UPDATED_FILE"
+
+# Stage the file
+git add "$LAST_UPDATED_FILE"
+
+exit 0
