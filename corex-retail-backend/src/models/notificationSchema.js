@@ -332,7 +332,7 @@ module.exports = {
   prepareNotification,
   createLowStockNotification,
   createMissingRosterNotification,
-  createDailyTargetNotification,
+  // createDailyTargetNotification,
   createFirestoreIndexes,
   cleanupSampleNotification
 };
