@@ -7,6 +7,7 @@ import { InventoryProvider } from "./configs/InventoryContext";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { ToastProvider } from "./components/ui/use-toast";
 import routes from "./Routes/Routes";
+import { NotificationProvider } from "./configs/notificationsContext";
 
 function App() {
   // Create router using the imported routes configuration
@@ -19,7 +20,9 @@ function App() {
           <StaffProvider>
             <InventoryProvider>
               <RosterProvider>
-                <RouterProvider router={router} />
+                <NotificationProvider>
+                  <RouterProvider router={router} />
+                </NotificationProvider>
               </RosterProvider>
             </InventoryProvider>
           </StaffProvider>

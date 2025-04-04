@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import LogoutButton from "@/configs/Logout";
+import NotificationHeader from "../NotificationHeader";
 
 const navLinksAdmin = () => [
   { to: "/DashboardAdmin", label: "Dashboard" },
@@ -7,8 +8,8 @@ const navLinksAdmin = () => [
     label: "Staff ",
     to: "#",
     subItems: [
-      { to: "./staff/manage", label: "Manage Staff"},
-      { to: "./staff/addUpdate", label: "Staff Creation"},
+      { to: "./staff/manage", label: "Manage Staff" },
+      { to: "./staff/addUpdate", label: "Staff Creation" },
       { to: "./staff/remove", label: "Remove Staff" },
     ],
   },
@@ -45,14 +46,13 @@ const navLinksAdmin = () => [
     subItems: [
       { to: "./more/reports", label: "Reports" },
       { to: "./more/requests", label: "Requests" },
-      { to: "./more/settings", label: "Settings" }, 
+      { to: "./more/settings", label: "Settings" },
       { to: "./more/notifications", label: "Notifications" },
       { to: "./more/profile", label: "Profile" },
       { component: <LogoutButton /> },
     ],
-  }
-  
-  
+  },
+
 ];
 
 export default navLinksAdmin;

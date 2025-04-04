@@ -11,6 +11,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   
+  
 });
 
 const db = admin.firestore(); 
@@ -20,3 +21,6 @@ const storage = admin.storage().bucket();
 console.log("✅ Firebase initialized with bucket:", process.env.FIREBASE_STORAGE_BUCKET);
 
 module.exports = { db, auth, storage };
+
+
+

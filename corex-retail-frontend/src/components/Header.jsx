@@ -4,6 +4,7 @@ import LogoutButton from "@/configs/Logout";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Sidebar from "./sidebar";
 import "../css/Header.css";
+import NotificationHeader from "./NotificationHeader";
 
 const Header = ({ navLinks, buttons }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -90,7 +91,6 @@ const Header = ({ navLinks, buttons }) => {
                     </div>
                   </li>
                 ))}
-
                 {/* Buttons with Dropdowns */}
                 <div className="header-buttons">
                   {buttons?.map((btn, index) => (

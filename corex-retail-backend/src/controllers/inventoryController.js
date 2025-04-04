@@ -156,21 +156,18 @@ const deleteProduct_BE = async (req, res) => {
 const getLowStockProducts_BE = async (req, res) => {
   try {
     const inventoryRef = admin.firestore().collection('inventory');
-    const snapshot = await inventoryRef
-      .where('currentStock', '<', 10)
-      .get();
+    const snapshot = await inventoryRef.get();
 
-    // Transform query results
-    const lowStockProducts = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const lowStockProducts = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(product => product.currentStock <= product.reorderPoint);
 
-    // Additional logging
     console.log('Low stock products query executed');
     console.log('Number of low stock products found:', lowStockProducts.length);
 
-    // Check if products exist
     if (lowStockProducts.length === 0) {
       return res.status(200).json({
         message: 'No low stock products found',
@@ -178,22 +175,19 @@ const getLowStockProducts_BE = async (req, res) => {
       });
     }
 
-    // Successful response
     res.status(200).json({
       message: 'Low stock products retrieved successfully',
       products: lowStockProducts
     });
   } catch (error) {
-    // Comprehensive error logging
     console.error('Error in getLowStockProducts_BE:', error);
-
-    // Generic error response
     res.status(500).json({
       message: 'Error fetching low stock products',
       error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }
 };
+
 
 const checkAndNotifyLowStock = async () => {
   try {

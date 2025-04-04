@@ -106,6 +106,7 @@ const StockUpdateReminder = () => {
                   <tr className="border-b">
                     <th className="py-2 text-left">Product Name</th>
                     <th className="py-2 text-left">Current Stock</th>
+                    <th className="py-2 text-left">Re order Point</th>
                     <th className="py-2 text-left">Category</th>
                     <th className="py-2 text-left">Stock Trend</th>
                     <th className="py-2 text-left">Actions</th>
@@ -113,7 +114,7 @@ const StockUpdateReminder = () => {
                 </thead>
                 <tbody>
                   {lowStockProducts.map((product) => {
-                    const stockNeeded = 10 - (product.currentStock || 0);
+                    const stockNeeded = product.reorderPoint - (product.currentStock || 0);
                     return (
                       <tr key={product.id} className="border-b">
                         <td className="py-2">
@@ -130,6 +131,7 @@ const StockUpdateReminder = () => {
                             {product.currentStock || 0}
                           </span>
                         </td>
+                        <td className="py-2">{product.reorderPoint}</td>
                         <td className="py-2">{product.category}</td>
                         <td className="py-2">
                           <div className="flex items-center">
