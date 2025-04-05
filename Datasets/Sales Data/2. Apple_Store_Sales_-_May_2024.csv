@@ -1,0 +1,156 @@
+date,product_id,product_name,category,units_sold,unit_price,total_sales,store_location
+2024-05-01,P001,iPhone 15,iPhone,6,899,5394,London
+2024-05-01,P002,MacBook Air M2,Mac,4,1199,4796,London
+2024-05-01,P003,iPad Pro 12.9,iPad,5,1099,5495,London
+2024-05-01,P004,Apple Watch Series 9,Wearables,6,429,2574,London
+2024-05-01,P005,AirPods Pro 2,Accessories,5,249,1245,London
+2024-05-02,P001,iPhone 15,iPhone,4,899,3596,London
+2024-05-02,P002,MacBook Air M2,Mac,4,1199,4796,London
+2024-05-02,P003,iPad Pro 12.9,iPad,9,1099,9891,London
+2024-05-02,P004,Apple Watch Series 9,Wearables,7,429,3003,London
+2024-05-02,P005,AirPods Pro 2,Accessories,7,249,1743,London
+2024-05-03,P001,iPhone 15,iPhone,5,899,4495,London
+2024-05-03,P002,MacBook Air M2,Mac,8,1199,9592,London
+2024-05-03,P003,iPad Pro 12.9,iPad,8,1099,8792,London
+2024-05-03,P004,Apple Watch Series 9,Wearables,5,429,2145,London
+2024-05-03,P005,AirPods Pro 2,Accessories,9,249,2241,London
+2024-05-04,P001,iPhone 15,iPhone,7,899,6293,London
+2024-05-04,P002,MacBook Air M2,Mac,9,1199,10791,London
+2024-05-04,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-04,P004,Apple Watch Series 9,Wearables,11,429,4719,London
+2024-05-04,P005,AirPods Pro 2,Accessories,6,249,1494,London
+2024-05-05,P001,iPhone 15,iPhone,7,899,6293,London
+2024-05-05,P002,MacBook Air M2,Mac,10,1199,11990,London
+2024-05-05,P003,iPad Pro 12.9,iPad,11,1099,12089,London
+2024-05-05,P004,Apple Watch Series 9,Wearables,10,429,4290,London
+2024-05-05,P005,AirPods Pro 2,Accessories,14,249,3486,London
+2024-05-06,P001,iPhone 15,iPhone,5,899,4495,London
+2024-05-06,P002,MacBook Air M2,Mac,5,1199,5995,London
+2024-05-06,P003,iPad Pro 12.9,iPad,3,1099,3297,London
+2024-05-06,P004,Apple Watch Series 9,Wearables,4,429,1716,London
+2024-05-06,P005,AirPods Pro 2,Accessories,4,249,996,London
+2024-05-07,P001,iPhone 15,iPhone,6,899,5394,London
+2024-05-07,P002,MacBook Air M2,Mac,7,1199,8393,London
+2024-05-07,P003,iPad Pro 12.9,iPad,3,1099,3297,London
+2024-05-07,P004,Apple Watch Series 9,Wearables,10,429,4290,London
+2024-05-07,P005,AirPods Pro 2,Accessories,4,249,996,London
+2024-05-08,P001,iPhone 15,iPhone,5,899,4495,London
+2024-05-08,P002,MacBook Air M2,Mac,9,1199,10791,London
+2024-05-08,P003,iPad Pro 12.9,iPad,8,1099,8792,London
+2024-05-08,P004,Apple Watch Series 9,Wearables,6,429,2574,London
+2024-05-08,P005,AirPods Pro 2,Accessories,6,249,1494,London
+2024-05-09,P001,iPhone 15,iPhone,9,899,8091,London
+2024-05-09,P002,MacBook Air M2,Mac,9,1199,10791,London
+2024-05-09,P003,iPad Pro 12.9,iPad,4,1099,4396,London
+2024-05-09,P004,Apple Watch Series 9,Wearables,4,429,1716,London
+2024-05-09,P005,AirPods Pro 2,Accessories,10,249,2490,London
+2024-05-10,P001,iPhone 15,iPhone,9,899,8091,London
+2024-05-10,P002,MacBook Air M2,Mac,10,1199,11990,London
+2024-05-10,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-10,P004,Apple Watch Series 9,Wearables,4,429,1716,London
+2024-05-10,P005,AirPods Pro 2,Accessories,8,249,1992,London
+2024-05-11,P001,iPhone 15,iPhone,7,899,6293,London
+2024-05-11,P002,MacBook Air M2,Mac,6,1199,7194,London
+2024-05-11,P003,iPad Pro 12.9,iPad,8,1099,8792,London
+2024-05-11,P004,Apple Watch Series 9,Wearables,14,429,6006,London
+2024-05-11,P005,AirPods Pro 2,Accessories,10,249,2490,London
+2024-05-12,P001,iPhone 15,iPhone,7,899,6293,London
+2024-05-12,P002,MacBook Air M2,Mac,11,1199,13189,London
+2024-05-12,P003,iPad Pro 12.9,iPad,8,1099,8792,London
+2024-05-12,P004,Apple Watch Series 9,Wearables,7,429,3003,London
+2024-05-12,P005,AirPods Pro 2,Accessories,10,249,2490,London
+2024-05-13,P001,iPhone 15,iPhone,6,899,5394,London
+2024-05-13,P002,MacBook Air M2,Mac,3,1199,3597,London
+2024-05-13,P003,iPad Pro 12.9,iPad,3,1099,3297,London
+2024-05-13,P004,Apple Watch Series 9,Wearables,3,429,1287,London
+2024-05-13,P005,AirPods Pro 2,Accessories,5,249,1245,London
+2024-05-14,P001,iPhone 15,iPhone,10,899,8990,London
+2024-05-14,P002,MacBook Air M2,Mac,6,1199,7194,London
+2024-05-14,P003,iPad Pro 12.9,iPad,9,1099,9891,London
+2024-05-14,P004,Apple Watch Series 9,Wearables,3,429,1287,London
+2024-05-14,P005,AirPods Pro 2,Accessories,7,249,1743,London
+2024-05-15,P001,iPhone 15,iPhone,3,899,2697,London
+2024-05-15,P002,MacBook Air M2,Mac,10,1199,11990,London
+2024-05-15,P003,iPad Pro 12.9,iPad,5,1099,5495,London
+2024-05-15,P004,Apple Watch Series 9,Wearables,6,429,2574,London
+2024-05-15,P005,AirPods Pro 2,Accessories,5,249,1245,London
+2024-05-16,P001,iPhone 15,iPhone,5,899,4495,London
+2024-05-16,P002,MacBook Air M2,Mac,9,1199,10791,London
+2024-05-16,P003,iPad Pro 12.9,iPad,4,1099,4396,London
+2024-05-16,P004,Apple Watch Series 9,Wearables,8,429,3432,London
+2024-05-16,P005,AirPods Pro 2,Accessories,7,249,1743,London
+2024-05-17,P001,iPhone 15,iPhone,4,899,3596,London
+2024-05-17,P002,MacBook Air M2,Mac,4,1199,4796,London
+2024-05-17,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-17,P004,Apple Watch Series 9,Wearables,10,429,4290,London
+2024-05-17,P005,AirPods Pro 2,Accessories,8,249,1992,London
+2024-05-18,P001,iPhone 15,iPhone,8,899,7192,London
+2024-05-18,P002,MacBook Air M2,Mac,6,1199,7194,London
+2024-05-18,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-18,P004,Apple Watch Series 9,Wearables,10,429,4290,London
+2024-05-18,P005,AirPods Pro 2,Accessories,15,249,3735,London
+2024-05-19,P001,iPhone 15,iPhone,8,899,7192,London
+2024-05-19,P002,MacBook Air M2,Mac,6,1199,7194,London
+2024-05-19,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-19,P004,Apple Watch Series 9,Wearables,12,429,5148,London
+2024-05-19,P005,AirPods Pro 2,Accessories,14,249,3486,London
+2024-05-20,P001,iPhone 15,iPhone,10,899,8990,London
+2024-05-20,P002,MacBook Air M2,Mac,7,1199,8393,London
+2024-05-20,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-20,P004,Apple Watch Series 9,Wearables,10,429,4290,London
+2024-05-20,P005,AirPods Pro 2,Accessories,8,249,1992,London
+2024-05-21,P001,iPhone 15,iPhone,6,899,5394,London
+2024-05-21,P002,MacBook Air M2,Mac,3,1199,3597,London
+2024-05-21,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-21,P004,Apple Watch Series 9,Wearables,7,429,3003,London
+2024-05-21,P005,AirPods Pro 2,Accessories,6,249,1494,London
+2024-05-22,P001,iPhone 15,iPhone,7,899,6293,London
+2024-05-22,P002,MacBook Air M2,Mac,3,1199,3597,London
+2024-05-22,P003,iPad Pro 12.9,iPad,6,1099,6594,London
+2024-05-22,P004,Apple Watch Series 9,Wearables,6,429,2574,London
+2024-05-22,P005,AirPods Pro 2,Accessories,8,249,1992,London
+2024-05-23,P001,iPhone 15,iPhone,7,899,6293,London
+2024-05-23,P002,MacBook Air M2,Mac,10,1199,11990,London
+2024-05-23,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-23,P004,Apple Watch Series 9,Wearables,3,429,1287,London
+2024-05-23,P005,AirPods Pro 2,Accessories,3,249,747,London
+2024-05-24,P001,iPhone 15,iPhone,6,899,5394,London
+2024-05-24,P002,MacBook Air M2,Mac,5,1199,5995,London
+2024-05-24,P003,iPad Pro 12.9,iPad,9,1099,9891,London
+2024-05-24,P004,Apple Watch Series 9,Wearables,5,429,2145,London
+2024-05-24,P005,AirPods Pro 2,Accessories,6,249,1494,London
+2024-05-25,P001,iPhone 15,iPhone,13,899,11687,London
+2024-05-25,P002,MacBook Air M2,Mac,8,1199,9592,London
+2024-05-25,P003,iPad Pro 12.9,iPad,13,1099,14287,London
+2024-05-25,P004,Apple Watch Series 9,Wearables,7,429,3003,London
+2024-05-25,P005,AirPods Pro 2,Accessories,7,249,1743,London
+2024-05-26,P001,iPhone 15,iPhone,14,899,12586,London
+2024-05-26,P002,MacBook Air M2,Mac,7,1199,8393,London
+2024-05-26,P003,iPad Pro 12.9,iPad,11,1099,12089,London
+2024-05-26,P004,Apple Watch Series 9,Wearables,15,429,6435,London
+2024-05-26,P005,AirPods Pro 2,Accessories,15,249,3735,London
+2024-05-27,P001,iPhone 15,iPhone,4,899,3596,London
+2024-05-27,P002,MacBook Air M2,Mac,3,1199,3597,London
+2024-05-27,P003,iPad Pro 12.9,iPad,7,1099,7693,London
+2024-05-27,P004,Apple Watch Series 9,Wearables,6,429,2574,London
+2024-05-27,P005,AirPods Pro 2,Accessories,4,249,996,London
+2024-05-28,P001,iPhone 15,iPhone,8,899,7192,London
+2024-05-28,P002,MacBook Air M2,Mac,9,1199,10791,London
+2024-05-28,P003,iPad Pro 12.9,iPad,4,1099,4396,London
+2024-05-28,P004,Apple Watch Series 9,Wearables,4,429,1716,London
+2024-05-28,P005,AirPods Pro 2,Accessories,8,249,1992,London
+2024-05-29,P001,iPhone 15,iPhone,4,899,3596,London
+2024-05-29,P002,MacBook Air M2,Mac,9,1199,10791,London
+2024-05-29,P003,iPad Pro 12.9,iPad,5,1099,5495,London
+2024-05-29,P004,Apple Watch Series 9,Wearables,9,429,3861,London
+2024-05-29,P005,AirPods Pro 2,Accessories,5,249,1245,London
+2024-05-30,P001,iPhone 15,iPhone,10,899,8990,London
+2024-05-30,P002,MacBook Air M2,Mac,5,1199,5995,London
+2024-05-30,P003,iPad Pro 12.9,iPad,4,1099,4396,London
+2024-05-30,P004,Apple Watch Series 9,Wearables,10,429,4290,London
+2024-05-30,P005,AirPods Pro 2,Accessories,8,249,1992,London
+2024-05-31,P001,iPhone 15,iPhone,9,899,8091,London
+2024-05-31,P002,MacBook Air M2,Mac,8,1199,9592,London
+2024-05-31,P003,iPad Pro 12.9,iPad,10,1099,10990,London
+2024-05-31,P004,Apple Watch Series 9,Wearables,9,429,3861,London
+2024-05-31,P005,AirPods Pro 2,Accessories,5,249,1245,London

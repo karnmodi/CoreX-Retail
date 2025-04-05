@@ -374,7 +374,7 @@ const ViewInventory = () => {
         break;
 
       // Stock fields
-      case "reorder_point":
+      case "reorderPoint":
         updatedInventory.reorderPoint = value;
         break;
       case "reorder_quantity":
@@ -403,10 +403,10 @@ const ViewInventory = () => {
     console.log(`Updated ${name} to:`, value);
   };
 
-  const getStockLevelColor = (stockLevel) => {
+  const getStockLevelColor = (stockLevel, reorderPoint) => {
     if (stockLevel <= 0) return "text-red-600 font-bold";
-    if (stockLevel < 10) return "text-orange-500 font-medium";
-    if (stockLevel < 20) return "text-yellow-600";
+    if (stockLevel <= reorderPoint * 0.5) return "text-orange-500 font-medium";
+    if (stockLevel <= reorderPoint) return "text-yellow-600";
     return "text-green-600";
   };
 
@@ -754,13 +754,14 @@ const ViewInventory = () => {
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div
                               className={getStockLevelColor(
-                                item.currentStock || 0
+                                item.currentStock || 0,
+                                item.reorderPoint
                               )}
                             >
                               {item.currentStock || 0} units
                             </div>
                             {(item.currentStock || 0) <
-                              (item.reorder_point || 10) && (
+                              (item.reorderPoint || 10) && (
                               <div className="text-xs text-red-500 font-medium">
                                 Low stock
                               </div>
@@ -1103,7 +1104,8 @@ const ViewInventory = () => {
                         className={`w-full px-3 py-2 border border-gray-200 rounded-md text-sm ${
                           !isEditing
                             ? getStockLevelColor(
-                                selectedInventory.currentStock || 0
+                                selectedInventory.currentStock || 0,
+                                selectedInventory.reorderPoint
                               )
                             : ""
                         }`}
@@ -1265,12 +1267,12 @@ const ViewInventory = () => {
                       </label>
                       <input
                         type="number"
-                        name="reorder_point"
+                        name="reorderPoint"
                         className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
                         value={
                           isEditing
-                            ? editedInventory?.reorder_point || ""
-                            : selectedInventory.reorder_point || ""
+                            ? editedInventory?.reorderPoint || ""
+                            : selectedInventory.reorderPoint || ""
                         }
                         onChange={handleEditChange}
                         readOnly={!isEditing}
@@ -1388,7 +1390,8 @@ const ViewInventory = () => {
       {showDetails && selectedInventory && (
         <div className="hidden lg:block w-96 bg-white border-l border-gray-200 overflow-auto">
           <div className="p-6">
-            <div className="flex justify-between items-center mb-4">Product Details
+            <div className="flex justify-between items-center mb-4">
+              Product Details
               <h2 className="text-lg font-medium"></h2>
               <div className="flex gap-2">
                 {!isEditing ? (
@@ -1661,7 +1664,8 @@ const ViewInventory = () => {
                     className={`w-full px-3 py-2 border border-gray-200 rounded-md text-sm ${
                       !isEditing
                         ? getStockLevelColor(
-                            selectedInventory.currentStock || 0
+                            selectedInventory.currentStock || 0,
+                            selectedInventory.reorderPoint
                           )
                         : ""
                     }`}
@@ -1801,7 +1805,7 @@ const ViewInventory = () => {
                   </label>
                   <input
                     type="number"
-                    name="reorder_point"
+                    name="reorderPoint"
                     className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
                     value={
                       isEditing
@@ -1919,87 +1923,92 @@ const ViewInventory = () => {
       )}
 
       {/* Right sidebar statistics */}
-      <div className="w-full lg:w-64 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 p-4 lg:p-6">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 lg:mb-6">
-          INVENTORY OVERVIEW
-        </h2>
+      {!selectedInventory && (
+        <div className="w-full lg:w-64 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 p-4 lg:p-6">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 lg:mb-6">
+            INVENTORY OVERVIEW
+          </h2>
 
-        <div className="grid grid-cols-3 lg:grid-cols-1 gap-4 lg:gap-6">
-          <Card className="shadow-none border border-gray-300 rounded-2xl">
-            <CardContent className="p-4 text-center lg:text-left">
-              <div className="text-sm text-gray-500 mb-1">Total Products</div>
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900">
-                {product.length}
+          <div className="grid grid-cols-3 lg:grid-cols-1 gap-4 lg:gap-6">
+            <Card className="shadow-none border border-gray-300 rounded-2xl">
+              <CardContent className="p-4 text-center lg:text-left">
+                <div className="text-sm text-gray-500 mb-1">Total Products</div>
+                <div className="text-2xl lg:text-3xl font-bold text-gray-900">
+                  {product.length}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-none border border-gray-300 rounded-2xl">
+              <CardContent className="p-4 text-center lg:text-left">
+                <div className="text-sm text-gray-500 mb-1">Low Stock</div>
+                <div className="text-2xl lg:text-3xl font-bold text-orange-500">
+                  {
+                    product.filter(
+                      (item) =>
+                        (item.currentStock || 0) < (item.reorderPoint || 10)
+                    ).length
+                  }
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-none border border-gray-300 rounded-2xl">
+              <CardContent className="p-4 text-center lg:text-left">
+                <div className="text-sm text-gray-500 mb-1">Out of Stock</div>
+                <div className="text-2xl lg:text-3xl font-bold text-red-500">
+                  {
+                    product.filter((item) => (item.currentStock || 0) <= 0)
+                      .length
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="mt-6 shadow-none border border-gray-300 rounded-2xl">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Category Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="space-y-2 mt-2">
+                {categoryOptions.slice(0, 5).map((category) => {
+                  const count = product.filter(
+                    (item) => item.category === category.value
+                  ).length;
+                  const percentage =
+                    Math.round((count / product.length) * 100) || 0;
+
+                  return (
+                    <div key={category.value} className="text-sm">
+                      <div className="flex justify-between mb-1">
+                        <span>{category.label}</span>
+                        <span className="text-gray-500">{count}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-none border border-gray-300 rounded-2xl">
-            <CardContent className="p-4 text-center lg:text-left">
-              <div className="text-sm text-gray-500 mb-1">Low Stock</div>
-              <div className="text-2xl lg:text-3xl font-bold text-orange-500">
-                {
-                  product.filter(
-                    (item) =>
-                      (item.currentStock || 0) < (item.reorder_point || 10)
-                  ).length
-                }
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-none border border-gray-300 rounded-2xl">
-            <CardContent className="p-4 text-center lg:text-left">
-              <div className="text-sm text-gray-500 mb-1">Out of Stock</div>
-              <div className="text-2xl lg:text-3xl font-bold text-red-500">
-                {product.filter((item) => (item.currentStock || 0) <= 0).length}
-              </div>
-            </CardContent>
-          </Card>
+          <Button
+            variant="outline"
+            className="w-full mt-6 text-sm"
+            onClick={() => navigate("../reports")}
+          >
+            View Complete Reports
+          </Button>
         </div>
-
-        <Card className="mt-6 shadow-none border border-gray-300 rounded-2xl">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Category Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="space-y-2 mt-2">
-              {categoryOptions.slice(0, 5).map((category) => {
-                const count = product.filter(
-                  (item) => item.category === category.value
-                ).length;
-                const percentage =
-                  Math.round((count / product.length) * 100) || 0;
-
-                return (
-                  <div key={category.value} className="text-sm">
-                    <div className="flex justify-between mb-1">
-                      <span>{category.label}</span>
-                      <span className="text-gray-500">{count}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button
-          variant="outline"
-          className="w-full mt-6 text-sm"
-          onClick={() => navigate("../reports")}
-        >
-          View Complete Reports
-        </Button>
-      </div>
+      )}
     </div>
   );
 };

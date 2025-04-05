@@ -1,0 +1,241 @@
+date,product_id,product_name,category,units_sold,unit_price,total_sales,store_location
+2024-11-01,P001,iPhone 15,iPhone,20,899,17980,London
+2024-11-01,P002,MacBook Air M2,Mac,12,1199,14388,London
+2024-11-01,P003,iPad Pro 12.9,iPad,22,1099,24178,London
+2024-11-01,P004,Apple Watch Series 9,Wearables,15,429,6435,London
+2024-11-01,P005,AirPods Pro 2,Accessories,16,249,3984,London
+2024-11-01,P006,iPhone 16,iPhone,17,999,16983,London
+2024-11-01,P007,iPhone 16 Pro,iPhone,20,1199,23980,London
+2024-11-01,P008,iPhone 16 Pro Max,iPhone,24,1399,33576,London
+2024-11-02,P001,iPhone 15,iPhone,39,899,35061,London
+2024-11-02,P002,MacBook Air M2,Mac,21,1199,25179,London
+2024-11-02,P003,iPad Pro 12.9,iPad,36,1099,39564,London
+2024-11-02,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-02,P005,AirPods Pro 2,Accessories,37,249,9213,London
+2024-11-02,P006,iPhone 16,iPhone,35,999,34965,London
+2024-11-02,P007,iPhone 16 Pro,iPhone,40,1199,47960,London
+2024-11-02,P008,iPhone 16 Pro Max,iPhone,22,1399,30778,London
+2024-11-03,P001,iPhone 15,iPhone,33,899,29667,London
+2024-11-03,P002,MacBook Air M2,Mac,37,1199,44363,London
+2024-11-03,P003,iPad Pro 12.9,iPad,24,1099,26376,London
+2024-11-03,P004,Apple Watch Series 9,Wearables,27,429,11583,London
+2024-11-03,P005,AirPods Pro 2,Accessories,39,249,9711,London
+2024-11-03,P006,iPhone 16,iPhone,40,999,39960,London
+2024-11-03,P007,iPhone 16 Pro,iPhone,23,1199,27577,London
+2024-11-03,P008,iPhone 16 Pro Max,iPhone,30,1399,41970,London
+2024-11-04,P001,iPhone 15,iPhone,16,899,14384,London
+2024-11-04,P002,MacBook Air M2,Mac,12,1199,14388,London
+2024-11-04,P003,iPad Pro 12.9,iPad,15,1099,16485,London
+2024-11-04,P004,Apple Watch Series 9,Wearables,22,429,9438,London
+2024-11-04,P005,AirPods Pro 2,Accessories,22,249,5478,London
+2024-11-04,P006,iPhone 16,iPhone,17,999,16983,London
+2024-11-04,P007,iPhone 16 Pro,iPhone,20,1199,23980,London
+2024-11-04,P008,iPhone 16 Pro Max,iPhone,23,1399,32177,London
+2024-11-05,P001,iPhone 15,iPhone,18,899,16182,London
+2024-11-05,P002,MacBook Air M2,Mac,15,1199,17985,London
+2024-11-05,P003,iPad Pro 12.9,iPad,14,1099,15386,London
+2024-11-05,P004,Apple Watch Series 9,Wearables,19,429,8151,London
+2024-11-05,P005,AirPods Pro 2,Accessories,25,249,6225,London
+2024-11-05,P006,iPhone 16,iPhone,18,999,17982,London
+2024-11-05,P007,iPhone 16 Pro,iPhone,17,1199,20383,London
+2024-11-05,P008,iPhone 16 Pro Max,iPhone,14,1399,19586,London
+2024-11-06,P001,iPhone 15,iPhone,12,899,10788,London
+2024-11-06,P002,MacBook Air M2,Mac,12,1199,14388,London
+2024-11-06,P003,iPad Pro 12.9,iPad,21,1099,23079,London
+2024-11-06,P004,Apple Watch Series 9,Wearables,23,429,9867,London
+2024-11-06,P005,AirPods Pro 2,Accessories,23,249,5727,London
+2024-11-06,P006,iPhone 16,iPhone,17,999,16983,London
+2024-11-06,P007,iPhone 16 Pro,iPhone,24,1199,28776,London
+2024-11-06,P008,iPhone 16 Pro Max,iPhone,25,1399,34975,London
+2024-11-07,P001,iPhone 15,iPhone,20,899,17980,London
+2024-11-07,P002,MacBook Air M2,Mac,17,1199,20383,London
+2024-11-07,P003,iPad Pro 12.9,iPad,23,1099,25277,London
+2024-11-07,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-07,P005,AirPods Pro 2,Accessories,20,249,4980,London
+2024-11-07,P006,iPhone 16,iPhone,21,999,20979,London
+2024-11-07,P007,iPhone 16 Pro,iPhone,25,1199,29975,London
+2024-11-07,P008,iPhone 16 Pro Max,iPhone,13,1399,18187,London
+2024-11-08,P001,iPhone 15,iPhone,19,899,17081,London
+2024-11-08,P002,MacBook Air M2,Mac,24,1199,28776,London
+2024-11-08,P003,iPad Pro 12.9,iPad,22,1099,24178,London
+2024-11-08,P004,Apple Watch Series 9,Wearables,23,429,9867,London
+2024-11-08,P005,AirPods Pro 2,Accessories,16,249,3984,London
+2024-11-08,P006,iPhone 16,iPhone,22,999,21978,London
+2024-11-08,P007,iPhone 16 Pro,iPhone,15,1199,17985,London
+2024-11-08,P008,iPhone 16 Pro Max,iPhone,23,1399,32177,London
+2024-11-09,P001,iPhone 15,iPhone,33,899,29667,London
+2024-11-09,P002,MacBook Air M2,Mac,24,1199,28776,London
+2024-11-09,P003,iPad Pro 12.9,iPad,24,1099,26376,London
+2024-11-09,P004,Apple Watch Series 9,Wearables,39,429,16731,London
+2024-11-09,P005,AirPods Pro 2,Accessories,30,249,7470,London
+2024-11-09,P006,iPhone 16,iPhone,26,999,25974,London
+2024-11-09,P007,iPhone 16 Pro,iPhone,40,1199,47960,London
+2024-11-09,P008,iPhone 16 Pro Max,iPhone,40,1399,55960,London
+2024-11-10,P001,iPhone 15,iPhone,24,899,21576,London
+2024-11-10,P002,MacBook Air M2,Mac,36,1199,43164,London
+2024-11-10,P003,iPad Pro 12.9,iPad,27,1099,29673,London
+2024-11-10,P004,Apple Watch Series 9,Wearables,20,429,8580,London
+2024-11-10,P005,AirPods Pro 2,Accessories,30,249,7470,London
+2024-11-10,P006,iPhone 16,iPhone,39,999,38961,London
+2024-11-10,P007,iPhone 16 Pro,iPhone,40,1199,47960,London
+2024-11-10,P008,iPhone 16 Pro Max,iPhone,29,1399,40571,London
+2024-11-11,P001,iPhone 15,iPhone,13,899,11687,London
+2024-11-11,P002,MacBook Air M2,Mac,14,1199,16786,London
+2024-11-11,P003,iPad Pro 12.9,iPad,18,1099,19782,London
+2024-11-11,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-11,P005,AirPods Pro 2,Accessories,18,249,4482,London
+2024-11-11,P006,iPhone 16,iPhone,25,999,24975,London
+2024-11-11,P007,iPhone 16 Pro,iPhone,25,1199,29975,London
+2024-11-11,P008,iPhone 16 Pro Max,iPhone,12,1399,16788,London
+2024-11-12,P001,iPhone 15,iPhone,16,899,14384,London
+2024-11-12,P002,MacBook Air M2,Mac,19,1199,22781,London
+2024-11-12,P003,iPad Pro 12.9,iPad,17,1099,18683,London
+2024-11-12,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-12,P005,AirPods Pro 2,Accessories,15,249,3735,London
+2024-11-12,P006,iPhone 16,iPhone,15,999,14985,London
+2024-11-12,P007,iPhone 16 Pro,iPhone,25,1199,29975,London
+2024-11-12,P008,iPhone 16 Pro Max,iPhone,17,1399,23783,London
+2024-11-13,P001,iPhone 15,iPhone,19,899,17081,London
+2024-11-13,P002,MacBook Air M2,Mac,18,1199,21582,London
+2024-11-13,P003,iPad Pro 12.9,iPad,13,1099,14287,London
+2024-11-13,P004,Apple Watch Series 9,Wearables,23,429,9867,London
+2024-11-13,P005,AirPods Pro 2,Accessories,18,249,4482,London
+2024-11-13,P006,iPhone 16,iPhone,12,999,11988,London
+2024-11-13,P007,iPhone 16 Pro,iPhone,13,1199,15587,London
+2024-11-13,P008,iPhone 16 Pro Max,iPhone,17,1399,23783,London
+2024-11-14,P001,iPhone 15,iPhone,18,899,16182,London
+2024-11-14,P002,MacBook Air M2,Mac,20,1199,23980,London
+2024-11-14,P003,iPad Pro 12.9,iPad,15,1099,16485,London
+2024-11-14,P004,Apple Watch Series 9,Wearables,22,429,9438,London
+2024-11-14,P005,AirPods Pro 2,Accessories,16,249,3984,London
+2024-11-14,P006,iPhone 16,iPhone,19,999,18981,London
+2024-11-14,P007,iPhone 16 Pro,iPhone,12,1199,14388,London
+2024-11-14,P008,iPhone 16 Pro Max,iPhone,22,1399,30778,London
+2024-11-15,P001,iPhone 15,iPhone,16,899,14384,London
+2024-11-15,P002,MacBook Air M2,Mac,22,1199,26378,London
+2024-11-15,P003,iPad Pro 12.9,iPad,22,1099,24178,London
+2024-11-15,P004,Apple Watch Series 9,Wearables,14,429,6006,London
+2024-11-15,P005,AirPods Pro 2,Accessories,24,249,5976,London
+2024-11-15,P006,iPhone 16,iPhone,24,999,23976,London
+2024-11-15,P007,iPhone 16 Pro,iPhone,24,1199,28776,London
+2024-11-15,P008,iPhone 16 Pro Max,iPhone,12,1399,16788,London
+2024-11-16,P001,iPhone 15,iPhone,37,899,33263,London
+2024-11-16,P002,MacBook Air M2,Mac,20,1199,23980,London
+2024-11-16,P003,iPad Pro 12.9,iPad,31,1099,34069,London
+2024-11-16,P004,Apple Watch Series 9,Wearables,22,429,9438,London
+2024-11-16,P005,AirPods Pro 2,Accessories,28,249,6972,London
+2024-11-16,P006,iPhone 16,iPhone,24,999,23976,London
+2024-11-16,P007,iPhone 16 Pro,iPhone,26,1199,31174,London
+2024-11-16,P008,iPhone 16 Pro Max,iPhone,39,1399,54561,London
+2024-11-17,P001,iPhone 15,iPhone,26,899,23374,London
+2024-11-17,P002,MacBook Air M2,Mac,38,1199,45562,London
+2024-11-17,P003,iPad Pro 12.9,iPad,38,1099,41762,London
+2024-11-17,P004,Apple Watch Series 9,Wearables,35,429,15015,London
+2024-11-17,P005,AirPods Pro 2,Accessories,28,249,6972,London
+2024-11-17,P006,iPhone 16,iPhone,22,999,21978,London
+2024-11-17,P007,iPhone 16 Pro,iPhone,21,1199,25179,London
+2024-11-17,P008,iPhone 16 Pro Max,iPhone,36,1399,50364,London
+2024-11-18,P001,iPhone 15,iPhone,22,899,19778,London
+2024-11-18,P002,MacBook Air M2,Mac,23,1199,27577,London
+2024-11-18,P003,iPad Pro 12.9,iPad,24,1099,26376,London
+2024-11-18,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-18,P005,AirPods Pro 2,Accessories,13,249,3237,London
+2024-11-18,P006,iPhone 16,iPhone,16,999,15984,London
+2024-11-18,P007,iPhone 16 Pro,iPhone,17,1199,20383,London
+2024-11-18,P008,iPhone 16 Pro Max,iPhone,14,1399,19586,London
+2024-11-19,P001,iPhone 15,iPhone,17,899,15283,London
+2024-11-19,P002,MacBook Air M2,Mac,17,1199,20383,London
+2024-11-19,P003,iPad Pro 12.9,iPad,15,1099,16485,London
+2024-11-19,P004,Apple Watch Series 9,Wearables,20,429,8580,London
+2024-11-19,P005,AirPods Pro 2,Accessories,12,249,2988,London
+2024-11-19,P006,iPhone 16,iPhone,22,999,21978,London
+2024-11-19,P007,iPhone 16 Pro,iPhone,19,1199,22781,London
+2024-11-19,P008,iPhone 16 Pro Max,iPhone,22,1399,30778,London
+2024-11-20,P001,iPhone 15,iPhone,24,899,21576,London
+2024-11-20,P002,MacBook Air M2,Mac,18,1199,21582,London
+2024-11-20,P003,iPad Pro 12.9,iPad,22,1099,24178,London
+2024-11-20,P004,Apple Watch Series 9,Wearables,12,429,5148,London
+2024-11-20,P005,AirPods Pro 2,Accessories,15,249,3735,London
+2024-11-20,P006,iPhone 16,iPhone,22,999,21978,London
+2024-11-20,P007,iPhone 16 Pro,iPhone,17,1199,20383,London
+2024-11-20,P008,iPhone 16 Pro Max,iPhone,24,1399,33576,London
+2024-11-21,P001,iPhone 15,iPhone,16,899,14384,London
+2024-11-21,P002,MacBook Air M2,Mac,23,1199,27577,London
+2024-11-21,P003,iPad Pro 12.9,iPad,18,1099,19782,London
+2024-11-21,P004,Apple Watch Series 9,Wearables,23,429,9867,London
+2024-11-21,P005,AirPods Pro 2,Accessories,12,249,2988,London
+2024-11-21,P006,iPhone 16,iPhone,16,999,15984,London
+2024-11-21,P007,iPhone 16 Pro,iPhone,13,1199,15587,London
+2024-11-21,P008,iPhone 16 Pro Max,iPhone,14,1399,19586,London
+2024-11-22,P001,iPhone 15,iPhone,16,899,14384,London
+2024-11-22,P002,MacBook Air M2,Mac,22,1199,26378,London
+2024-11-22,P003,iPad Pro 12.9,iPad,14,1099,15386,London
+2024-11-22,P004,Apple Watch Series 9,Wearables,25,429,10725,London
+2024-11-22,P005,AirPods Pro 2,Accessories,17,249,4233,London
+2024-11-22,P006,iPhone 16,iPhone,14,999,13986,London
+2024-11-22,P007,iPhone 16 Pro,iPhone,18,1199,21582,London
+2024-11-22,P008,iPhone 16 Pro Max,iPhone,20,1399,27980,London
+2024-11-23,P001,iPhone 15,iPhone,24,899,21576,London
+2024-11-23,P002,MacBook Air M2,Mac,30,1199,35970,London
+2024-11-23,P003,iPad Pro 12.9,iPad,20,1099,21980,London
+2024-11-23,P004,Apple Watch Series 9,Wearables,30,429,12870,London
+2024-11-23,P005,AirPods Pro 2,Accessories,28,249,6972,London
+2024-11-23,P006,iPhone 16,iPhone,28,999,27972,London
+2024-11-23,P007,iPhone 16 Pro,iPhone,38,1199,45562,London
+2024-11-23,P008,iPhone 16 Pro Max,iPhone,39,1399,54561,London
+2024-11-24,P001,iPhone 15,iPhone,26,899,23374,London
+2024-11-24,P002,MacBook Air M2,Mac,23,1199,27577,London
+2024-11-24,P003,iPad Pro 12.9,iPad,28,1099,30772,London
+2024-11-24,P004,Apple Watch Series 9,Wearables,26,429,11154,London
+2024-11-24,P005,AirPods Pro 2,Accessories,30,249,7470,London
+2024-11-24,P006,iPhone 16,iPhone,20,999,19980,London
+2024-11-24,P007,iPhone 16 Pro,iPhone,37,1199,44363,London
+2024-11-24,P008,iPhone 16 Pro Max,iPhone,23,1399,32177,London
+2024-11-25,P001,iPhone 15,iPhone,17,899,15283,London
+2024-11-25,P002,MacBook Air M2,Mac,24,1199,28776,London
+2024-11-25,P003,iPad Pro 12.9,iPad,24,1099,26376,London
+2024-11-25,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-25,P005,AirPods Pro 2,Accessories,14,249,3486,London
+2024-11-25,P006,iPhone 16,iPhone,13,999,12987,London
+2024-11-25,P007,iPhone 16 Pro,iPhone,22,1199,26378,London
+2024-11-25,P008,iPhone 16 Pro Max,iPhone,17,1399,23783,London
+2024-11-26,P001,iPhone 15,iPhone,17,899,15283,London
+2024-11-26,P002,MacBook Air M2,Mac,19,1199,22781,London
+2024-11-26,P003,iPad Pro 12.9,iPad,12,1099,13188,London
+2024-11-26,P004,Apple Watch Series 9,Wearables,21,429,9009,London
+2024-11-26,P005,AirPods Pro 2,Accessories,20,249,4980,London
+2024-11-26,P006,iPhone 16,iPhone,12,999,11988,London
+2024-11-26,P007,iPhone 16 Pro,iPhone,21,1199,25179,London
+2024-11-26,P008,iPhone 16 Pro Max,iPhone,14,1399,19586,London
+2024-11-27,P001,iPhone 15,iPhone,15,899,13485,London
+2024-11-27,P002,MacBook Air M2,Mac,25,1199,29975,London
+2024-11-27,P003,iPad Pro 12.9,iPad,13,1099,14287,London
+2024-11-27,P004,Apple Watch Series 9,Wearables,20,429,8580,London
+2024-11-27,P005,AirPods Pro 2,Accessories,22,249,5478,London
+2024-11-27,P006,iPhone 16,iPhone,14,999,13986,London
+2024-11-27,P007,iPhone 16 Pro,iPhone,16,1199,19184,London
+2024-11-27,P008,iPhone 16 Pro Max,iPhone,17,1399,23783,London
+2024-11-28,P001,iPhone 15,iPhone,31,899,27869,London
+2024-11-28,P002,MacBook Air M2,Mac,42,1199,50358,London
+2024-11-28,P003,iPad Pro 12.9,iPad,49,1099,53851,London
+2024-11-28,P004,Apple Watch Series 9,Wearables,63,429,27027,London
+2024-11-28,P005,AirPods Pro 2,Accessories,32,249,7968,London
+2024-11-28,P006,iPhone 16,iPhone,58,999,57942,London
+2024-11-28,P007,iPhone 16 Pro,iPhone,60,1199,71940,London
+2024-11-28,P008,iPhone 16 Pro Max,iPhone,60,1399,83940,London
+2024-11-29,P001,iPhone 15,iPhone,32,899,28768,London
+2024-11-29,P002,MacBook Air M2,Mac,38,1199,45562,London
+2024-11-29,P003,iPad Pro 12.9,iPad,61,1099,67039,London
+2024-11-29,P004,Apple Watch Series 9,Wearables,47,429,20163,London
+2024-11-29,P005,AirPods Pro 2,Accessories,50,249,12450,London
+2024-11-29,P006,iPhone 16,iPhone,61,999,60939,London
+2024-11-29,P007,iPhone 16 Pro,iPhone,30,1199,35970,London
+2024-11-29,P008,iPhone 16 Pro Max,iPhone,44,1399,61556,London
+2024-11-30,P001,iPhone 15,iPhone,67,899,60233,London
+2024-11-30,P002,MacBook Air M2,Mac,31,1199,37169,London
+2024-11-30,P003,iPad Pro 12.9,iPad,50,1099,54950,London
+2024-11-30,P004,Apple Watch Series 9,Wearables,43,429,18447,London
+2024-11-30,P005,AirPods Pro 2,Accessories,58,249,14442,London
+2024-11-30,P006,iPhone 16,iPhone,61,999,60939,London
+2024-11-30,P007,iPhone 16 Pro,iPhone,66,1199,79134,London
+2024-11-30,P008,iPhone 16 Pro Max,iPhone,59,1399,82541,London
