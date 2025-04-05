@@ -1923,7 +1923,7 @@ const ViewInventory = () => {
       )}
 
       {/* Right sidebar statistics */}
-      {!selectedInventory && (
+      {!selectedInventory && !showDetails &&(
         <div className="w-full lg:w-64 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 p-4 lg:p-6">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 lg:mb-6">
             INVENTORY OVERVIEW
