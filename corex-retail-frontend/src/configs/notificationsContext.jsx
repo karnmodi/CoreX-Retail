@@ -153,7 +153,7 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       const response = await getUserNotifications(token);
-      console.log("API Response:", response); // Debug log to check response
+      console.log("API Response:", response);
 
       // Process notifications
       let notificationsData = [];
@@ -301,6 +301,33 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+
+  // Create a new notification
+  const addNotification = async (notificationData) => {
+    if (!token) return { success: false, message: "Not authenticated" };
+
+    try {
+      const createdNotification = await createNotification(token, notificationData);
+      
+      // Add to local state
+      const mappedNotification = mapNotification(createdNotification);
+      setNotifications((prev) => [mappedNotification, ...prev]);
+      
+      // Refresh notifications to ensure correct data
+      fetchNotifications();
+      
+      return { 
+        success: true, 
+        message: "Notification created successfully",
+        notification: mappedNotification
+      };
+    } catch (err) {
+      console.error("Error creating notification:", err);
+      setError(err.message);
+      return { success: false, message: err.message };
+    }
+  };
+
   // Get notifications by type
   const getNotificationsByType = (type) => {
     return notifications.filter((n) => n.type === type);
@@ -309,6 +336,13 @@ export const NotificationProvider = ({ children }) => {
   // Get unread notifications
   const getUnreadNotifications = () => {
     return notifications.filter((n) => !n.read);
+  };
+
+  //Refresh notifications
+  const refreshNotifications = async () => {
+    const res = fetchNotifications();
+    const data = await res.json();
+    setNotifications(data);
   };
 
   // Initial load
@@ -338,9 +372,11 @@ export const NotificationProvider = ({ children }) => {
         error,
         lastRefreshed,
         fetchNotifications,
+        refreshNotifications,
         markAsRead,
         markAllAsRead,
         removeNotification,
+        addNotification,
         getNotificationsByType,
         getUnreadNotifications,
       }}

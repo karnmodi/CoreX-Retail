@@ -80,7 +80,7 @@ const notificationSchema = {
   targetRole: {
     type: 'string',
     required: true,
-    enum: ['admin', 'store manager', 'staff', 'all'],
+    enum: ['admin', 'store manager', 'staff', 'all', 'specific'],
     default: 'all'
   },
   targetUsers: {

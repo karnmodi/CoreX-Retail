@@ -1,16 +1,14 @@
 // src/services/NotificationAPI.js
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Helper function to handle API responses
 const handleResponse = async (response) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const errorMessage = errorData.message || errorData.error || `HTTP error ${response.status}`;
     throw new Error(errorMessage);
   }
-  
+
   try {
-    // Try to parse as JSON
     return await response.json();
   } catch (error) {
     console.warn('Response is not valid JSON, returning empty array');
@@ -18,7 +16,6 @@ const handleResponse = async (response) => {
   }
 };
 
-// Use mock data if API fails (for development/testing purposes)
 const getMockNotifications = () => {
   console.warn('Using mock notification data');
   return [
@@ -54,7 +51,7 @@ const getMockNotifications = () => {
 
 export const getUserNotifications = async (token) => {
   console.log("📡 Fetching user notifications");
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications`, {
       method: "GET",
@@ -66,7 +63,7 @@ export const getUserNotifications = async (token) => {
 
     const data = await handleResponse(response);
     console.log("✅ Received notifications:", data);
-    
+
     // Return the data array, or if it's an object with a notifications/data property, return that
     if (Array.isArray(data)) {
       return data;
@@ -74,26 +71,24 @@ export const getUserNotifications = async (token) => {
       if (Array.isArray(data.notifications)) return data.notifications;
       if (Array.isArray(data.data)) return data.data;
     }
-    
-    // If we couldn't find an array in the response, log a warning and return an empty array
+
     console.warn('Unexpected API response format:', data);
     return [];
-    
+
   } catch (error) {
     console.error("Error fetching notifications:", error);
-    
-    // For development, return mock data if API fails
+
     if (process.env.NODE_ENV !== 'production') {
       return getMockNotifications();
     }
-    
+
     throw error;
   }
 };
 
 export const getUnreadNotifications = async (token) => {
   console.log("📡 Fetching unread notifications");
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/unread`, {
       method: "GET",
@@ -105,7 +100,7 @@ export const getUnreadNotifications = async (token) => {
 
     const data = await handleResponse(response);
     console.log("✅ Received unread notifications:", data);
-    
+
     // Handle different response formats
     if (Array.isArray(data)) {
       return data;
@@ -113,11 +108,11 @@ export const getUnreadNotifications = async (token) => {
       if (Array.isArray(data.notifications)) return data.notifications;
       if (Array.isArray(data.data)) return data.data;
     }
-    
+
     return [];
   } catch (error) {
     console.error("Error fetching unread notifications:", error);
-    
+
     // Return an empty array for unread notifications on error
     return [];
   }
@@ -125,7 +120,7 @@ export const getUnreadNotifications = async (token) => {
 
 export const getNewNotifications = async (token) => {
   console.log("📡 Fetching new notifications");
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/new`, {
       method: "GET",
@@ -137,7 +132,7 @@ export const getNewNotifications = async (token) => {
 
     const data = await handleResponse(response);
     console.log("✅ Received new notifications:", data);
-    
+
     // Handle different response formats
     if (Array.isArray(data)) {
       return data;
@@ -145,7 +140,7 @@ export const getNewNotifications = async (token) => {
       if (Array.isArray(data.notifications)) return data.notifications;
       if (Array.isArray(data.data)) return data.data;
     }
-    
+
     return [];
   } catch (error) {
     console.error("Error fetching new notifications:", error);
@@ -155,7 +150,7 @@ export const getNewNotifications = async (token) => {
 
 export const getNotificationSummary = async (token) => {
   console.log("📡 Fetching notification summary");
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/summary`, {
       method: "GET",
@@ -176,7 +171,7 @@ export const getNotificationSummary = async (token) => {
 
 export const markNotificationAsRead = async (token, notificationId, userId) => {
   console.log(`📡 Marking notification ${notificationId} as read for user ${userId}`);
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
       method: "PUT",
@@ -198,7 +193,7 @@ export const markNotificationAsRead = async (token, notificationId, userId) => {
 
 export const markAllNotificationsAsRead = async (token, userId) => {
   console.log("📡 Marking all notifications as read for user", userId);
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
       method: "PUT",
@@ -220,7 +215,7 @@ export const markAllNotificationsAsRead = async (token, userId) => {
 
 export const deleteNotification = async (token, notificationId) => {
   console.log(`📡 Deleting notification ${notificationId}`);
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}`, {
       method: "DELETE",
@@ -239,10 +234,113 @@ export const deleteNotification = async (token, notificationId) => {
   }
 };
 
+// In your createNotification API function:
+export const createNotification = async (token, notificationData) => {
+  try {
+    // Format the data exactly matching backend schema requirements
+    const formattedData = {
+      title: notificationData.title,
+      message: notificationData.message,
+      priority: notificationData.priority || 'medium',
+      targetRole: notificationData.targetRole || 'all',
+      targetUsers: Array.isArray(notificationData.targetUsers) ? notificationData.targetUsers : [],
+      targetStores: [],
+      read: {},
+      type: 'admin' 
+    };
+   
+    // Add action if specified
+    if (notificationData.action && notificationData.action.type !== 'none') {
+      formattedData.action = {
+        type: notificationData.action.type || 'link',
+        destination: notificationData.action.destination || '',
+        label: notificationData.action.label || 'View'
+      };
+    }
+   
+    // Add expiration date if provided
+    if (notificationData.expiresAt) {
+      formattedData.expiresAt = notificationData.expiresAt;
+    }
+    
+    // Include sendPush as a separate property as backend expects it from req.body
+    if (notificationData.sendPush) {
+      formattedData.sendPush = true;
+    }
+   
+    console.log("Final formatted notification:", JSON.stringify(formattedData, null, 2));
+   
+    // Make the API call with properly formatted data
+    const response = await fetch(`${API_BASE_URL}/notifications`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formattedData)
+    });
+    
+    if (!response.ok) {
+      let errorMessage = "Failed to create notification";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        if (errorData.details && Array.isArray(errorData.details)) {
+          errorMessage += ": " + errorData.details.join(", ");
+        }
+      } catch (e) {
+        console.error("Failed to parse error response");
+      }
+      throw new Error(errorMessage);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    throw error;
+  }
+};
+
+export const getUserRoles = async (token) => {
+  try {
+    // First try to get roles from the backend API
+    const response = await fetch(`${API_BASE_URL}/user-roles`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.roles || [];
+    } else {
+      // Return default roles if API fails
+      return [
+        { id: "all", name: "All Users" },
+        { id: "admin", name: "Administrators" },
+        { id: "manager", name: "Store Managers" },
+        { id: "staff", name: "Staff Members" }
+      ];
+    }
+  } catch (error) {
+    console.error("Error fetching user roles:", error);
+    // Return default roles on error
+    return [
+      { id: "all", name: "All Users" },
+      { id: "admin", name: "Administrators" },
+      { id: "manager", name: "Store Managers" },
+      { id: "staff", name: "Staff Members" }
+    ];
+  }
+};
+
 // Admin functions
 export const checkInventory = async (token) => {
   console.log("📡 Triggering inventory check");
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/check-inventory`, {
       method: "POST",
@@ -263,7 +361,7 @@ export const checkInventory = async (token) => {
 
 export const checkRosters = async (token) => {
   console.log("📡 Triggering roster check");
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}/notifications/check-rosters`, {
       method: "POST",

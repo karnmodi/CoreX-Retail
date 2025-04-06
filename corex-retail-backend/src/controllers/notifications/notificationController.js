@@ -14,63 +14,78 @@ exports.getUserNotifications = async (req, res) => {
   try {
     const userId = req.user.uid;
 
-    console.log('Fetching notifications for user:', userId);
-
     // Fetch user document from the correct collection
     const userRef = db.collection('employees').doc(userId);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
-      console.log('User document not found:', userId);
       return res.status(404).json({ error: 'User not found' });
     }
 
     const userData = userDoc.data();
-    console.log('User data:', userData);
-
     const userRole = userData.role || 'staff';
     const storeId = userData.storeId || null;
 
-    console.log('User role:', userRole);
-    console.log('Store ID:', storeId);
+    // We'll need to perform multiple queries and merge results
+    const notifications = [];
 
-    // Build base query for notifications
-    let baseQuery = db.collection('notifications');
+    // Query 1: Get notifications by role
+    let roleQuery = db.collection('notifications')
+      .where('targetRole', 'in', [userRole, 'all'])
+      .orderBy('createdAt', 'desc')
+      .limit(50);
 
-    // For admin, fetch all system and admin notifications
-    if (userRole === 'admin') {
-      baseQuery = baseQuery.where('targetRole', 'in', ['admin', 'all']);
-    } else {
-      // For other roles, filter by role and store
-      baseQuery = baseQuery.where('targetRole', 'in', [userRole, 'all']);
-    }
-
-    // Order by creation time and limit results
-    baseQuery = baseQuery.orderBy('createdAt', 'desc').limit(50);
-
-    // Execute query
-    const snapshot = await baseQuery.get();
-
-    console.log('Total notifications found:', snapshot.docs.length);
-
-    // Process notifications
-    const notifications = snapshot.docs.map(doc => {
-      const notifData = doc.data();
-      console.log('Individual Notification:', {
+    const roleSnapshot = await roleQuery.get();
+    roleSnapshot.forEach(doc => {
+      notifications.push({
         id: doc.id,
-        title: notifData.title,
-        targetRole: notifData.targetRole,
-        createdAt: notifData.createdAt
+        ...doc.data(),
+        isRead: doc.data().read && doc.data().read[userId] === true
       });
-
-      return {
-        id: doc.id,
-        ...notifData,
-        isRead: notifData.read && notifData.read[userId] === true
-      };
     });
 
-    return res.status(200).json({ notifications });
+    // Query 2: Get notifications targeted specifically to this user
+    // We need a separate query as Firestore doesn't support OR conditions
+    let userQuery = db.collection('notifications')
+      .where('targetRole', '==', 'specific')
+      .where('targetUsers', 'array-contains', userId)
+      .orderBy('createdAt', 'desc')
+      .limit(50);
+
+    const userSnapshot = await userQuery.get();
+    userSnapshot.forEach(doc => {
+      // Check if we already have this notification from the previous query
+      const existingIndex = notifications.findIndex(n => n.id === doc.id);
+      if (existingIndex === -1) {
+        notifications.push({
+          id: doc.id,
+          ...doc.data(),
+          isRead: doc.data().read && doc.data().read[userId] === true
+        });
+      }
+    });
+
+    // Sort combined results by creation date
+    notifications.sort((a, b) => {
+      // Handle different timestamp formats
+      const getTimestamp = (item) => {
+        if (item.createdAt && item.createdAt._seconds) {
+          return item.createdAt._seconds * 1000;
+        } else if (item.createdAt && typeof item.createdAt.toDate === 'function') {
+          return item.createdAt.toDate().getTime();
+        } else if (item.createdAt) {
+          return new Date(item.createdAt).getTime();
+        }
+        return 0;
+      };
+
+      return getTimestamp(b) - getTimestamp(a); // Descending order
+    });
+
+    // Limit to most recent 50
+    const limitedNotifications = notifications.slice(0, 50);
+
+    return res.status(200).json({ notifications: limitedNotifications });
   } catch (error) {
     console.error('Error getting notifications:', error);
     return res.status(500).json({
@@ -374,7 +389,7 @@ exports.getNotificationSummary = async (req, res) => {
     ]);
 
     // Process notifications with additional details
-    const processNotifications = (snapshot) => 
+    const processNotifications = (snapshot) =>
       snapshot.docs.map(doc => {
         const notifData = doc.data();
         return {

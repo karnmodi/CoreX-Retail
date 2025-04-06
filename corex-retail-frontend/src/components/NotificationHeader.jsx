@@ -2,28 +2,37 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNotification } from "../configs/notificationsContext";
 import { Link } from "react-router-dom";
-import { 
-  Bell, 
-  Package, 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  Settings, 
+import {
+  Bell,
+  Package,
+  Users,
+  Calendar,
+  Settings,
   ShoppingBag,
-  XCircle, 
+  XCircle,
   CheckCircle,
   AlertTriangle,
-  ExternalLink
+  ExternalLink,
+  PoundSterling,
 } from "lucide-react";
 
 const NotificationHeader = () => {
-  const { notifications, unreadCount, markAsRead, removeNotification } = useNotification();
+  const { notifications, unreadCount, markAsRead, removeNotification, refreshNotifications } =
+    useNotification();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  
+
   const recentNotifications = notifications
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshNotifications();
+    }, 1000);
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -40,9 +49,9 @@ const NotificationHeader = () => {
 
   // Get notification icon based on type
   const getNotificationIcon = (type, priority) => {
-    const iconProps = { 
-      size: 18, 
-      className: priority === "high" ? "text-red-500" : "text-blue-500" 
+    const iconProps = {
+      size: 18,
+      className: priority === "high" ? "text-red-500" : "text-blue-500",
     };
 
     switch (type) {
@@ -53,7 +62,7 @@ const NotificationHeader = () => {
       case "roster":
         return <Calendar {...iconProps} />;
       case "sales":
-        return <DollarSign {...iconProps} />;
+        return <PoundSterling {...iconProps} />;
       case "system":
         return <Settings {...iconProps} />;
       case "order":
@@ -80,7 +89,7 @@ const NotificationHeader = () => {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        className="relative text-gray-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-full"
+        className="text-gray-800 p-2 hover:text-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-opacity-50 rounded-full"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >
@@ -95,7 +104,9 @@ const NotificationHeader = () => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-xl shadow-lg z-10 overflow-hidden border border-gray-100">
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
-            <h3 className="text-sm font-medium text-gray-700">Recent Notifications</h3>
+            <h3 className="text-sm font-medium text-gray-700">
+              Recent Notifications
+            </h3>
             <Link
               to="./more/notifications"
               className="text-xs text-blue-600 hover:text-blue-800 font-medium"
@@ -114,24 +125,38 @@ const NotificationHeader = () => {
             ) : (
               <ul className="divide-y divide-gray-100">
                 {recentNotifications.map((notification) => (
-                  <li key={notification.id} className={`p-4 hover:bg-gray-50 ${!notification.read ? "bg-blue-50" : ""}`}>
+                  <li
+                    key={notification.id}
+                    className={`p-4 hover:bg-gray-50 ${
+                      !notification.read ? "bg-blue-50" : ""
+                    }`}
+                  >
                     <div className="flex items-start">
                       <div className="flex-shrink-0 pt-0.5 bg-gray-50 p-1.5 rounded-lg">
-                        {getNotificationIcon(notification.type, notification.priority)}
+                        {getNotificationIcon(
+                          notification.type,
+                          notification.priority
+                        )}
                       </div>
                       <div className="ml-3 flex-1">
                         <div className="flex justify-between">
                           <p className="text-sm font-medium text-gray-900 truncate max-w-[180px]">
                             {notification.title}
                           </p>
-                          <p className="text-xs text-gray-500">{notification.time}</p>
+                          <p className="text-xs text-gray-500">
+                            {notification.time}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500 truncate max-w-[250px] mt-0.5">{notification.message}</p>
-                        
+                        <p className="text-xs text-gray-500 truncate max-w-[250px] mt-0.5">
+                          {notification.message}
+                        </p>
+
                         <div className="mt-2 flex space-x-2">
                           {!notification.read && (
                             <button
-                              onClick={(e) => handleMarkAsRead(notification.id, e)}
+                              onClick={(e) =>
+                                handleMarkAsRead(notification.id, e)
+                              }
                               className="text-xs flex items-center text-blue-600 hover:text-blue-800"
                             >
                               <CheckCircle size={12} className="mr-1" />
@@ -139,31 +164,44 @@ const NotificationHeader = () => {
                             </button>
                           )}
                           <button
-                            onClick={(e) => handleRemoveNotification(notification.id, e)}
+                            onClick={(e) =>
+                              handleRemoveNotification(notification.id, e)
+                            }
                             className="text-xs flex items-center text-gray-600 hover:text-gray-800"
                           >
                             <XCircle size={12} className="mr-1" />
                             Remove
                           </button>
-                          
-                          {notification.action && notification.action.type === "link" && (
-                            <Link
-                              to={notification.action.destination}
-                              className="text-xs flex items-center ml-auto text-blue-600 hover:text-blue-800"
-                              onClick={() => {
-                                setIsOpen(false);
-                                if (!notification.read) markAsRead(notification.id);
-                              }}
-                            >
-                              {notification.action.label || "View"} <ExternalLink size={10} className="ml-1" />
-                            </Link>
-                          )}
+
+                          {notification.action &&
+                            notification.action.type === "link" && (
+                              <Link
+                                to={`/dashboardAdmin/${notification.action.destination.replace(
+                                  /^(\.\/|\.\.\/)+/,
+                                  ""
+                                )}`}
+                                className="text-xs flex items-center ml-auto text-blue-600 hover:text-blue-800"
+                                onClick={() => {
+                                  setIsOpen(false);
+                                  if (!notification.read)
+                                    markAsRead(notification.id);
+                                }}
+                              >
+                                {notification.action.label || "View"}{" "}
+                                <ExternalLink size={10} className="ml-1" />
+                              </Link>
+                            )}
                         </div>
-                        
+
                         {notification.priority === "high" && (
                           <div className="mt-1 flex items-center">
-                            <AlertTriangle size={12} className="text-red-500 mr-1" />
-                            <span className="text-xs text-red-500">High priority</span>
+                            <AlertTriangle
+                              size={12}
+                              className="text-red-500 mr-1"
+                            />
+                            <span className="text-xs text-red-500">
+                              High priority
+                            </span>
                           </div>
                         )}
                       </div>
@@ -173,7 +211,7 @@ const NotificationHeader = () => {
               </ul>
             )}
           </div>
-          
+
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center rounded-b-xl">
             <Link
               to="./more/notifications"

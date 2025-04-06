@@ -1,35 +1,3 @@
-// import React, { useEffect } from "react";
-// import { useAuth } from "../../configs/AuthContext.jsx";
-// import LogoutButton from "../../configs/Logout.jsx";
-// import { useNavigate } from "react-router-dom";
-
-// const DashboardAdmin = () => {
-//   const { user, userData, logout } = useAuth();
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     if (!user) {
-//       navigate("/login");
-//     }
-//   }, [user, navigate]);
-
-//   return (
-//     <>
-//       {/* <div className="dashboard-container">
-//         <h1 className="text-red-500 text-3xl font-bold">
-//           Welcome Admin,{" "}
-//           {userData?.firstName + " " + userData?.lastName ||
-//             user?.displayName ||
-//             "Loading..."}
-//         </h1>
-//         <p>Email: {user?.email}</p>
-//       </div> */}
-//     </>
-//   );
-// };
-
-// export default DashboardAdmin;
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../configs/AuthContext.jsx";
@@ -47,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from "../../components/Loading.jsx";
 import { useStaff } from "../../configs/StaffContext.jsx";
+import NotificationHeader from "../../components/NotificationHeader.jsx";
 
 // Import icons from lucide-react
 import {
@@ -72,11 +41,12 @@ const DashboardAdmin = () => {
   const { user, userData, logout } = useAuth();
   const navigate = useNavigate();
   const { staff, newStaffCount } = useStaff();
-  const { inventoryValue, formatCurrency, refreshInventoryValue } = useInventory();
+  const { inventoryValue, formatCurrency, refreshInventoryValue } =
+    useInventory();
   const { toast } = useToast();
 
   const getChangeColor = () => {
-    if (inventoryValue.change > 0 ) return "text-green-600";
+    if (inventoryValue.change > 0) return "text-green-600";
     if (inventoryValue.change < 0) return "text-red-600";
     return "text-gray-500";
   };
@@ -97,16 +67,26 @@ const DashboardAdmin = () => {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <main className="container mx-auto px-4 py-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">
-            Welcome,
-            <span className="text-red-500 font-bold"> Admin </span>
-            <span className="text-blue font-bold">
-              {userData?.firstName + " " + userData?.lastName ||
-                user?.displayName || <LoadingSpinner />}
-            </span>
-          </h1>
-          <p className="text-muted-foreground">{userData?.email || "Not Found"}</p>
+        <div className="mb-8 flex justify-between items-start">
+          {/* Left Side: Welcome Text */}
+          <div>
+            <h1 className="text-3xl font-bold text-primary flex flex-wrap items-center gap-2">
+              Welcome,
+              <span className="text-red-500 font-bold">Admin</span>
+              <span className="text-blue-600 font-bold">
+                {userData?.firstName + " " + userData?.lastName ||
+                  user?.displayName || <LoadingSpinner />}
+              </span>
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {userData?.email || "Not Found"}
+            </p>
+          </div>
+
+          {/* Right Side: Notification Icon */}
+          <div className="ml-auto">
+            <NotificationHeader />
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -186,7 +166,6 @@ const DashboardAdmin = () => {
               )}
             </CardContent>
           </Card>
-
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -281,8 +260,6 @@ const DashboardAdmin = () => {
 
         <h2 className="text-2xl font-bold mb-4">Reports & Requests</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-
-
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Reports</CardTitle>
@@ -364,7 +341,6 @@ const DashboardAdmin = () => {
               </Button>
             </CardFooter>
           </Card>
-
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">

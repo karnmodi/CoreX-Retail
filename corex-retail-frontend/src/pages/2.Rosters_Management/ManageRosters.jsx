@@ -95,66 +95,66 @@ const RosterManagementPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-  
+
     const businessStart = businessHours.startTime || "09:00";
     const businessEnd = businessHours.endTime || "20:00";
     const maxDuration = businessHours.duration || 8;
-  
+
     const toMinutes = (time) => {
       const [h, m] = time.split(":").map(Number);
       return h * 60 + m;
     };
-  
+
     const toHHMM = (totalMins) => {
       const h = Math.floor(totalMins / 60);
       const m = totalMins % 60;
       return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     };
-  
+
     let updatedShiftForm = { ...shiftForm, [name]: value };
-  
+
     if (name === "startTime") {
       const startMins = toMinutes(value);
       const businessStartMins = toMinutes(businessStart);
       const businessEndMins = toMinutes(businessEnd);
-  
+
       if (startMins < businessStartMins || startMins >= businessEndMins) {
         return;
         // alert(`Start time must be within business hours (${businessStart} - ${businessEnd}).`);
       }
-  
+
       // Auto-calculate endTime
       const endMins = Math.min(startMins + maxDuration * 60, businessEndMins);
       updatedShiftForm.endTime = toHHMM(endMins);
     }
-  
+
     if (name === "endTime") {
       const startTime = shiftForm.startTime || businessStart;
       const startMins = toMinutes(startTime);
       const endMins = toMinutes(value);
       const businessEndMins = toMinutes(businessEnd);
-  
+
       if (endMins < startMins) {
         alert("End time cannot be earlier than start time.");
         return;
       }
-  
+
       const duration = endMins - startMins;
-  
+
       if (duration > maxDuration * 60) {
         alert(`Shift duration cannot exceed ${maxDuration} hours.`);
         return;
       }
-  
+
       if (endMins > businessEndMins) {
         alert(`End time must be within business hours (up to ${businessEnd}).`);
         return;
       }
     }
-  
+
     setShiftForm(updatedShiftForm);
   };
-  
+
   const handleAddShift = async (e) => {
     e.preventDefault();
 
@@ -421,6 +421,14 @@ const RosterManagementPage = () => {
         (shift) => shift.employeeId === employeeId
       );
       employeeShifts[employeeId] = employeeShiftList;
+    });
+
+    shifts.forEach((shift) => {
+      const uid = getShiftUID(shift);
+      if (!employeeShifts[uid]) {
+        employeeShifts[uid] = [];
+      }
+      employeeShifts[uid].push(shift);
     });
 
     const printContent = `
@@ -759,12 +767,10 @@ const RosterManagementPage = () => {
 
               <div className="flex justify-between">
                 <button className="text-black-300 hover:text-black-700">
-                  {editingShift ? (
-                    "updateShift"
-                  ) : (
-                    // <BadgePlus className="w-8 h-8" />
-                   "Add Shift"
-                  )}
+                  {editingShift
+                    ? "updateShift"
+                    : // <BadgePlus className="w-8 h-8" />
+                      "Add Shift"}
                 </button>
 
                 {editingShift && (
