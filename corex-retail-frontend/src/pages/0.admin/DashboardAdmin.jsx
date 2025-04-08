@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../configs/AuthContext.jsx";
 import LogoutButton from "../../configs/Logout.jsx";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from "../../components/Loading.jsx";
 import { useStaff } from "../../configs/StaffContext.jsx";
+import { useProfile } from "../../configs/ProfileContext.jsx";
 import NotificationHeader from "../../components/NotificationHeader.jsx";
 
 // Import icons from lucide-react
@@ -22,7 +24,7 @@ import {
   BarChart3,
   Bell,
   Calendar,
-  Cog,
+  Clock,
   FileText,
   Package,
   PoundSterling,
@@ -33,22 +35,67 @@ import {
   Users,
   Loader2,
   RefreshCw,
+  FileEdit,
+  Key,
+  UserCheck,
+  UserX,
+  LogIn,
 } from "lucide-react";
 import { useInventory } from "../../configs/InventoryContext";
 import { useToast } from "../../components/ui/use-toast.jsx";
+import { Separator } from "@/components/ui/separator";
 
 const DashboardAdmin = () => {
   const { user, userData, logout } = useAuth();
   const navigate = useNavigate();
   const { staff, newStaffCount } = useStaff();
+  const [refreshingActivities, setRefreshingActivities] = useState(false);
   const { inventoryValue, formatCurrency, refreshInventoryValue } =
     useInventory();
+  const {
+    activityData,
+    activityLoading,
+    activityError,
+    fetchActivityData,
+  } = useProfile();
+
+  useEffect(() => {
+    const loadActivityData = async () => {
+      try {
+        await fetchActivityData(10);
+      } catch (error) {
+        console.error("Error loading activity data:", error);
+      }
+    };
+
+    loadActivityData();
+  }, [fetchActivityData]);
+
   const { toast } = useToast();
 
   const getChangeColor = () => {
     if (inventoryValue.change > 0) return "text-green-600";
     if (inventoryValue.change < 0) return "text-red-600";
     return "text-gray-500";
+  };
+
+  const ActivityIcon = ({ type }) => {
+    switch (type) {
+      case "login":
+        return <LogIn className="h-5 w-5 text-primary" />;
+      case "profile_update":
+        return <FileEdit className="h-5 w-5 text-primary" />;
+      case "password_change":
+        return <Key className="h-5 w-5 text-primary" />;
+      case "profile_picture_update":
+        return <UserCheck className="h-5 w-5 text-primary" />;
+      case "logout":
+        return <UserX className="h-5 w-5 text-primary" />;
+      case "settings_update":
+        return <Settings className="h-5 w-5 text-primary" />;
+      default:
+        return <FileText className="h-5 w-5 text-primary" />;
+    }
   };
 
   const formatChange = () => {
@@ -62,6 +109,26 @@ const DashboardAdmin = () => {
       title: "Refreshing",
       description: "Updating inventory value data...",
     });
+  };
+
+  const handleRefreshActivities = async () => {
+    setRefreshingActivities(true);
+    try {
+      await fetchActivityData(10);
+      toast({
+        title: "Activities Refreshed",
+        description: "Your activity list has been updated.",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh activities. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshingActivities(false);
+    }
   };
 
   return (
@@ -197,63 +264,78 @@ const DashboardAdmin = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest updates across the system
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  Your recent actions and updates
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshActivities}
+                disabled={refreshingActivities}
+              >
+                {refreshingActivities ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <div className="mr-2 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Users className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      New staff member added
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Sarah Johnson joined the team
-                    </p>
-                  </div>
-                  <div className="ml-auto text-xs text-muted-foreground">
-                    2h ago
-                  </div>
+              {activityLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
-                <div className="flex items-center">
-                  <div className="mr-2 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Package className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      Inventory updated
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      25 new items added to stock
-                    </p>
-                  </div>
-                  <div className="ml-auto text-xs text-muted-foreground">
-                    5h ago
-                  </div>
+              ) : activityError ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                  <p className="text-destructive">{activityError}</p>
+                  <Button
+                    onClick={handleRefreshActivities}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Try Again
+                  </Button>
                 </div>
-                <div className="flex items-center">
-                  <div className="mr-2 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      Sales milestone reached
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Monthly target exceeded by 15%
-                    </p>
-                  </div>
-                  <div className="ml-auto text-xs text-muted-foreground">
-                    1d ago
-                  </div>
+              ) : activityData && activityData.length > 0 ? (
+                <div className="space-y-4">
+                  {activityData.map((activity, index) => (
+                    <React.Fragment key={activity.id || index}>
+                      <div className="flex items-start">
+                        <div className="mr-4 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <ActivityIcon type={activity.type} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium">{activity.title}</h3>
+                            <span className="text-xs text-muted-foreground">
+                              {activity.timestamp}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {activity.description}
+                          </p>
+                        </div>
+                      </div>
+                      {index < activityData.length - 1 && <Separator />}
+                    </React.Fragment>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <Clock className="h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    No activity recorded yet.
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center max-w-md">
+                    Your recent account activities will appear here.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -344,22 +426,6 @@ const DashboardAdmin = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Settings</CardTitle>
-              <CardDescription>Configure your account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-4">
-                <Settings className="h-12 w-12 text-primary/50" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                <Link to="./more/settings">Go to Settings</Link>
-              </Button>
-            </CardFooter>
-          </Card>
 
           <Card>
             <CardHeader className="pb-3">

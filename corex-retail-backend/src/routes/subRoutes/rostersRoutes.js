@@ -8,10 +8,15 @@ const {
   deleteShift_BE,
   getWorkingEmployeesByDate_BE,
 } = require("../../controllers/Rosters/rostersController");
+const { trackActivity } = require("../../controllers/profile/ActivityController");
 
 router.get("/",verifyToken, getShifts_BE);
 router.post("/",verifyToken,  addShift_BE);
-router.put("/:id", verifyToken, updateShift_BE);
+router.put("/:id", verifyToken, trackActivity(
+  'Rosters_update',
+  (req) => 'Roster Updated',
+  (req) => 'some roster was updated',
+), updateShift_BE);
 router.delete("/:id", verifyToken, deleteShift_BE);
 router.get("/by-date", getWorkingEmployeesByDate_BE);
 

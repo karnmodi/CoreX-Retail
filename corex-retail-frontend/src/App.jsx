@@ -3,7 +3,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./configs/AuthContext";
 import { StaffProvider } from "./configs/StaffContext";
 import { RosterProvider } from "./configs/RostersContext";
-import { InventoryProvider } from "./configs/InventoryContext";
+import { InventoryProvider } from "./configs/InventoryContext"; 
+import { ProfileProvider } from "./configs/ProfileContext"; 
 import { TooltipProvider } from "./components/ui/tooltip";
 import { ToastProvider } from "./components/ui/use-toast";
 import routes from "./Routes/Routes";
@@ -17,15 +18,17 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <TooltipProvider>
-          <StaffProvider>
-            <InventoryProvider>
-              <RosterProvider>
-                <NotificationProvider>
-                  <RouterProvider router={router} />
-                </NotificationProvider>
-              </RosterProvider>
-            </InventoryProvider>
-          </StaffProvider>
+          <ProfileProvider>
+            <StaffProvider>
+              <InventoryProvider>
+                <RosterProvider>
+                  <NotificationProvider>
+                    <RouterProvider router={router} />
+                  </NotificationProvider>
+                </RosterProvider>
+              </InventoryProvider>
+            </StaffProvider>
+          </ProfileProvider>
         </TooltipProvider>
       </ToastProvider>
     </AuthProvider>

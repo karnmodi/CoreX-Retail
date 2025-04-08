@@ -6,6 +6,8 @@ const staffRoutes = require("./subRoutes/staffRoutes");
 const inventoryRoutes = require("./subRoutes/inventoryRoutes");
 const rostersRoutes = require("./subRoutes/rostersRoutes");
 const notificationRoutes = require("./subRoutes/notificationRoutes");
+const profileRoutes = require("./subRoutes/profileRoutes");
+const salesRoutes = require("./subRoutes/salesRoutes");
 
 router.get("/", (req, res) => {
   res.status(200).json({
@@ -16,9 +18,11 @@ router.get("/", (req, res) => {
 
 router.use("/auth", authRoutes);
 router.use("/employees", staffRoutes);
-router.use("/inventory", inventoryRoutes);
 router.use("/rosters", rostersRoutes);
+router.use("/inventory", inventoryRoutes);
+router.use("/sales", salesRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/profile", profileRoutes);
 
 // 404 Handler - Page Not Found
 router.use((req, res, next) => {

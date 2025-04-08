@@ -1,6 +1,7 @@
 // controllers/authController.js (Backend)
 const { auth } = require("../config/firebase");
 const jwt = require("jsonwebtoken");
+const { recordLoginActivity } = require('../controllers/profile/ActivityController');
 
 const loginUser_BE = async (req, res) => {
   try {
@@ -12,7 +13,6 @@ const loginUser_BE = async (req, res) => {
     const userEmail = decodedFirebaseToken.email;
     const userRole = decodedFirebaseToken.userRole;
 
-    // Generate your own JWT for long-term usage (30 days expiry)
     const token = jwt.sign(
       { uid: userId, email: userEmail },
       process.env.JWT_SECRET,
@@ -24,15 +24,17 @@ const loginUser_BE = async (req, res) => {
       token,
       userRole,
       userId
-      
     });
+
+    await recordLoginActivity(userId, {
+      userAgent: req.headers['user-agent'],
+      ip: req.ip
+    });
+
   } catch (error) {
     console.error("Login error (Backend):", error.message);
     res.status(400).json({ error: "Invalid Firebase token" });
   }
 };
-
-module.exports = { loginUser_BE };
-
 
 module.exports = { loginUser_BE };

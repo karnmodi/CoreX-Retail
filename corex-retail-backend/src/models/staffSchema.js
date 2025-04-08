@@ -88,7 +88,7 @@ const employeeSchema = {
     enum: ['male', 'female', 'other', 'prefer not to say'],
     default: ''
   },
-  maritalStatus: {
+  maritalDesc: {
     type: 'string',
     required: false,
     enum: ['single', 'married', 'divorced', 'widowed', 'separated'],

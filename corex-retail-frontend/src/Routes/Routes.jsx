@@ -21,11 +21,9 @@ import SalesTargetsPage from "../pages/4.Sales_Management/SalesTarget";
 import SalesDashboard from "../pages/4.Sales_Management/SalesDashboard";
 import ReportsPage from "../pages/5.More/1.Reports.jsx";
 import RequestsPage from "../pages/5.More/2.Requests.jsx";
-import ProfilePage from "../pages/5.More/5.Profile.jsx";
-import SettingsPage from "../pages/5.More/3.Settings.jsx";
+import ProfilePage from "../pages/5.More/3.Profile.jsx";
 import NotificationsPage from "../pages/5.More/4.Notifications.jsx";
 import StockUpdateReminder from "../pages/3.Invenotry_Management/StockUpdates.jsx";
-import NotificationHeader from "../components/NotificationHeader.jsx";
 
 const logoSrc = "/assets/WebsiteLogo.jpg";
 
@@ -90,9 +88,8 @@ const salesRoutes = [
 const moreRoutes = [
   {path: "reports", element: <ReportsPage />},
   {path: "requests", element: <RequestsPage />},
-  {path: "settings", element: <SettingsPage />},
-  {path: "notifications", element: <NotificationsPage />},
   {path: "profile", element: <ProfilePage />},
+  {path: "notifications", element: <NotificationsPage />},
 ];
 
 // Admin dashboard routes

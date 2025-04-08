@@ -46,9 +46,8 @@ const navLinksAdmin = () => [
     subItems: [
       { to: "./more/reports", label: "Reports" },
       { to: "./more/requests", label: "Requests" },
-      { to: "./more/settings", label: "Settings" },
-      { to: "./more/notifications", label: "Notifications" },
       { to: "./more/profile", label: "Profile" },
+      { to: "./more/notifications", label: "Notifications" },
       { component: <LogoutButton /> },
     ],
   },
