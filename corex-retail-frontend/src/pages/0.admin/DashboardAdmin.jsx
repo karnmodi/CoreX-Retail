@@ -62,7 +62,7 @@ const DashboardAdmin = () => {
   useEffect(() => {
     const loadActivityData = async () => {
       try {
-        await fetchActivityData(10);
+        await fetchActivityData(5);
       } catch (error) {
         console.error("Error loading activity data:", error);
       }
@@ -114,7 +114,7 @@ const DashboardAdmin = () => {
   const handleRefreshActivities = async () => {
     setRefreshingActivities(true);
     try {
-      await fetchActivityData(10);
+      await fetchActivityData(5);
       toast({
         title: "Activities Refreshed",
         description: "Your activity list has been updated.",

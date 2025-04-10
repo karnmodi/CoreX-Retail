@@ -19,17 +19,15 @@ async function importSalesData(filePath) {
     try {
         console.log(`Starting import from ${filePath}`);
 
-        // Read CSV file
         const csvData = fs.readFileSync(filePath, 'utf8');
 
-        // Parse CSV data
         const records = await new Promise((resolve, reject) => {
             parse(csvData, {
                 columns: true,
                 trim: true,
                 skip_empty_lines: true,
-                cast: true, // Automatically convert values to their types
-                bom: true   // Handle Byte Order Mark
+                cast: true, 
+                bom: true   
             }, (err, records) => {
                 if (err) reject(err);
                 else resolve(records);
@@ -38,7 +36,6 @@ async function importSalesData(filePath) {
 
         console.log(`Found ${records.length} records to import`);
 
-        // Log column names to identify any issues
         if (records.length > 0) {
             console.log("Column names in CSV:", Object.keys(records[0]));
         }
@@ -49,13 +46,10 @@ async function importSalesData(filePath) {
 
         for (const [index, record] of records.entries()) {
             try {
-                // Check for datetime in the record - handle the case with BOM character
-                // Look for any key that ends with "datetime"
                 let dateKey = null;
                 let dateValue = null;
 
                 for (const key of Object.keys(record)) {
-                    // Check if the key ends with "datetime", regardless of any BOM characters
                     if (key.endsWith('datetime')) {
                         dateKey = key;
                         dateValue = record[key];
@@ -63,7 +57,6 @@ async function importSalesData(filePath) {
                     }
                 }               
 
-                // Parse the date from the format: MM/DD/YYYY HH:MM
                 let isDateValid = false;
                 const dateMatch = dateValue.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+)/);
                 if (dateMatch) {
@@ -94,7 +87,6 @@ async function importSalesData(filePath) {
                         record.minuteKey = `${year}-${paddedMonth}-${paddedDay}-${paddedHour}-${paddedMinute}`;
 
                         isDateValid = true;
-                        console.log(`Successfully parsed date: ${date}`);
                     } else {
                         console.warn(`Invalid date created from pattern match: "${dateValue}"`);
                     }
@@ -111,7 +103,6 @@ async function importSalesData(filePath) {
                     continue;
                 }
 
-                // Handle other column name mismatches - look for keys that end with these names
                 // For product_id
                 if (!record.productId) {
                     for (const key of Object.keys(record)) {
@@ -222,9 +213,8 @@ async function importSalesData(filePath) {
     }
 }
 
-// Helper function to import valid records in batches
 async function importValidRecords(records) {
-    const batchSize = 500; // Firestore batch size limit is 500
+    const batchSize = 500; 
     const batches = [];
 
     for (let i = 0; i < records.length; i += batchSize) {
@@ -256,7 +246,6 @@ async function importValidRecords(records) {
     }
 }
 
-// Function to update minute-based aggregation (copied from salesController.js)
 async function updateMinuteAggregation(saleData) {
     try {
         // Get the relevant keys
