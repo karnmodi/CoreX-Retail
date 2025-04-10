@@ -1,16 +1,16 @@
 const { db } = require("../../config/firebase");
 const admin = require('firebase-admin');
 const {
-  validateSalesRecord,
-  prepareSalesRecord
+  validateSalesItem,
+  prepareSalesItem
 } = require("../../models/salesSchema");
 
-// Add New Sale
+// Add a new sale
 const addSale_BE = async (req, res) => {
   try {
-    const saleData = prepareSalesRecord(req.body);
+    const saleData = prepareSalesItem(req.body);
 
-    const validation = validateSalesRecord(saleData);
+    const validation = validateSalesItem(saleData);
     if (!validation.valid) {
       return res.status(400).json({
         error: "Validation failed",
@@ -18,605 +18,677 @@ const addSale_BE = async (req, res) => {
       });
     }
 
-    if (!saleData.transactionId) {
-      saleData.transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Calculate total amount if not provided
+    if (!saleData.totalAmount && saleData.unitPrice && saleData.quantity) {
+      saleData.totalAmount = saleData.unitPrice * saleData.quantity;
     }
 
+    // Step 1: Fetch the inventory item
+    const inventoryRef = db.collection("inventory").doc(saleData.productId);
+    const inventoryDoc = await inventoryRef.get();
+
+    if (!inventoryDoc.exists) {
+      return res.status(404).json({ error: "Inventory item not found" });
+    }
+
+    const inventoryData = inventoryDoc.data();
+
+    // Step 2: Check if there is enough stock
+    if (inventoryData.currentStock < saleData.quantity) {
+      return res.status(400).json({
+        error: "Insufficient stock",
+        availableStock: inventoryData.currentStock,
+      });
+    }
+
+    // Step 3: Deduct stock
+    await inventoryRef.update({
+      currentStock: inventoryData.currentStock - saleData.quantity
+    });
+
+    // Step 4: Save the sale
     const saleRef = db.collection("sales").doc();
     saleData.id = saleRef.id;
 
     await saleRef.set(saleData);
 
-    // Update minute-based aggregated data
-    await updateMinuteAggregation(saleData);
+    // Also add to time-based collections for aggregation
+    if (saleData.dateKey) {
+      const dateRef = db.collection("sales_by_date").doc(saleData.dateKey);
+      await updateAggregation(dateRef, saleData);
+    }
 
-    res.status(201).json({ message: "Sale recorded successfully!", id: saleRef.id, ...saleData });
+    if (saleData.hourKey) {
+      const hourRef = db.collection("sales_by_hour").doc(saleData.hourKey);
+      await updateAggregation(hourRef, saleData);
+    }
+
+    if (saleData.minuteKey) {
+      const minuteRef = db.collection("sales_by_minute").doc(saleData.minuteKey);
+      await updateAggregation(minuteRef, saleData);
+    }
+
+    res.status(201).json({
+      message: "Sale recorded and inventory updated successfully!",
+      id: saleRef.id,
+      ...saleData
+    });
+
   } catch (error) {
     console.error("Error adding sale:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get All Sales
+
+// Helper function to update aggregation documents
+const updateAggregation = async (docRef, saleData) => {
+  const docSnapshot = await docRef.get();
+
+  if (!docSnapshot.exists) {
+    // Create a new aggregation document
+    await docRef.set({
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      totalAmount: saleData.totalAmount || 0,
+      totalQuantity: saleData.quantity || 1,
+      transactionCount: 1,
+      sales: [
+        {
+          id: saleData.id,
+          productId: saleData.productId,
+          productName: saleData.productName,
+          quantity: saleData.quantity,
+          totalAmount: saleData.totalAmount,
+          unitPrice: saleData.unitPrice,
+          storeLocation: saleData.storeLocation,
+          saleDatetime: saleData.saleDatetime
+        }
+      ]
+    });
+  } else {
+    // Update existing aggregation document
+    const data = docSnapshot.data();
+    const sales = data.sales || [];
+
+    // Add the new sale to the sales array
+    sales.push({
+      id: saleData.id,
+      productId: saleData.productId,
+      productName: saleData.productName,
+      quantity: saleData.quantity,
+      totalAmount: saleData.totalAmount,
+      unitPrice: saleData.unitPrice,
+      storeLocation: saleData.storeLocation,
+      saleDatetime: saleData.saleDatetime
+    });
+
+    // Update the aggregation data
+    await docRef.update({
+      totalAmount: admin.firestore.FieldValue.increment(saleData.totalAmount || 0),
+      totalQuantity: admin.firestore.FieldValue.increment(saleData.quantity || 1),
+      transactionCount: admin.firestore.FieldValue.increment(1),
+      sales: sales,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+};
+
+// Get all sales with optional filtering
 const getAllSales_BE = async (req, res) => {
   try {
-    const { startDate, endDate, location, category, limit = 100 } = req.query;
+    const {
+      startDate,
+      endDate,
+      storeLocation,
+      category,
+      limit = 100,
+      offset = 0
+    } = req.query;
+
     let query = db.collection("sales");
-    
-    // Apply filters if they exist
+
+    // Apply filters
     if (startDate && endDate) {
-      const startTimestamp = new Date(startDate);
-      const endTimestamp = new Date(endDate);
-      query = query.where("saleDateTime", ">=", startTimestamp)
-                   .where("saleDateTime", "<=", endTimestamp);
+      query = query.where("dateKey", ">=", startDate)
+        .where("dateKey", "<=", endDate);
     } else if (startDate) {
-      const startTimestamp = new Date(startDate);
-      query = query.where("saleDateTime", ">=", startTimestamp);
+      query = query.where("dateKey", ">=", startDate);
     } else if (endDate) {
-      const endTimestamp = new Date(endDate);
-      query = query.where("saleDateTime", "<=", endTimestamp);
+      query = query.where("dateKey", "<=", endDate);
     }
-    
-    if (location) {
-      query = query.where("storeLocation", "==", location);
+
+    if (storeLocation) {
+      query = query.where("storeLocation", "==", storeLocation);
     }
-    
+
     if (category) {
       query = query.where("category", "==", category);
     }
-    
-    query = query.orderBy("saleDateTime", "desc").limit(parseInt(limit));
-    
+
+    // Add ordering
+    query = query.orderBy("dateKey", "desc");
+
+    // Pagination
+    const limitNumber = parseInt(limit);
+    const offsetNumber = parseInt(offset);
+
+    if (!isNaN(offsetNumber) && offsetNumber > 0) {
+      const snapshot = await query.limit(offsetNumber).get();
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      if (lastDoc) {
+        query = query.startAfter(lastDoc);
+      }
+    }
+
+    if (!isNaN(limitNumber) && limitNumber > 0) {
+      query = query.limit(limitNumber);
+    }
+
     const snapshot = await query.get();
     const sales = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    res.json(sales);
+    // Calculate totals
+    const totalAmount = sales.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
+    const totalQuantity = sales.reduce((sum, sale) => sum + (sale.quantity || 0), 0);
+
+    res.json({
+      sales,
+      meta: {
+        totalRecords: sales.length,
+        totalAmount,
+        totalQuantity
+      }
+    });
   } catch (error) {
     console.error("Error fetching sales:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get Sale by ID
-const getSaleById_BE = async (req, res) => {
+
+// Get sales by date
+const getSalesByDate_BE = async (req, res) => {
   try {
-    const id = req.params.id;
-    const saleRef = db.collection("sales").doc(id);
-    const docSnapshot = await saleRef.get();
+    const { startDate, endDate } = req.query;
 
-    if (!docSnapshot.exists) return res.status(404).json({ message: "Sale record not found" });
+    let query = db.collection("sales_by_date");
 
-    res.json({ id: docSnapshot.id, ...docSnapshot.data() });
-  } catch (error) {
-    console.error("Error fetching sale:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Update Sale
-const updateSale_BE = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Get the current sale data
-    const saleDoc = await db.collection("sales").doc(id).get();
-
-    if (!saleDoc.exists) {
-      return res.status(404).json({ error: "Sale record not found" });
+    if (startDate && endDate) {
+      query = query.where(admin.firestore.FieldPath.documentId(), ">=", startDate)
+        .where(admin.firestore.FieldPath.documentId(), "<=", endDate);
+    } else if (startDate) {
+      query = query.where(admin.firestore.FieldPath.documentId(), ">=", startDate);
+    } else if (endDate) {
+      query = query.where(admin.firestore.FieldPath.documentId(), "<=", endDate);
     }
 
-    const existingSale = saleDoc.data();
-    
-    // Remove the old data from aggregations
-    await removeFromMinuteAggregation(existingSale);
-    
-    const updateData = prepareSalesRecord({...existingSale, ...req.body});
-    updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+    query = query.orderBy(admin.firestore.FieldPath.documentId(), "desc");
 
-    await db.collection("sales").doc(id).update(updateData);
-    
-    // Add the updated data to aggregations
-    await updateMinuteAggregation(updateData);
+    const snapshot = await query.get();
+    const salesByDate = snapshot.docs.map((doc) => ({
+      date: doc.id,
+      totalAmount: doc.data().totalAmount || 0,
+      totalQuantity: doc.data().totalQuantity || 0,
+      transactionCount: doc.data().transactionCount || 0
+    }));
 
-    const updatedDoc = await db.collection("sales").doc(id).get();
-
-    res.status(200).json({
-      message: "Sale record updated successfully",
-      sale: updatedDoc.data()
-    });
-
+    res.json(salesByDate);
   } catch (error) {
-    console.error("Error updating sale:", error.message);
+    console.error("Error fetching sales by date:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Delete Sale
-const deleteSale_BE = async (req, res) => {
+// Get sales for a specific date
+const getSalesForDate_BE = async (req, res) => {
   try {
-    const id = req.params.id;
-    const saleRef = db.collection("sales").doc(id);
-    const docSnapshot = await saleRef.get();
+    const { date } = req.params;
 
-    if (!docSnapshot.exists) {
-      return res.status(404).json({ error: "Sale record not found" });
-    }
-
-    // Remove the data from aggregations
-    await removeFromMinuteAggregation(docSnapshot.data());
-
-    // Delete sale from Firestore
-    await saleRef.delete();
-
-    res.json({ message: "Sale record deleted successfully!" });
-  } catch (error) {
-    console.error("Error deleting sale:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-//   Get Sales By Minute
-const getSalesByMinute_BE = async (req, res) => {
-  try {
-    const { date, hour, minute } = req.query;
-    
     if (!date) {
-      return res.status(400).json({ error: "Date parameter is required (YYYY-MM-DD)" });
+      return res.status(400).json({ error: "Date parameter is required" });
     }
-    
-    let minuteKey;
-    if (date && hour && minute) {
-      minuteKey = `${date}-${hour}-${minute}`;
-    } else {
-      return res.status(400).json({ error: "Hour and minute parameters are required" });
-    }
-    
-    const aggregationRef = db.collection("sales_by_minute").doc(minuteKey);
-    const docSnapshot = await aggregationRef.get();
-    
+
+    const docRef = db.collection("sales_by_date").doc(date);
+    const docSnapshot = await docRef.get();
+
     if (!docSnapshot.exists) {
-      return res.status(404).json({ 
-        message: "No sales data found for the specified minute",
-        minuteKey,
-        sales: [] 
+      return res.json({
+        date,
+        totalAmount: 0,
+        totalQuantity: 0,
+        transactionCount: 0,
+        sales: []
       });
     }
-    
+
+    const data = docSnapshot.data();
+
     res.json({
-      minuteKey,
-      ...docSnapshot.data()
+      date,
+      totalAmount: data.totalAmount || 0,
+      totalQuantity: data.totalQuantity || 0,
+      transactionCount: data.transactionCount || 0,
+      sales: data.sales || []
     });
   } catch (error) {
-    console.error("Error fetching minute sales:", error.message);
+    console.error("Error fetching sales for date:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-//   Get Sales By Hour
-const getSalesByHour_BE = async (req, res) => {
+// Get hourly sales for a specific date
+const getHourlySalesForDate_BE = async (req, res) => {
   try {
-    const { date, hour } = req.query;
-    
+    const { date } = req.params;
+
     if (!date) {
-      return res.status(400).json({ error: "Date parameter is required (YYYY-MM-DD)" });
+      return res.status(400).json({ error: "Date parameter is required" });
     }
-    
-    let hourKey;
-    if (date && hour) {
-      hourKey = `${date}-${hour}`;
-    } else {
-      return res.status(400).json({ error: "Hour parameter is required" });
-    }
-    
-    const aggregationRef = db.collection("sales_by_hour").doc(hourKey);
-    const docSnapshot = await aggregationRef.get();
-    
-    if (!docSnapshot.exists) {
-      return res.status(404).json({ 
-        message: "No sales data found for the specified hour",
-        hourKey,
-        sales: [] 
-      });
-    }
-    
-    res.json({
-      hourKey,
-      ...docSnapshot.data()
+
+    const query = db.collection("sales_by_hour")
+      .where(admin.firestore.FieldPath.documentId(), ">=", `${date}-10`)
+      .where(admin.firestore.FieldPath.documentId(), "<=", `${date}-23`)
+      .orderBy(admin.firestore.FieldPath.documentId());
+
+    const snapshot = await query.get();
+    const hourlySales = snapshot.docs.map((doc) => {
+      const hour = doc.id.split('-').pop();
+      return {
+        hour,
+        hourKey: doc.id,
+        totalAmount: doc.data().totalAmount || 0,
+        totalQuantity: doc.data().totalQuantity || 0,
+        transactionCount: doc.data().transactionCount || 0
+      };
     });
+
+    // Fill in missing hours with zero values
+    const completeHourlySales = [];
+    for (let i = 10; i < 22; i++) {
+      const hour = i.toString().padStart(2, '0');
+      const hourKey = `${date}-${hour}`;
+      const existingData = hourlySales.find(item => item.hourKey === hourKey);
+
+      if (existingData) {
+        completeHourlySales.push(existingData);
+      } else {
+        completeHourlySales.push({
+          hour,
+          hourKey,
+          totalAmount: 0,
+          totalQuantity: 0,
+          transactionCount: 0
+        });
+      }
+    }
+
+    res.json({ Sales_Dated_For: date, completeHourlySales });
   } catch (error) {
     console.error("Error fetching hourly sales:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-//   Get Sales By Date
-const getSalesByDate_BE = async (req, res) => {
+// Get sales for a specific hour
+const getSalesForHour_BE = async (req, res) => {
   try {
-    const { date } = req.query;
-    
-    if (!date) {
-      return res.status(400).json({ error: "Date parameter is required (YYYY-MM-DD)" });
+    const { hourKey } = req.params;
+
+    if (!hourKey) {
+      return res.status(400).json({ error: "Hour key parameter is required" });
     }
-    
-    const dateKey = date;
-    const aggregationRef = db.collection("sales_by_date").doc(dateKey);
-    const docSnapshot = await aggregationRef.get();
-    
+
+    const docRef = db.collection("sales_by_hour").doc(hourKey);
+    const docSnapshot = await docRef.get();
+
     if (!docSnapshot.exists) {
-      return res.status(404).json({ 
-        message: "No sales data found for the specified date",
-        dateKey,
-        sales: [] 
+      return res.json({
+        hourKey,
+        totalAmount: 0,
+        totalQuantity: 0,
+        transactionCount: 0,
+        sales: []
       });
     }
-    
+
+    const data = docSnapshot.data();
+
     res.json({
-      dateKey,
-      ...docSnapshot.data()
+      hourKey,
+      totalAmount: data.totalAmount || 0,
+      totalQuantity: data.totalQuantity || 0,
+      transactionCount: data.transactionCount || 0,
+      sales: data.sales || []
     });
   } catch (error) {
-    console.error("Error fetching daily sales:", error.message);
+    console.error("Error fetching sales for hour:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-//   Get Sales Summary
-const getSalesSummary_BE = async (req, res) => {
+// Get sales data for dashboard
+const getSalesDashboardData_BE = async (req, res) => {
   try {
-    const { startDate, endDate, groupBy = 'day' } = req.query;
-    
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Both startDate and endDate parameters are required" });
-    }
-    
-    let collection;
-    let keyPrefix;
-    
-    // Determine which collection to query based on grouping
-    if (groupBy === 'minute') {
-      collection = 'sales_by_minute';
-      keyPrefix = '';
-    } else if (groupBy === 'hour') {
-      collection = 'sales_by_hour';
-      keyPrefix = '';
-    } else {
-      collection = 'sales_by_date';
-      keyPrefix = '';
-    }
-    
-    // Generate all keys in the date range
-    const startKey = startDate + (groupBy !== 'day' ? keyPrefix : '');
-    const endKey = endDate + (groupBy !== 'day' ? 'Z' : ''); // Z to include all possible suffixes
-    
-    const snapshot = await db.collection(collection)
-      .where(admin.firestore.FieldPath.documentId(), '>=', startKey)
-      .where(admin.firestore.FieldPath.documentId(), '<=', endKey)
-      .get();
-    
-    if (snapshot.empty) {
-      return res.status(404).json({
-        message: "No sales data found for the specified period",
-        summary: {
-          totalSales: 0,
-          totalItems: 0,
-          averageOrderValue: 0,
-          data: []
-        }
-      });
-    }
-    
-    const salesData = snapshot.docs.map(doc => ({
-      key: doc.id,
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date(2025, 2, 3);
+    const todayStr = today.toISOString().split('T')[0];
+
+    // Get yesterday's date
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Get last 30 days start date
+    const last30DaysStart = new Date(today);
+    last30DaysStart.setDate(last30DaysStart.getDate() - 30);
+    const last30DaysStartStr = last30DaysStart.toISOString().split('T')[0];
+
+    // Get today's data
+    const todayDocRef = db.collection("sales_by_date").doc(todayStr);
+    const todayDoc = await todayDocRef.get();
+    const todaySales = todayDoc.exists ? todayDoc.data() : { totalAmount: 0, totalQuantity: 0, transactionCount: 0 };
+
+    // Get yesterday's data
+    const yesterdayDocRef = db.collection("sales_by_date").doc(yesterdayStr);
+    const yesterdayDoc = await yesterdayDocRef.get();
+    const yesterdaySales = yesterdayDoc.exists ? yesterdayDoc.data() : { totalAmount: 0, totalQuantity: 0, transactionCount: 0 };
+
+    // Get data for last 30 days
+    const last30DaysQuery = db.collection("sales_by_date")
+      .where(admin.firestore.FieldPath.documentId(), ">=", last30DaysStartStr)
+      .where(admin.firestore.FieldPath.documentId(), "<=", todayStr)
+      .orderBy(admin.firestore.FieldPath.documentId());
+
+    const last30DaysSnapshot = await last30DaysQuery.get();
+    const last30DaysData = last30DaysSnapshot.docs.map(doc => ({
+      date: doc.id,
+      totalAmount: doc.data().totalAmount || 0,
+      totalQuantity: doc.data().totalQuantity || 0,
+      transactionCount: doc.data().transactionCount || 0
+    }));
+
+    const last30DaysTotal = last30DaysData.reduce((sum, day) => sum + day.totalAmount, 0);
+    const last30DaysTransactions = last30DaysData.reduce((sum, day) => sum + day.transactionCount, 0);
+
+    const recentSalesQuery = db.collection("sales")
+      .orderBy("saleDatetime", "desc")
+      .limit(10);
+
+    const recentSalesSnapshot = await recentSalesQuery.get();
+    const recentSales = recentSalesSnapshot.docs.map(doc => ({
+      id: doc.id,
       ...doc.data()
     }));
-    
-    // Calculate summary metrics
-    const totalSales = salesData.reduce((sum, day) => sum + (day.totalAmount || 0), 0);
-    const totalItems = salesData.reduce((sum, day) => sum + (day.totalQuantity || 0), 0);
-    const totalTransactions = salesData.reduce((sum, day) => sum + (day.transactionCount || 0), 0);
-    
-    res.json({
-      startDate,
-      endDate,
-      groupBy,
-      summary: {
-        totalSales: parseFloat(totalSales.toFixed(2)),
-        totalItems,
-        totalTransactions,
-        averageOrderValue: totalTransactions > 0 ? parseFloat((totalSales / totalTransactions).toFixed(2)) : 0,
-        data: salesData
-      }
-    });
-  } catch (error) {
-    console.error("Error fetching sales summary:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
 
-//   Get Product Sales Ranking
-const getProductSalesRanking_BE = async (req, res) => {
-  try {
-    const { startDate, endDate, limit = 10 } = req.query;
-    
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Both startDate and endDate parameters are required" });
-    }
-    
-    const startTimestamp = new Date(startDate);
-    const endTimestamp = new Date(endDate);
-    
-    const snapshot = await db.collection("sales")
-      .where("saleDateTime", ">=", startTimestamp)
-      .where("saleDateTime", "<=", endTimestamp)
-      .get();
-    
-    if (snapshot.empty) {
-      return res.json({
-        message: "No sales data found for the specified period",
-        ranking: []
-      });
-    }
-    
-    // Group by product and calculate totals
+    const productSalesQuery = db.collection("sales")
+      .where("saleDatetime", ">=", last30DaysStart);
+
+    const productSalesSnapshot = await productSalesQuery.get();
+    const productSalesData = productSalesSnapshot.docs.map(doc => ({
+      productId: doc.data().productId,
+      productName: doc.data().productName,
+      amount: doc.data().totalAmount || 0,
+      quantity: doc.data().quantity || 0
+    }));
+
     const productSales = {};
-    
-    snapshot.docs.forEach(doc => {
-      const sale = doc.data();
-      const productId = sale.productId;
-      
-      if (!productSales[productId]) {
-        productSales[productId] = {
-          productId,
+    productSalesData.forEach(sale => {
+      if (!productSales[sale.productId]) {
+        productSales[sale.productId] = {
+          productId: sale.productId,
           productName: sale.productName,
-          category: sale.category,
-          totalQuantity: 0,
           totalAmount: 0,
-          transactionCount: 0
+          totalQuantity: 0,
+          count: 0
         };
       }
-      
-      productSales[productId].totalQuantity += (sale.quantity || 0);
-      productSales[productId].totalAmount += (sale.totalAmount || 0);
-      productSales[productId].transactionCount += 1;
+
+      productSales[sale.productId].totalAmount += sale.amount;
+      productSales[sale.productId].totalQuantity += sale.quantity;
+      productSales[sale.productId].count += 1;
     });
-    
-    // Convert to array and sort by total amount
-    const ranking = Object.values(productSales)
+
+    const topProducts = Object.values(productSales)
       .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, parseInt(limit));
-    
+      .slice(0, 5);
+
     res.json({
-      startDate,
-      endDate,
-      ranking
+      today: {
+        date: todayStr,
+        totalAmount: todaySales.totalAmount || 0,
+        totalQuantity: todaySales.totalQuantity || 0,
+        transactionCount: todaySales.transactionCount || 0,
+        percentChange: yesterdaySales.totalAmount > 0
+          ? ((todaySales.totalAmount - yesterdaySales.totalAmount) / yesterdaySales.totalAmount) * 100
+          : 0
+      },
+      last30Days: {
+        totalAmount: last30DaysTotal,
+        totalTransactions: last30DaysTransactions,
+        dailySales: last30DaysData
+      },
+      recentSales,
+      topProducts
     });
   } catch (error) {
-    console.error("Error fetching product sales ranking:", error.message);
+    console.error("Error fetching dashboard data:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-//   Bulk Import Sales
-const bulkImportSales_BE = async (req, res) => {
+// Get sales target data
+const getSalesTargets_BE = async (req, res) => {
   try {
-    const { salesData } = req.body;
-    
-    if (!Array.isArray(salesData) || salesData.length === 0) {
-      return res.status(400).json({ error: "Invalid sales data format. Expected non-empty array." });
+    const { year, month, day } = req.query;
+
+    if (!year || !month) {
+      return res.status(400).json({ error: "Please provide year and month. Day is optional." });
     }
-    
-    const batch = db.batch();
-    const validSales = [];
-    const errors = [];
-    
-    for (let i = 0; i < salesData.length; i++) {
-      const saleData = prepareSalesRecord(salesData[i]);
-      
-      const validation = validateSalesRecord(saleData);
-      if (!validation.valid) {
-        errors.push({
-          index: i,
-          data: salesData[i],
-          errors: validation.errors
-        });
-        continue;
+
+    const parsedYear = parseInt(year);
+    const parsedMonth = parseInt(month);
+    const parsedDay = day ? parseInt(day) : null;
+
+    const targetsRef = db.collection("sales_targets");
+    const targetsSnapshot = await targetsRef.get();
+
+    const allTargets = [];
+    const summary = {};
+
+    for (const doc of targetsSnapshot.docs) {
+      const data = doc.data();
+      const { targetType, period, amount } = data;
+
+      const periodParts = period.split("-");
+      const targetYear = parseInt(periodParts[0]);
+      const targetMonth = parseInt(periodParts[1]);
+      const targetDay = targetType === "daily" ? parseInt(periodParts[2]) : null;
+
+      let include = false;
+
+      if (targetType === "monthly" && targetYear === parsedYear && targetMonth === parsedMonth) {
+        include = true;
       }
-      
-      if (!saleData.transactionId) {
-        saleData.transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}-${i}`;
+
+      if (
+        targetType === "daily" &&
+        targetYear === parsedYear &&
+        targetMonth === parsedMonth &&
+        (!parsedDay || targetDay === parsedDay)
+      ) {
+        include = true;
       }
-      
-      const saleRef = db.collection("sales").doc();
-      saleData.id = saleRef.id;
-      
-      batch.set(saleRef, saleData);
-      validSales.push(saleData);
+
+      if (!include) continue;
+
+      let achieved = 0;
+
+      if (targetType === "daily") {
+        const formattedDate = `${targetYear}-${String(targetMonth).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
+        const salesDoc = await db.collection("sales_by_date").doc(formattedDate).get();
+        achieved = salesDoc.exists ? (salesDoc.data().totalAmount || 0) : 0;
+      }
+
+      if (targetType === "monthly") {
+        const startDate = `${parsedYear}-${String(parsedMonth).padStart(2, "0")}-01`;
+        const nextMonth = parsedMonth === 12 ? 1 : parsedMonth + 1;
+        const nextYear = parsedMonth === 12 ? parsedYear + 1 : parsedYear;
+        const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+        const salesSnapshot = await db.collection("sales_by_date")
+          .where(admin.firestore.FieldPath.documentId(), ">=", startDate)
+          .where(admin.firestore.FieldPath.documentId(), "<", endDate)
+          .get();
+
+        achieved = salesSnapshot.docs.reduce((sum, doc) => sum + (doc.data().totalAmount || 0), 0);
+      }
+
+      summary[`${targetType}-${period}`] = {
+        period,
+        type: targetType,
+        target: amount,
+        achieved,
+        percentage: (achieved / amount) * 100
+      };
+
+      allTargets.push({ id: doc.id, ...data });
     }
-    
-    if (validSales.length === 0) {
-      return res.status(400).json({
-        error: "No valid sales records found",
-        errors
-      });
-    }
-    
-    await batch.commit();
-    
-    // Update aggregations for all valid sales
-    for (const sale of validSales) {
-      await updateMinuteAggregation(sale);
-    }
-    
-    res.status(201).json({
-      message: `Successfully imported ${validSales.length} sales records`,
-      totalProcessed: salesData.length,
-      successful: validSales.length,
-      failed: errors.length,
-      errors: errors.length > 0 ? errors : undefined
-    });
+
+    res.json({ summary, allTargets });
   } catch (error) {
-    console.error("Error bulk importing sales:", error.message);
+    console.error("Error fetching sales targets:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-// ========== Helper Functions ==========
-
-// Function to update minute-based aggregation
-async function updateMinuteAggregation(saleData) {
+const getSalesTargetsByRange_BE = async (req, res) => {
   try {
-    // Get the relevant keys
-    const { minuteKey, hourKey, dateKey } = saleData;
-    
-    if (!minuteKey || !hourKey || !dateKey) {
-      console.error("Missing time keys for aggregation");
-      return;
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Please provide both startDate and endDate in YYYY-MM-DD format." });
     }
-    
-    // Update minute aggregation
-    await updateAggregation("sales_by_minute", minuteKey, saleData);
-    
-    // Update hour aggregation
-    await updateAggregation("sales_by_hour", hourKey, saleData);
-    
-    // Update date aggregation
-    await updateAggregation("sales_by_date", dateKey, saleData);
-  } catch (error) {
-    console.error("Error updating minute aggregation:", error);
-  }
-}
 
-// Function to remove from minute-based aggregation
-async function removeFromMinuteAggregation(saleData) {
-  try {
-    // Get the relevant keys
-    const { minuteKey, hourKey, dateKey } = saleData;
-    
-    if (!minuteKey || !hourKey || !dateKey) {
-      console.error("Missing time keys for aggregation removal");
-      return;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start > end) {
+      return res.status(400).json({ error: "startDate cannot be after endDate." });
     }
-    
-    // Remove from minute aggregation
-    await removeFromAggregation("sales_by_minute", minuteKey, saleData);
-    
-    // Remove from hour aggregation
-    await removeFromAggregation("sales_by_hour", hourKey, saleData);
-    
-    // Remove from date aggregation
-    await removeFromAggregation("sales_by_date", dateKey, saleData);
-  } catch (error) {
-    console.error("Error removing from minute aggregation:", error);
-  }
-}
 
-// Generic function to update an aggregation document
-async function updateAggregation(collection, docId, saleData) {
-  const docRef = db.collection(collection).doc(docId);
-  
-  // Try to update the existing document
-  try {
-    await db.runTransaction(async (transaction) => {
-      const doc = await transaction.get(docRef);
-      
-      if (doc.exists) {
-        // Update existing aggregation
-        const currentData = doc.data();
-        
-        transaction.update(docRef, {
-          totalAmount: admin.firestore.FieldValue.increment(saleData.totalAmount || 0),
-          totalQuantity: admin.firestore.FieldValue.increment(saleData.quantity || 0),
-          transactionCount: admin.firestore.FieldValue.increment(1),
-          sales: admin.firestore.FieldValue.arrayUnion({
-            id: saleData.id,
-            productId: saleData.productId,
-            productName: saleData.productName,
-            quantity: saleData.quantity,
-            unitPrice: saleData.unitPrice,
-            totalAmount: saleData.totalAmount,
-            storeLocation: saleData.storeLocation,
-            saleDateTime: saleData.saleDateTime
-          }),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      } else {
-        // Create new aggregation document
-        transaction.set(docRef, {
-          totalAmount: saleData.totalAmount || 0,
-          totalQuantity: saleData.quantity || 0,
-          transactionCount: 1,
-          sales: [{
-            id: saleData.id,
-            productId: saleData.productId,
-            productName: saleData.productName,
-            quantity: saleData.quantity,
-            unitPrice: saleData.unitPrice,
-            totalAmount: saleData.totalAmount,
-            storeLocation: saleData.storeLocation,
-            saleDateTime: saleData.saleDateTime
-          }],
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      }
-    });
-  } catch (error) {
-    console.error(`Error updating ${collection} aggregation:`, error);
-    throw error;
-  }
-}
+    const targetsRef = db.collection("sales_targets");
+    const targetsSnapshot = await targetsRef.get();
 
-// Generic function to remove from an aggregation document
-async function removeFromAggregation(collection, docId, saleData) {
-  const docRef = db.collection(collection).doc(docId);
-  
-  try {
-    await db.runTransaction(async (transaction) => {
-      const doc = await transaction.get(docRef);
-      
-      if (doc.exists) {
-        const currentData = doc.data();
-        const sales = currentData.sales || [];
-        
-        // Find the sale in the array
-        const saleIndex = sales.findIndex(sale => sale.id === saleData.id);
-        
-        if (saleIndex !== -1) {
-          // Remove the sale from the array
-          sales.splice(saleIndex, 1);
-          
-          // Update the aggregation
-          transaction.update(docRef, {
-            totalAmount: admin.firestore.FieldValue.increment(-(saleData.totalAmount || 0)),
-            totalQuantity: admin.firestore.FieldValue.increment(-(saleData.quantity || 0)),
-            transactionCount: admin.firestore.FieldValue.increment(-1),
-            sales: sales,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-          
-          // If there are no more sales, delete the document
-          if (sales.length === 0) {
-            transaction.delete(docRef);
-          }
+    const allTargets = [];
+    const summary = {};
+
+    for (const doc of targetsSnapshot.docs) {
+      const data = doc.data();
+      const { targetType, period, amount } = data;
+
+      let include = false;
+      let achieved = 0;
+
+      if (targetType === "daily") {
+        const [yyyy, mm, dd] = period.split("-").map(Number);
+        const periodDate = new Date(`${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`);
+        if (periodDate >= start && periodDate <= end) {
+          include = true;
+
+          const docId = `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+          const salesDoc = await db.collection("sales_by_date").doc(docId).get();
+          achieved = salesDoc.exists ? (salesDoc.data().totalAmount || 0) : 0;
         }
       }
-    });
+
+      if (targetType === "monthly") {
+        const [yyyy, mm] = period.split("-").map(Number);
+        const monthStart = new Date(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
+        const nextMonth = mm === 12 ? 1 : mm + 1;
+        const nextYear = mm === 12 ? yyyy + 1 : yyyy;
+        const monthEnd = new Date(`${nextYear}-${String(nextMonth).padStart(2, '0')}-01`);
+
+        // Include if month overlaps with range
+        if (monthStart <= end && monthEnd >= start) {
+          include = true;
+
+          const startDateStr = `${yyyy}-${String(mm).padStart(2, "0")}-01`;
+          const endDateStr = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+          const salesSnapshot = await db.collection("sales_by_date")
+            .where(admin.firestore.FieldPath.documentId(), ">=", startDateStr)
+            .where(admin.firestore.FieldPath.documentId(), "<", endDateStr)
+            .get();
+
+          achieved = salesSnapshot.docs.reduce((sum, doc) => sum + (doc.data().totalAmount || 0), 0);
+        }
+      }
+
+      if (!include) continue;
+
+      summary[`${targetType}-${period}`] = {
+        period,
+        type: targetType,
+        target: amount,
+        achieved,
+        percentage: (achieved / amount) * 100
+      };
+
+      allTargets.push({ id: doc.id, ...data });
+    }
+
+    res.json({ summary, allTargets });
   } catch (error) {
-    console.error(`Error removing from ${collection} aggregation:`, error);
-    throw error;
+    console.error("Error fetching range-based sales targets:", error.message);
+    res.status(500).json({ error: error.message });
   }
-}
+};
+
+
+// Create or update a sales target
+const updateSalesTarget_BE = async (req, res) => {
+  try {
+    const { targetType, period, amount, description } = req.body;
+
+    if (!targetType || !period || !amount) {
+      return res.status(400).json({ error: "targetType, period, and amount are required" });
+    }
+
+    // Validate target type
+    if (!['daily', 'monthly', 'quarterly', 'yearly'].includes(targetType)) {
+      return res.status(400).json({ error: "targetType must be one of: daily, monthly, quarterly, yearly" });
+    }
+
+    // Create target ID based on type and period
+    const targetId = `${targetType}-${period}`;
+
+    // Create or update the target
+    await db.collection("sales_targets").doc(targetId).set({
+      targetType,
+      period,
+      amount: parseFloat(amount),
+      description: description || '',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    res.status(200).json({ message: "Sales target updated successfully", id: targetId });
+  } catch (error) {
+    console.error("Error updating sales target:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 module.exports = {
   addSale_BE,
   getAllSales_BE,
-  getSaleById_BE,
-  updateSale_BE,
-  deleteSale_BE,
-  getSalesByMinute_BE,
-  getSalesByHour_BE,
   getSalesByDate_BE,
-  getSalesSummary_BE,
-  getProductSalesRanking_BE,
-  bulkImportSales_BE
+  getSalesForDate_BE,
+  getHourlySalesForDate_BE,
+  getSalesForHour_BE,
+  getSalesDashboardData_BE,
+  getSalesTargets_BE,
+  getSalesTargetsByRange_BE,
+  updateSalesTarget_BE
 };

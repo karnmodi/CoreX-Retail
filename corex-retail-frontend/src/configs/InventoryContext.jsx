@@ -12,7 +12,6 @@ import {
   updateProductStock,
 } from "../services/inventoryAPI";
 import { useToast } from "../components/ui/use-toast";
-import { duration } from "moment/moment";
 
 const InventoryContext = createContext();
 

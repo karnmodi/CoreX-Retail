@@ -40,10 +40,12 @@ import {
   UserCheck,
   UserX,
   LogIn,
+  AlertCircle,
 } from "lucide-react";
 import { useInventory } from "../../configs/InventoryContext";
 import { useToast } from "../../components/ui/use-toast.jsx";
 import { Separator } from "@/components/ui/separator";
+import { SalesOverviewChart } from "@/components/charts/SalesOverviewChart";
 
 const DashboardAdmin = () => {
   const { user, userData, logout } = useAuth();
@@ -52,12 +54,8 @@ const DashboardAdmin = () => {
   const [refreshingActivities, setRefreshingActivities] = useState(false);
   const { inventoryValue, formatCurrency, refreshInventoryValue } =
     useInventory();
-  const {
-    activityData,
-    activityLoading,
-    activityError,
-    fetchActivityData,
-  } = useProfile();
+  const { activityData, activityLoading, activityError, fetchActivityData } =
+    useProfile();
 
   useEffect(() => {
     const loadActivityData = async () => {
@@ -251,15 +249,14 @@ const DashboardAdmin = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
           <Card className="col-span-2">
             <CardHeader>
-              <CardTitle>Sales Overview</CardTitle>
+              <CardTitle>
+                <Link to="./sales/salesOverview">Sales Overview </Link>
+              </CardTitle>
               <CardDescription>Monthly sales performance</CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-              <div className="h-[300px] flex items-center justify-center bg-muted/20 rounded-md">
-                <BarChart3 className="h-16 w-16 text-muted-foreground/50" />
-                <span className="ml-2 text-muted-foreground">
-                  Sales chart will appear here
-                </span>
+              <div className="h-[300px]">
+                <SalesOverviewChart />
               </div>
             </CardContent>
           </Card>
@@ -426,7 +423,6 @@ const DashboardAdmin = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Notifications</CardTitle>

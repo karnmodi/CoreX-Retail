@@ -1,8 +1,13 @@
-import React from 'react';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SalesHeader } from '../../components/SalesHeader';
+import { SalesHeader } from "../../components/SalesHeader";
 import { SalesOverviewChart } from "@/components/charts/SalesOverviewChart";
 import { ProductSalesDistribution } from "@/components/charts/productSalesDistribution";
 import { SalesTargetProgress } from "@/components/charts/SalesTargetProgress";
@@ -11,7 +16,10 @@ import { SalesForecastChart } from "@/components/charts/SalesForecastChart";
 function SalesOverview() {
   return (
     <div className="flex flex-col">
-      <SalesHeader title="Sales Overview" description="Comprehensive view of your sales performance" />
+      <SalesHeader
+        title="Sales Overview"
+        description="Comprehensive view of your sales performance"
+      />
 
       <div className="p-4 md:p-6 space-y-6">
         <Tabs defaultValue="charts" className="space-y-4">
@@ -26,7 +34,9 @@ function SalesOverview() {
               <Card className="col-span-1">
                 <CardHeader>
                   <CardTitle>Historical Sales</CardTitle>
-                  <CardDescription>Monthly sales data for the past year</CardDescription>
+                  <CardDescription>
+                    Monthly sales data for the past year
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SalesOverviewChart />
@@ -36,7 +46,9 @@ function SalesOverview() {
               <Card className="col-span-1">
                 <CardHeader>
                   <CardTitle>Sales vs Targets</CardTitle>
-                  <CardDescription>Comparison of actual sales against targets</CardDescription>
+                  <CardDescription>
+                    Comparison of actual sales against targets
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SalesTargetProgress />
@@ -47,7 +59,9 @@ function SalesOverview() {
             <Card>
               <CardHeader>
                 <CardTitle>Product Sales Distribution</CardTitle>
-                <CardDescription>Breakdown of sales by product category</CardDescription>
+                <CardDescription>
+                  Breakdown of sales by product category
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ProductSalesDistribution />
@@ -59,7 +73,9 @@ function SalesOverview() {
             <Card>
               <CardHeader>
                 <CardTitle>Sales Forecast</CardTitle>
-                <CardDescription>Predicted sales trends based on historical data</CardDescription>
+                <CardDescription>
+                  Predicted sales trends based on historical data
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <SalesForecastChart />
@@ -71,7 +87,9 @@ function SalesOverview() {
             <Card>
               <CardHeader>
                 <CardTitle>Year-over-Year Comparison</CardTitle>
-                <CardDescription>Compare sales performance with previous years</CardDescription>
+                <CardDescription>
+                  Compare sales performance with previous years
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-[400px] flex items-center justify-center text-muted-foreground">
                 Year-over-year comparison chart will appear here

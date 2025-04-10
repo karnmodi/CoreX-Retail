@@ -1,12 +1,7 @@
 const firebase = require('firebase-admin');
 
 const salesSchema = {
-  // Transaction Information
-  transactionId: {
-    type: 'string',
-    required: true,
-    default: ''
-  },
+  // Basic Information
   productId: {
     type: 'string',
     required: true,
@@ -19,23 +14,23 @@ const salesSchema = {
   },
   category: {
     type: 'string',
-    required: true,
+    required: false,
     enum: ['Phones', 'Tabs', 'Watches', 'Earbuds', 'Others'],
-    default: 'Phones'
+    default: 'Others'
   },
-
-  // Pricing and Quantity
-  unitPrice: {
-    type: 'number',
-    required: true,
-    min: 0,
-    default: 0.0
-  },
+  
+  // Transaction Information
   quantity: {
     type: 'number',
     required: true,
     min: 1,
     default: 1
+  },
+  unitPrice: {
+    type: 'number',
+    required: true,
+    min: 0,
+    default: 0.0
   },
   totalAmount: {
     type: 'number',
@@ -43,47 +38,50 @@ const salesSchema = {
     min: 0,
     default: 0.0
   },
-
-  // Store Information
+  
+  // Location and Payment Info
   storeLocation: {
     type: 'string',
     required: true,
     default: ''
   },
-
-  // Timestamps
-  saleDateTime: {
+  paymentMethod: {
+    type: 'string',
+    required: true,
+    enum: ['Cash', 'Credit Card', 'Debit Card', 'Mobile Payment', 'Other'],
+    default: 'Cash'
+  },
+  
+  // Time-related fields for aggregations
+  saleDatetime: {
     type: 'timestamp',
     required: true,
     default: () => firebase.firestore.FieldValue.serverTimestamp()
   },
-
-  // Minute-Level Data
-  minuteKey: {
+  dateKey: {
     type: 'string',
     required: true,
-    default: '' // Format: YYYY-MM-DD-HH-MM
+    default: ''
   },
   hourKey: {
     type: 'string',
     required: true,
-    default: '' // Format: YYYY-MM-DD-HH
+    default: ''
   },
-  dateKey: {
+  minuteKey: {
     type: 'string',
     required: true,
-    default: '' // Format: YYYY-MM-DD
+    default: ''
   },
-
-  // Additional Information
-  paymentMethod: {
+  
+  // Identifiers
+  transactionId: {
     type: 'string',
-    required: false,
-    enum: ['Cash', 'Credit Card', 'Debit Card', 'Mobile Payment', 'Other'],
-    default: 'Cash'
+    required: true,
+    default: ''
   },
-
-  // Metadata
+  
+  // Timestamps
   createdAt: {
     type: 'timestamp',
     required: true,
@@ -96,50 +94,50 @@ const salesSchema = {
   }
 };
 
-function createDefaultSalesRecord() {
-  const defaultRecord = {};
+function createDefaultSalesItem() {
+  const defaultItem = {};
 
   for (const [field, config] of Object.entries(salesSchema)) {
     if (typeof config.default === 'function') {
-      defaultRecord[field] = config.default();
+      defaultItem[field] = config.default();
     } else {
-      defaultRecord[field] = config.default;
+      defaultItem[field] = config.default;
     }
   }
 
-  return defaultRecord;
+  return defaultItem;
 }
 
-function validateSalesRecord(record) {
+function validateSalesItem(item) {
   const errors = [];
 
   for (const [field, config] of Object.entries(salesSchema)) {
     if (field === 'id') continue;
 
-    if (config.required && (record[field] === undefined || record[field] === null)) {
+    if (config.required && (item[field] === undefined || item[field] === null)) {
       errors.push(`${field} is required`);
       continue;
     }
 
-    if (record[field] === undefined || record[field] === null) continue;
+    if (item[field] === undefined || item[field] === null) continue;
 
-    if (config.type === 'string' && typeof record[field] !== 'string') {
+    if (config.type === 'string' && typeof item[field] !== 'string') {
       errors.push(`${field} must be a string`);
     }
 
-    if (config.type === 'number' && typeof record[field] !== 'number') {
+    if (config.type === 'number' && typeof item[field] !== 'number') {
       errors.push(`${field} must be a number`);
     }
 
-    if (config.enum && !config.enum.includes(record[field])) {
+    if (config.enum && !config.enum.includes(item[field])) {
       errors.push(`${field} must be one of: ${config.enum.join(', ')}`);
     }
 
     if (config.type === 'number') {
-      if (config.min !== undefined && record[field] < config.min) {
+      if (config.min !== undefined && item[field] < config.min) {
         errors.push(`${field} must be at least ${config.min}`);
       }
-      if (config.max !== undefined && record[field] > config.max) {
+      if (config.max !== undefined && item[field] > config.max) {
         errors.push(`${field} must be at most ${config.max}`);
       }
     }
@@ -151,54 +149,55 @@ function validateSalesRecord(record) {
   };
 }
 
-function prepareSalesRecord(recordData) {
-  const record = createDefaultSalesRecord();
+function prepareSalesItem(itemData) {
+  const item = createDefaultSalesItem();
 
-  for (const [key, value] of Object.entries(recordData)) {
+  for (const [key, value] of Object.entries(itemData)) {
     if (value !== undefined && value !== null) {
       if (salesSchema[key] && salesSchema[key].type === 'number' && typeof value !== 'number') {
-        record[key] = parseFloat(value) || salesSchema[key].default;
+        item[key] = parseFloat(value) || salesSchema[key].default;
       } else {
-        record[key] = value;
+        item[key] = value;
       }
     }
   }
 
-  if (!recordData.totalAmount) {
-    record.totalAmount = record.unitPrice * record.quantity;
-  }
-
-  // Make sure the date keys (dateKey, hourKey, minuteKey) are preserved
-  if (recordData.dateKey) record.dateKey = recordData.dateKey;
-  if (recordData.hourKey) record.hourKey = recordData.hourKey;
-  if (recordData.minuteKey) record.minuteKey = recordData.minuteKey;
-
-  // Set saleDateTime if not already set but datetime exists
-  if (!record.saleDateTime && recordData.datetime) {
-    if (typeof recordData.datetime === 'object' && recordData.datetime instanceof Date) {
-      record.saleDateTime = recordData.datetime;
-    } else {
-      record.saleDateTime = new Date(recordData.datetime);
+  // Generate time-based keys if not provided
+  if (itemData.saleDatetime && (!itemData.dateKey || !itemData.hourKey || !itemData.minuteKey)) {
+    const date = new Date(itemData.saleDatetime);
+    
+    if (!itemData.dateKey) {
+      item.dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+    
+    if (!itemData.hourKey) {
+      const hours = date.getHours().toString().padStart(2, '0');
+      item.hourKey = `${item.dateKey}-${hours}`;
+    }
+    
+    if (!itemData.minuteKey) {
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      item.minuteKey = `${item.hourKey}-${minutes}`;
     }
   }
 
-  // Calculate total amount if not provided
-  if (!recordData.totalAmount && recordData.unitPrice && recordData.quantity) {
-    record.totalAmount = parseFloat(recordData.unitPrice) * parseInt(recordData.quantity);
-  }
-
   // Ensure timestamps
-  record.updatedAt = new Date();
-  if (!recordData.createdAt) {
-    record.createdAt = new Date();
+  item.updatedAt = new Date();
+  if (!itemData.createdAt) {
+    item.createdAt = new Date();
   }
 
-  return record;
+  // Generate transaction ID if not provided
+  if (!itemData.transactionId) {
+    item.transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  }
+
+  return item;
 }
 
 module.exports = {
   salesSchema,
-  createDefaultSalesRecord,
-  validateSalesRecord,
-  prepareSalesRecord
+  createDefaultSalesItem,
+  validateSalesItem,
+  prepareSalesItem
 };
