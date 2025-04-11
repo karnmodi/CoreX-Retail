@@ -209,7 +209,7 @@ function SalesDashboard() {
               <CardHeader>
                 <CardTitle>Sales Overview</CardTitle>
                 <CardDescription>
-                  Monthly sales performance for the last 30 days
+                  Monthly sales performance for the last 12 months.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
