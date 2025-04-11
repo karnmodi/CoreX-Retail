@@ -4,6 +4,8 @@ import {
   getSalesDashboard,
   getAllSales,
   getSalesByDate,
+  getSalesByDateDaily,
+  getSalesByDateMonthly,
   getSalesForDate,
   getHourlySalesForDate,
   getSalesForHour,
@@ -27,14 +29,40 @@ export const SalesProvider = ({ children }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [salesList, setSalesList] = useState([]);
   const [salesByDate, setSalesByDate] = useState([]);
+  const [salesByDateDaily, setSalesByDateDaily] = useState([]);
+  const [salesByDateMonthly, setSalesByDateMonthly] = useState([]);
   const [selectedDateSales, setSelectedDateSales] = useState(null);
   const [hourlySales, setHourlySales] = useState([]);
   const [selectedHourSales, setSelectedHourSales] = useState(null);
   const [salesTargets, setSalesTargets] = useState({});
   const [salesTargetsByRange, setSalesTargetsByRange] = useState([]);
-  const [loading, setLoading] = useState(false);
+
+  // Replace single loading state with loading states object
+  const [loadingStates, setLoadingStates] = useState({
+    dashboard: false,
+    sales: false,
+    salesByDate: false,
+    salesByDateDaily: false,
+    salesByDateMonthly: false,
+    salesForDate: false,
+    hourlySales: false,
+    salesForHour: false,
+    salesTargets: false,
+    salesTargetsByRange: false,
+    createSale: false,
+    updateSalesTarget: false,
+  });
+
   const [error, setError] = useState(null);
   const { token } = useAuth();
+
+  // Helper to update loading state for a specific operation
+  const setLoadingFor = (operation, isLoading) => {
+    setLoadingStates((prevState) => ({
+      ...prevState,
+      [operation]: isLoading,
+    }));
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -42,15 +70,14 @@ export const SalesProvider = ({ children }) => {
     // Initial dashboard data load
     const loadInitialData = async () => {
       try {
-        setLoading(true);
-        console.log("Loading initial dashboard data");
+        setLoadingFor("dashboard", true);
         const data = await getSalesDashboard(token);
         setDashboardData(data);
       } catch (error) {
         console.error("Error loading initial dashboard data:", error.message);
         setError(error.message);
       } finally {
-        setLoading(false);
+        setLoadingFor("dashboard", false);
       }
     };
 
@@ -61,8 +88,8 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      // Set loading to true at the start of the operation
-      setLoading(true);
+      // Set loading for this specific operation
+      setLoadingFor("sales", true);
       setError(null); // Reset error state before new request
 
       console.log("Loading sales with filters:", filters);
@@ -83,20 +110,20 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      // Always set loading to false when done, regardless of success/failure
-      setLoading(false);
+      // Only update loading state for this operation
+      setLoadingFor("sales", false);
       console.log("loadSales operation completed. Success:", operationSuccess);
     }
   };
 
+  // Legacy function - keeping for backward compatibility
   const loadSalesByDate = async (dateParams = {}) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("salesByDate", true);
       setError(null);
 
-      console.log("Loading sales by date with params:", dateParams);
       const data = await getSalesByDate(dateParams, token);
 
       // Check if data is valid before updating state
@@ -115,9 +142,85 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("salesByDate", false);
       console.log(
         "loadSalesByDate operation completed. Success:",
+        operationSuccess
+      );
+    }
+  };
+
+  // New function for daily sales data
+  const loadSalesByDateDaily = async (dateParams = {}) => {
+    let operationSuccess = false;
+
+    try {
+      setLoadingFor("salesByDateDaily", true);
+      setError(null);
+
+      console.log("[Daily] Loading daily sales with params:", dateParams);
+      const data = await getSalesByDateDaily(dateParams, token);
+
+      // Check if data is valid before updating state
+      if (data && Array.isArray(data)) {
+        setSalesByDateDaily(data);
+        operationSuccess = true;
+        return data;
+      } else {
+        console.warn(
+          "[Daily] Received invalid data from getSalesByDateDaily:",
+          data
+        );
+        setSalesByDateDaily([]); // Reset to empty array on invalid data
+        setError("Received invalid data from API");
+        return null;
+      }
+    } catch (error) {
+      console.error("[Daily] Error loading daily sales:", error.message);
+      setError(error.message);
+      return null;
+    } finally {
+      setLoadingFor("salesByDateDaily", false);
+      console.log(
+        "[Daily] loadSalesByDateDaily operation completed. Success:",
+        operationSuccess
+      );
+    }
+  };
+
+  // New function for monthly sales data
+  const loadSalesByDateMonthly = async (dateParams = {}) => {
+    let operationSuccess = false;
+
+    try {
+      setLoadingFor("salesByDateMonthly", true);
+      setError(null);
+
+      console.log("[Monthly] Loading monthly sales with params:", dateParams);
+      const data = await getSalesByDateMonthly(dateParams, token);
+
+      // Check if data is valid before updating state
+      if (data && Array.isArray(data)) {
+        setSalesByDateMonthly(data);
+        operationSuccess = true;
+        return data;
+      } else {
+        console.warn(
+          "[Monthly] Received invalid data from getSalesByDateMonthly:",
+          data
+        );
+        setSalesByDateMonthly([]); // Reset to empty array on invalid data
+        setError("Received invalid data from API");
+        return null;
+      }
+    } catch (error) {
+      console.error("[Monthly] Error loading monthly sales:", error.message);
+      setError(error.message);
+      return null;
+    } finally {
+      setLoadingFor("salesByDateMonthly", false);
+      console.log(
+        "[Monthly] loadSalesByDateMonthly operation completed. Success:",
         operationSuccess
       );
     }
@@ -127,7 +230,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("salesForDate", true);
       setError(null);
 
       console.log("Loading sales for date:", date);
@@ -148,7 +251,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("salesForDate", false);
       console.log(
         "loadSalesForDate operation completed. Success:",
         operationSuccess
@@ -160,7 +263,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("hourlySales", true);
       setError(null);
 
       console.log("Loading hourly sales for date:", date);
@@ -181,7 +284,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("hourlySales", false);
       console.log(
         "loadHourlySalesForDate operation completed. Success:",
         operationSuccess
@@ -193,7 +296,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("salesForHour", true);
       setError(null);
 
       console.log("Loading sales for hour:", hourKey);
@@ -214,7 +317,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("salesForHour", false);
       console.log(
         "loadSalesForHour operation completed. Success:",
         operationSuccess
@@ -226,7 +329,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("createSale", true);
       setError(null);
 
       if (!saleData || Object.keys(saleData).length === 0) {
@@ -262,7 +365,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("createSale", false);
       console.log("createSale operation completed. Success:", operationSuccess);
     }
   };
@@ -271,7 +374,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("salesTargets", true);
       setError(null);
 
       // Ensure params has the correct format
@@ -307,7 +410,7 @@ export const SalesProvider = ({ children }) => {
       setSalesTargets({}); // Reset to empty object on error
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("salesTargets", false);
       console.log(
         "loadSalesTargets operation completed. Success:",
         operationSuccess
@@ -319,7 +422,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("salesTargetsByRange", true);
       setError(null);
 
       // Ensure date params are properly formatted
@@ -331,13 +434,9 @@ export const SalesProvider = ({ children }) => {
         console.warn("End date is missing from range parameters");
       }
 
-      console.log("Loading sales targets by range with params:", dateParams);
-
       const data = await getSalesTargetsByRange(dateParams, token);
 
       if (data) {
-        console.log("Sales targets by range data received:", data);
-        // Update the state with this data
         setSalesTargetsByRange(data);
         operationSuccess = true;
         return data;
@@ -351,11 +450,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
-      console.log(
-        "loadSalesTargetsByRange operation completed. Success:",
-        operationSuccess
-      );
+      setLoadingFor("salesTargetsByRange", false);
     }
   };
 
@@ -363,7 +458,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("updateSalesTarget", true);
       setError(null);
 
       if (!targetData || Object.keys(targetData).length === 0) {
@@ -395,7 +490,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("updateSalesTarget", false);
       console.log(
         "createOrUpdateSalesTarget operation completed. Success:",
         operationSuccess
@@ -408,7 +503,7 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      setLoading(true);
+      setLoadingFor("dashboard", true);
       setError(null);
 
       const data = await getSalesDashboard(token);
@@ -427,7 +522,7 @@ export const SalesProvider = ({ children }) => {
       setError(error.message);
       return null;
     } finally {
-      setLoading(false);
+      setLoadingFor("dashboard", false);
       console.log(
         "loadDashboardData operation completed. Success:",
         operationSuccess
@@ -439,15 +534,36 @@ export const SalesProvider = ({ children }) => {
     dashboardData,
     salesList,
     salesByDate,
+    salesByDateDaily,
+    salesByDateMonthly,
     selectedDateSales,
     hourlySales,
     selectedHourSales,
     salesTargets,
     salesTargetsByRange,
-    loading,
+
+    loading: {
+      dashboard: loadingStates.dashboard,
+      sales: loadingStates.sales,
+      salesByDate: loadingStates.salesByDate,
+      salesByDateDaily: loadingStates.salesByDateDaily,
+      salesByDateMonthly: loadingStates.salesByDateMonthly,
+      salesForDate: loadingStates.salesForDate,
+      hourlySales: loadingStates.hourlySales,
+      salesForHour: loadingStates.salesForHour,
+      salesTargets: loadingStates.salesTargets,
+      salesTargetsByRange: loadingStates.salesTargetsByRange,
+      createSale: loadingStates.createSale,
+      updateSalesTarget: loadingStates.updateSalesTarget,
+      // Add a general loading state for backwards compatibility
+      any: Object.values(loadingStates).some(Boolean),
+    },
+
     error,
     loadSales,
     loadSalesByDate,
+    loadSalesByDateDaily,
+    loadSalesByDateMonthly,
     loadSalesForDate,
     loadHourlySalesForDate,
     loadSalesForHour,

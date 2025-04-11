@@ -14,6 +14,5 @@ export const getUserData = async (token, uid) => {
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || "Failed to fetch user data");
   
-  console.log("✅ Received user data:", data);
   return data;
 };

@@ -208,7 +208,40 @@ const getAllSales_BE = async (req, res) => {
 
 
 // Get sales by date
-const getSalesByDate_BE = async (req, res) => {
+// const getSalesByDate_BE = async (req, res) => {
+//   try {
+//     const { startDate, endDate } = req.query;
+
+//     let query = db.collection("sales_by_date");
+
+//     if (startDate && endDate) {
+//       query = query.where(admin.firestore.FieldPath.documentId(), ">=", startDate)
+//         .where(admin.firestore.FieldPath.documentId(), "<=", endDate);
+//     } else if (startDate) {
+//       query = query.where(admin.firestore.FieldPath.documentId(), ">=", startDate);
+//     } else if (endDate) {
+//       query = query.where(admin.firestore.FieldPath.documentId(), "<=", endDate);
+//     }
+
+//     query = query.orderBy(admin.firestore.FieldPath.documentId(), "desc");
+
+//     const snapshot = await query.get();
+//     const salesByDate = snapshot.docs.map((doc) => ({
+//       date: doc.id,
+//       totalAmount: doc.data().totalAmount || 0,
+//       totalQuantity: doc.data().totalQuantity || 0,
+//       transactionCount: doc.data().transactionCount || 0
+//     }));
+
+//     res.json(salesByDate);
+//   } catch (error) {
+//     console.error("Error fetching sales by date:", error.message);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+
+const getSalesByDate_Daily = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
@@ -235,7 +268,62 @@ const getSalesByDate_BE = async (req, res) => {
 
     res.json(salesByDate);
   } catch (error) {
-    console.error("Error fetching sales by date:", error.message);
+    console.error("Error fetching daily sales data:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+// Function to get monthly sales data
+const getSalesByDate_Monthly = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // Validate input dates
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Both startDate and endDate are required for monthly data" });
+    }
+
+    // Query the daily sales data
+    let query = db.collection("sales_by_date")
+      .where(admin.firestore.FieldPath.documentId(), ">=", startDate)
+      .where(admin.firestore.FieldPath.documentId(), "<=", endDate)
+      .orderBy(admin.firestore.FieldPath.documentId());
+
+    const snapshot = await query.get();
+
+    // Process the data to group by month
+    const monthlySales = {};
+
+    snapshot.docs.forEach((doc) => {
+      const date = doc.id; // Format: YYYY-MM-DD
+      const yearMonth = date.substring(0, 7); // Extract YYYY-MM
+
+      // Initialize the month if not exists
+      if (!monthlySales[yearMonth]) {
+        monthlySales[yearMonth] = {
+          month: yearMonth,
+          totalAmount: 0,
+          totalQuantity: 0,
+          transactionCount: 0
+        };
+      }
+
+      // Add the daily values to the monthly totals
+      const data = doc.data();
+      monthlySales[yearMonth].totalAmount += data.totalAmount || 0;
+      monthlySales[yearMonth].totalQuantity += data.totalQuantity || 0;
+      monthlySales[yearMonth].transactionCount += data.transactionCount || 0;
+    });
+
+    // Convert to array and sort by month
+    const result = Object.values(monthlySales).sort((a, b) =>
+      a.month.localeCompare(b.month)
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching monthly sales data:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -482,12 +570,12 @@ const getSalesTargets_BE = async (req, res) => {
   try {
     const { year, month, day } = req.query;
 
-    if (!year || !month) {
-      return res.status(400).json({ error: "Please provide year and month. Day is optional." });
+    if (!year) {
+      return res.status(400).json({ error: "Please provide year. Month and day are optional." });
     }
 
     const parsedYear = parseInt(year);
-    const parsedMonth = parseInt(month);
+    const parsedMonth = month ? parseInt(month) : null;
     const parsedDay = day ? parseInt(day) : null;
 
     const targetsRef = db.collection("sales_targets");
@@ -502,19 +590,30 @@ const getSalesTargets_BE = async (req, res) => {
 
       const periodParts = period.split("-");
       const targetYear = parseInt(periodParts[0]);
-      const targetMonth = parseInt(periodParts[1]);
+      const targetMonth = targetType !== "yearly" ? parseInt(periodParts[1]) : null;
       const targetDay = targetType === "daily" ? parseInt(periodParts[2]) : null;
 
       let include = false;
 
-      if (targetType === "monthly" && targetYear === parsedYear && targetMonth === parsedMonth) {
+      // Check yearly targets
+      if (targetType === "yearly" && targetYear === parsedYear) {
         include = true;
       }
 
+      // Check monthly targets
+      if (
+        targetType === "monthly" &&
+        targetYear === parsedYear &&
+        (!parsedMonth || targetMonth === parsedMonth)
+      ) {
+        include = true;
+      }
+
+      // Check daily targets
       if (
         targetType === "daily" &&
         targetYear === parsedYear &&
-        targetMonth === parsedMonth &&
+        (!parsedMonth || targetMonth === parsedMonth) &&
         (!parsedDay || targetDay === parsedDay)
       ) {
         include = true;
@@ -524,17 +623,32 @@ const getSalesTargets_BE = async (req, res) => {
 
       let achieved = 0;
 
+      // Calculate achievement for daily targets
       if (targetType === "daily") {
         const formattedDate = `${targetYear}-${String(targetMonth).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
         const salesDoc = await db.collection("sales_by_date").doc(formattedDate).get();
         achieved = salesDoc.exists ? (salesDoc.data().totalAmount || 0) : 0;
       }
 
+      // Calculate achievement for monthly targets
       if (targetType === "monthly") {
-        const startDate = `${parsedYear}-${String(parsedMonth).padStart(2, "0")}-01`;
-        const nextMonth = parsedMonth === 12 ? 1 : parsedMonth + 1;
-        const nextYear = parsedMonth === 12 ? parsedYear + 1 : parsedYear;
+        const startDate = `${targetYear}-${String(targetMonth).padStart(2, "0")}-01`;
+        const nextMonth = targetMonth === 12 ? 1 : targetMonth + 1;
+        const nextYear = targetMonth === 12 ? targetYear + 1 : targetYear;
         const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+        const salesSnapshot = await db.collection("sales_by_date")
+          .where(admin.firestore.FieldPath.documentId(), ">=", startDate)
+          .where(admin.firestore.FieldPath.documentId(), "<", endDate)
+          .get();
+
+        achieved = salesSnapshot.docs.reduce((sum, doc) => sum + (doc.data().totalAmount || 0), 0);
+      }
+
+      // Calculate achievement for yearly targets
+      if (targetType === "yearly") {
+        const startDate = `${targetYear}-01-01`;
+        const endDate = `${targetYear + 1}-01-01`;
 
         const salesSnapshot = await db.collection("sales_by_date")
           .where(admin.firestore.FieldPath.documentId(), ">=", startDate)
@@ -590,6 +704,7 @@ const getSalesTargetsByRange_BE = async (req, res) => {
       let include = false;
       let achieved = 0;
 
+      // Check daily targets
       if (targetType === "daily") {
         const [yyyy, mm, dd] = period.split("-").map(Number);
         const periodDate = new Date(`${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`);
@@ -602,6 +717,7 @@ const getSalesTargetsByRange_BE = async (req, res) => {
         }
       }
 
+      // Check monthly targets
       if (targetType === "monthly") {
         const [yyyy, mm] = period.split("-").map(Number);
         const monthStart = new Date(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
@@ -615,6 +731,28 @@ const getSalesTargetsByRange_BE = async (req, res) => {
 
           const startDateStr = `${yyyy}-${String(mm).padStart(2, "0")}-01`;
           const endDateStr = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+          const salesSnapshot = await db.collection("sales_by_date")
+            .where(admin.firestore.FieldPath.documentId(), ">=", startDateStr)
+            .where(admin.firestore.FieldPath.documentId(), "<", endDateStr)
+            .get();
+
+          achieved = salesSnapshot.docs.reduce((sum, doc) => sum + (doc.data().totalAmount || 0), 0);
+        }
+      }
+
+      // Check yearly targets
+      if (targetType === "yearly") {
+        const [yyyy] = period.split("-").map(Number);
+        const yearStart = new Date(`${yyyy}-01-01`);
+        const yearEnd = new Date(`${yyyy + 1}-01-01`);
+
+        // Include if year overlaps with range
+        if (yearStart <= end && yearEnd >= start) {
+          include = true;
+
+          const startDateStr = `${yyyy}-01-01`;
+          const endDateStr = `${yyyy + 1}-01-01`;
 
           const salesSnapshot = await db.collection("sales_by_date")
             .where(admin.firestore.FieldPath.documentId(), ">=", startDateStr)
@@ -683,7 +821,8 @@ const updateSalesTarget_BE = async (req, res) => {
 module.exports = {
   addSale_BE,
   getAllSales_BE,
-  getSalesByDate_BE,
+  getSalesByDate_Daily,
+  getSalesByDate_Monthly,
   getSalesForDate_BE,
   getHourlySalesForDate_BE,
   getSalesForHour_BE,

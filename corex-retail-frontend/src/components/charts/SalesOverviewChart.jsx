@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSales } from "../../configs/SalesContext";
 import { Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
-
 
 export function SalesOverviewChart() {
   const {
-    loadSalesByDate,
-    salesByDate,
+    loadSalesByDateMonthly,
+    salesByDateMonthly,
     loadSalesTargetsByRange,
     salesTargetsByRange,
     loading,
@@ -16,89 +14,88 @@ export function SalesOverviewChart() {
   } = useSales();
 
   const [chartData, setChartData] = useState([]);
-  const [localLoading, setLocalLoading] = useState(true);
-  const [localError, setLocalError] = useState(null);
-  const [dataLoaded, setDataLoaded] = useState(false);
-  const [dataProcessingStarted, setDataProcessingStarted] = useState(false);
+  const dataFetched = useRef(false);
 
+  // Single effect to handle data fetching and processing
   useEffect(() => {
     const fetchData = async () => {
+      if (dataFetched.current) return;
+      dataFetched.current = true;
+      
       try {
-        setLocalLoading(true);
-        const endDate = "2025-04-01";
-        const startDate = "2024-04-01";
+        // Using a full year range
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        
+        const formattedEndDate = endDate.toISOString().split('T')[0];
+        const formattedStartDate = startDate.toISOString().split('T')[0];
+        
+        console.log(`[SalesOverviewChart] Fetching data from ${formattedStartDate} to ${formattedEndDate}`);
+        
+        // Fetch data in parallel with a single Promise.all
         await Promise.all([
-          loadSalesByDate({ startDate, endDate }),
-          loadSalesTargetsByRange({ startDate, endDate }),
+          loadSalesByDateMonthly({ 
+            startDate: formattedStartDate, 
+            endDate: formattedEndDate 
+          }),
+          loadSalesTargetsByRange({ 
+            startDate: formattedStartDate, 
+            endDate: formattedEndDate 
+          }),
         ]);
-        setDataProcessingStarted(true);
       } catch (err) {
-        setLocalError(err.message || "Failed to load data");
-        setLocalLoading(false);
+        console.error("[SalesOverviewChart] Error loading data:", err);
       }
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Process the data when it's available
   useEffect(() => {
-    if (
-      dataProcessingStarted &&
-      Array.isArray(salesByDate) &&
-      salesTargetsByRange?.allTargets
-    ) {
-      try {
-        const targets = {};
-        salesTargetsByRange.allTargets.forEach((target) => {
-          if (target.targetType === "monthly") {
-            const [year, month] = target.period.split("-");
-            const yearMonth = `${year}-${month.padStart(2, "0")}`;
-            targets[yearMonth] = target.amount;
+    if (!salesByDateMonthly || !salesTargetsByRange) return;
+    
+    try {
+      console.log(`[SalesOverviewChart] Processing ${salesByDateMonthly?.length || 0} months of data`);
+      
+      // Create targets map by month from summary object
+      const targets = {};
+      
+      if (salesTargetsByRange.summary) {
+        Object.entries(salesTargetsByRange.summary).forEach(([key, value]) => {
+          if (key.startsWith('monthly-')) {
+            // Extract the YYYY-MM part from "monthly-YYYY-MM"
+            const monthKey = key.substring(8);
+            targets[monthKey] = value.target;
           }
         });
-
-        const monthlySales = {};
-        salesByDate.forEach((day) => {
-          const yearMonth = day.date.substring(0, 7);
-          const monthName = getMonthName(yearMonth);
-          if (!monthlySales[yearMonth]) {
-            monthlySales[yearMonth] = {
-              name: monthName,
-              yearMonth,
-              sales: 0,
-              target: targets[yearMonth] || 0,
-            };
-          }
-          monthlySales[yearMonth].sales += day.totalAmount || 0;
-        });
-
-        const chartArray = Object.values(monthlySales).sort((a, b) =>
-          a.yearMonth.localeCompare(b.yearMonth)
-        );
-
-        setChartData(chartArray);
-        setDataLoaded(true);
-        setLocalLoading(false);
-      } catch (err) {
-        setLocalError("Error processing data: " + err.message);
-        setLocalLoading(false);
       }
+      
+      console.log("[SalesOverviewChart] Monthly targets:", targets);
+
+      // Map the monthly data to chart data
+      const chartArray = salesByDateMonthly.map((monthData) => {
+        const monthKey = monthData.month;
+        return {
+          name: monthData.displayName,
+          month: monthKey,
+          sales: monthData.totalAmount || 0,
+          target: targets[monthKey] || 0,
+        };
+      });
+
+      setChartData(chartArray);
+    } catch (err) {
+      console.error("[SalesOverviewChart] Error processing data:", err);
     }
-  }, [salesByDate, salesTargetsByRange, dataProcessingStarted]);
+  }, [salesByDateMonthly, salesTargetsByRange]);
 
-  const getMonthName = (yearMonth) => {
-    const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-    const monthIndex = parseInt(yearMonth.split("-")[1]) - 1;
-    return months[monthIndex] || "Unknown";
-  };
+  // Simplified loading check
+  const isLoading = loading.salesByDateMonthly || loading.salesTargetsByRange;
 
-  const isLoading = localLoading || loading;
-  const displayError = localError || error;
-
-  if (isLoading && !dataLoaded) {
+  if (isLoading && chartData.length === 0) {
     return (
       <div className="flex justify-center items-center h-[300px]">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -107,10 +104,10 @@ export function SalesOverviewChart() {
     );
   }
 
-  if (displayError && !dataLoaded) {
+  if (error) {
     return (
       <div className="h-[300px] flex items-center justify-center text-red-500">
-        Failed to load chart: {displayError}
+        Failed to load chart: {error}
       </div>
     );
   }
@@ -123,15 +120,22 @@ export function SalesOverviewChart() {
     );
   }
 
-  // Rechart rendering (your original logic)
+  // Chart rendering with optimized max value calculation
   const hasTargets = chartData.some((item) => item?.target > 0);
-  const maxSales = Math.max(...chartData.map((i) => i.sales || 0));
-  const maxTarget = Math.max(...chartData.map((i) => i.target || 0));
-  const maxValue = Math.max(maxSales, maxTarget);
-  const yAxisMax =
+  
+  // Calculate max values in one pass
+  const maxValue = chartData.reduce((max, item) => {
+    return Math.max(max, item.sales || 0, item.target || 0);
+  }, 0);
+  
+  // Calculate appropriate y-axis maximum
+  const yAxisMax = 
     maxValue > 1_000_000 ? Math.ceil(maxValue / 1_000_000) * 1_000_000 :
     maxValue > 100_000 ? Math.ceil(maxValue / 100_000) * 100_000 :
     Math.ceil(maxValue / 10_000) * 10_000;
+
+  // More efficient tooltip formatter
+  const formatCurrency = (value) => `£${value.toLocaleString()}`;
 
   return (
     <div className="h-[300px] w-full">
@@ -139,12 +143,37 @@ export function SalesOverviewChart() {
         <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
-          <YAxis domain={[0, yAxisMax]} />
-          <Tooltip formatter={(v) => [`£${v.toLocaleString()}`, undefined]} labelFormatter={(l) => `Month: ${l}`} />
+          <YAxis 
+            domain={[0, yAxisMax]} 
+            tickFormatter={(value) => value >= 1000000 
+              ? `£${(value / 1000000).toFixed(1)}M` 
+              : value >= 1000 
+                ? `£${(value / 1000).toFixed(0)}k` 
+                : `£${value}`}
+          />
+          <Tooltip 
+            formatter={(value) => [formatCurrency(value), undefined]} 
+            labelFormatter={(label) => `Month: ${label}`} 
+          />
           <Legend />
-          <Line type="monotone" dataKey="sales" stroke="#8884d8" name="Actual Sales" strokeWidth={2} />
+          <Line 
+            type="monotone" 
+            dataKey="sales" 
+            stroke="#8884d8" 
+            name="Actual Sales" 
+            strokeWidth={2} 
+            connectNulls 
+          />
           {hasTargets && (
-            <Line type="monotone" dataKey="target" stroke="#82ca9d" name="Target Sales" strokeWidth={2} />
+            <Line 
+              type="monotone" 
+              dataKey="target" 
+              stroke="#82ca9d" 
+              name="Target Sales" 
+              strokeWidth={2} 
+              strokeDasharray="5 5"
+              connectNulls
+            />
           )}
         </LineChart>
       </ResponsiveContainer>

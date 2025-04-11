@@ -2,7 +2,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const getAllProducts = async (token) => {
   const url = `${API_BASE_URL}/inventory`;
-  console.log("Fetching inventory from:", url);
 
   const response = await fetch(url, {
     method: "GET",

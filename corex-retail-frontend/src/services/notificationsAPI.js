@@ -50,7 +50,6 @@ const getMockNotifications = () => {
 };
 
 export const getUserNotifications = async (token) => {
-  console.log("📡 Fetching user notifications");
 
   try {
     const response = await fetch(`${API_BASE_URL}/notifications`, {
@@ -62,9 +61,7 @@ export const getUserNotifications = async (token) => {
     });
 
     const data = await handleResponse(response);
-    console.log("✅ Received notifications:", data);
 
-    // Return the data array, or if it's an object with a notifications/data property, return that
     if (Array.isArray(data)) {
       return data;
     } else if (data && typeof data === 'object') {

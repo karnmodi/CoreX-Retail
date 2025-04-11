@@ -2,7 +2,8 @@ const express = require("express");
 const { 
   addSale_BE, 
   getAllSales_BE, 
-  getSalesByDate_BE, 
+  getSalesByDate_Daily, 
+  getSalesByDate_Monthly,
   getSalesForDate_BE, 
   getHourlySalesForDate_BE, 
   getSalesForHour_BE, 
@@ -33,7 +34,8 @@ router.post("/", verifyToken, trackActivity(
 router.get("/", verifyToken, getAllSales_BE);
 
 // Date-based endpoints
-router.get("/by-date", verifyToken, getSalesByDate_BE);
+router.get("/by-date/daily", verifyToken, getSalesByDate_Daily);
+router.get("/by-date/monthly", verifyToken, getSalesByDate_Monthly);
 router.get("/date/:date", verifyToken, getSalesForDate_BE);
 
 // Hour-based endpoints

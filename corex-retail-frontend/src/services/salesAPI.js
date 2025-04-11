@@ -65,7 +65,81 @@ export const getAllSales = async (filters, token) => {
   }
 };
 
-// Get sales by date
+// Get daily sales data
+export const getSalesByDateDaily = async (dateParams, token) => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (dateParams) {
+      if (dateParams.startDate) queryParams.append('startDate', dateParams.startDate);
+      if (dateParams.endDate) queryParams.append('endDate', dateParams.endDate);
+    }
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+    console.log(`[Daily] Fetching daily sales with params: ${queryString}`);
+
+    const response = await fetch(`${API_BASE_URL}/sales/by-date/daily${queryString}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error("[Daily] Sales by date API error response:", errorDetails);
+      throw new Error(`Failed to fetch daily sales: ${errorDetails}`);
+    }
+
+    const data = await response.json();
+    console.log(`[Daily] Received ${data.length || 0} daily sales records`);
+    return data;
+  } catch (error) {
+    console.error("[Daily] Error in getSalesByDateDaily:", error);
+    throw error;
+  }
+};
+
+// Get monthly sales data
+export const getSalesByDateMonthly = async (dateParams, token) => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (dateParams) {
+      if (dateParams.startDate) queryParams.append('startDate', dateParams.startDate);
+      if (dateParams.endDate) queryParams.append('endDate', dateParams.endDate);
+    }
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+    console.log(`[Monthly] Fetching monthly sales with params: ${queryString}`);
+
+    const response = await fetch(`${API_BASE_URL}/sales/by-date/monthly${queryString}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error("[Monthly] Sales by month API error response:", errorDetails);
+      throw new Error(`Failed to fetch monthly sales: ${errorDetails}`);
+    }
+
+    const data = await response.json();
+    console.log(`[Monthly] Received ${data.length || 0} monthly sales records`);
+    return data;
+  } catch (error) {
+    console.error("[Monthly] Error in getSalesByDateMonthly:", error);
+    throw error;
+  }
+};
+
+// Legacy function - keeping for backward compatibility
 export const getSalesByDate = async (dateParams, token) => {
   try {
     const queryParams = new URLSearchParams();
@@ -76,9 +150,8 @@ export const getSalesByDate = async (dateParams, token) => {
     }
 
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    console.log(`Fetching sales by date with query parameters: ${queryString}`);
 
-    const response = await fetch(`${API_BASE_URL}/sales/by-date${queryString}`, {
+    const response = await fetch(`${API_BASE_URL}/sales/by-date/daily${queryString}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -347,7 +420,8 @@ export const getSalesTargetsByRange = async (dateParams, token) => {
     }
 
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    console.log(`Fetching sales targets by range with query parameters: ${queryString}`);
+
+    console.log(`Fetching targets by range with params: ${queryString}`);
 
     const response = await fetch(`${API_BASE_URL}/sales/targets/range${queryString}`, {
       method: "GET",
@@ -364,7 +438,6 @@ export const getSalesTargetsByRange = async (dateParams, token) => {
     }
 
     const data = await response.json();
-    console.log("Sales targets by range received successfully:", data);
     return data;
   } catch (error) {
     console.error("Error in getSalesTargetsByRange:", error);

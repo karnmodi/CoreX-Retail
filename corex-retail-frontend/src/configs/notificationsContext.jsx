@@ -153,7 +153,6 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       const response = await getUserNotifications(token);
-      console.log("API Response:", response);
 
       // Process notifications
       let notificationsData = [];
@@ -301,25 +300,27 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-
   // Create a new notification
   const addNotification = async (notificationData) => {
     if (!token) return { success: false, message: "Not authenticated" };
 
     try {
-      const createdNotification = await createNotification(token, notificationData);
-      
+      const createdNotification = await createNotification(
+        token,
+        notificationData
+      );
+
       // Add to local state
       const mappedNotification = mapNotification(createdNotification);
       setNotifications((prev) => [mappedNotification, ...prev]);
-      
+
       // Refresh notifications to ensure correct data
       fetchNotifications();
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         message: "Notification created successfully",
-        notification: mappedNotification
+        notification: mappedNotification,
       };
     } catch (err) {
       console.error("Error creating notification:", err);
@@ -340,9 +341,7 @@ export const NotificationProvider = ({ children }) => {
 
   //Refresh notifications
   const refreshNotifications = async () => {
-    const res = fetchNotifications();
-    const data = await res.json();
-    setNotifications(data);
+    await fetchNotifications();
   };
 
   // Initial load

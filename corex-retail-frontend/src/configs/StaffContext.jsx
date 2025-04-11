@@ -29,8 +29,6 @@ export const StaffProvider = ({ children }) => {
 
   useEffect(() => {
     if (!token) return;
-    console.log("Token in StaffContext (Frontend):", token);
-
     const loadUsers = async () => {
       try {
         const users = await getAllEmployees(token);
