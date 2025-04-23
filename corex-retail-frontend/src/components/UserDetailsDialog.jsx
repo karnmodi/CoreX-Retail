@@ -1,7 +1,6 @@
 import { React, useState } from "react";
 import { X, Pencil, Printer, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import InfoTag from "./InfoTag";
 import EmployeeSection from "@/components/small/EmployeeSection";
 import {
@@ -10,7 +9,6 @@ import {
   getStatusColor,
 } from "../utils/helpers";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +16,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import { useAuth } from "../configs/AuthContext"; 
 
 const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
   const [showPersonalDetails, setShowPersonalDetails] = useState(true);
@@ -27,7 +26,12 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
     useState(false);
   const [showDatesInformation, setShowDatesInformation] = useState(false);
   const navigate = useNavigate();
+  const { userData } = useAuth(); // Get user data from AuthContext
+
   if (!user) return null;
+
+  // Check if current user is admin or not
+  const isAdmin = userData && userData.role === "admin";
 
   const tooltipText = () => (
     <span>
@@ -447,21 +451,29 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
                 <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              <button
-                onClick={handleEditClick}
-                title={`Edit ${getFullName(user.firstName, user.lastName)}`}
-                className="hover:bg-white/80 rounded-xl p-2 transition-colors duration-200 text-blue-600 flex items-center gap-2"
-              >
-                <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
+              {/* Only show Edit and Delete buttons if user is admin */}
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={handleEditClick}
+                    title={`Edit ${getFullName(user.firstName, user.lastName)}`}
+                    className="hover:bg-white/80 rounded-xl p-2 transition-colors duration-200 text-blue-600 flex items-center gap-2"
+                  >
+                    <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
 
-              <button
-                onClick={handleDeleteClick}
-                title={`Delete ${getFullName(user.firstName, user.lastName)}`}
-                className="hover:bg-white/80 rounded-xl p-2 transition-colors duration-200 text-red-600 flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    title={`Delete ${getFullName(
+                      user.firstName,
+                      user.lastName
+                    )}`}
+                    className="hover:bg-white/80 rounded-xl p-2 transition-colors duration-200 text-red-600 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                </>
+              )}
 
               <button // Close Button
                 onClick={onClose}

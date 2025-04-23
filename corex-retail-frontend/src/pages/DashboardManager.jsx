@@ -1,68 +1,72 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../configs/AuthContext.jsx";
-import Header from "../components/Header.jsx";
 import { useNavigate } from "react-router-dom";
-// import fetchProducts from '@/configs/InventoryContext';
+import NotificationHeader from "../components/NotificationHeader.jsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DashboardManager = () => {
   const { user, userData, logout } = useAuth();
-  const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    const getProducts = async () => {
-      const data = await fetchProducts();
-      setProducts(data);
-    };
-    getProducts();
-  }, []);
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
-  const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/login", label: "Login" },
-  ].filter(Boolean);
 
   return (
     <>
-      <Header navLinks={navLinks} />
-      <h1>
-        Welcome Manager,{" "}
-        {userData?.firstName + " " + userData?.lastName ||
-          user?.displayName ||
-          "Loading..."}
-      </h1>
-      <p>Email: {user?.email}</p>
-      <button onClick={handleLogout}>Log Out</button>
-
-      <div className="grid grid-cols-3 gap-4 p-4">
-        {products.map((product) => (
-          <div key={product.id} className="border p-4 rounded shadow">
-            <h2 className="text-xl font-bold mb-2">{product.Name}</h2>
-            <div className="flex space-x-2 mb-2">
-              {product.Photos.map((url, index) => (
-                <img
-                  key={index}
-                  src={url}
-                  alt={product.Name}
-                  className="w-24 h-24 object-cover rounded"
-                />
-              ))}
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+        <main className="container mx-auto px-4 py-6">
+          <div className="mb-8 flex justify-between items-start">
+            {/* Left Side: Welcome Text */}
+            <div>
+              <h1 className="text-3xl font-bold text-primary flex flex-wrap items-center gap-2">
+                Welcome,
+                <span className="text-red-500 font-bold">Manager</span>
+                <span className="text-blue-600 font-bold">
+                  {userData?.firstName + " " + userData?.lastName ||
+                    user?.displayName || <LoadingSpinner />}
+                </span>
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {userData?.email || "Not Found"}
+              </p>
             </div>
-            <p className="text-gray-600 mb-2">{product.Description}</p>
-            <p className="text-green-600 font-bold">£{product.Price}</p>
+
+            {/* Right Side: Notification Icon */}
+            <div className="ml-auto">
+              <NotificationHeader />
+            </div>
           </div>
-        ))}
+
+          <Tabs defaultValue="daily" className="space-y-4">
+            <TabsContent value="daily" className="space-y-4">
+              {/* <DashboardStats /> */}
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                {/* Sales Overview Chart */}
+                <Card className="col-span-4">
+                  <CardHeader>
+                    <CardTitle>Sales Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    {/* <DashboardCharts /> */}
+                  </CardContent>
+                </Card>
+
+                {/* Recent Sales */}
+                <Card className="col-span-3">
+                  <CardHeader>
+                    <CardTitle>Recent Sales</CardTitle>
+                    <CardDescription>You made 265 sales today</CardDescription>
+                  </CardHeader>
+                  <CardContent>{/* <RecentSales /> */}</CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
       </div>
     </>
   );

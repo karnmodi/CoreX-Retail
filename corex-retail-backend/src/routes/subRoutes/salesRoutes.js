@@ -10,7 +10,8 @@ const {
   getSalesDashboardData_BE,
   getSalesTargets_BE, 
   getSalesTargetsByRange_BE,
-  updateSalesTarget_BE
+  updateSalesTarget_BE,
+  deleteSalesTarget_BE
 } = require("../../controllers/sales/salesController");
 const verifyToken = require("../../middleware/auth");
 const { trackActivity } = require("../../controllers/profile/ActivityController");
@@ -18,11 +19,7 @@ const { trackActivity } = require("../../controllers/profile/ActivityController"
 const router = express.Router();
 
 // Dashboard data endpoint
-router.get("/dashboard", verifyToken, trackActivity(
-  'Sales_Dashboard_Viewed',
-  (req) => 'Sales Dashboard Viewed',
-  (req) => 'User viewed the sales dashboard'
-), getSalesDashboardData_BE);
+router.get("/dashboard", verifyToken,  getSalesDashboardData_BE);
 
 // Sales endpoints
 router.post("/", verifyToken, trackActivity(
@@ -50,5 +47,6 @@ router.post("/targets", verifyToken, trackActivity(
   (req) => 'Sales Target Updated',
   (req) => 'User updated a sales target'
 ), updateSalesTarget_BE);
+router.delete('/targets/:targetId(*)' , verifyToken, deleteSalesTarget_BE);
 
 module.exports = router;

@@ -277,7 +277,6 @@ export const addSale = async (saleData, token) => {
       body: JSON.stringify(saleData),
     });
 
-    console.log("✅ API Response Status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -304,17 +303,13 @@ export const getSalesTargets = async (params, token) => {
       // Ensure params.year is included
       if (params.year) {
         queryParams.append('year', params.year);
-        console.log(`Adding year parameter: ${params.year}`);
       } else {
         console.warn("Year parameter is missing from getSalesTargets call");
       }
 
-      // Ensure params.month is included and properly formatted
       if (params.month) {
-        // Ensure month is formatted as a 2-digit string (e.g., "05" not "5")
         const formattedMonth = params.month.toString().padStart(2, '0');
         queryParams.append('month', formattedMonth);
-        console.log(`Adding month parameter: ${formattedMonth}`);
       } else {
         console.warn("Month parameter is missing from getSalesTargets call");
       }
@@ -329,8 +324,6 @@ export const getSalesTargets = async (params, token) => {
 
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     const apiUrl = `${API_BASE_URL}/sales/targets${queryString}`;
-
-    console.log(`Fetching sales targets from: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
       method: "GET",
@@ -347,7 +340,6 @@ export const getSalesTargets = async (params, token) => {
     }
 
     const data = await response.json();
-    console.log("Sales targets received successfully:", data);
     return data;
   } catch (error) {
     console.error("Error in getSalesTargets:", error);
@@ -381,7 +373,6 @@ export const updateSalesTarget = async (targetData, token) => {
       throw new Error("amount must be a valid number");
     }
 
-    console.log("✅ Sending Target Data to API:", JSON.stringify(targetData, null, 2));
 
     const response = await fetch(`${API_BASE_URL}/sales/targets`, {
       method: "POST",
@@ -392,7 +383,6 @@ export const updateSalesTarget = async (targetData, token) => {
       body: JSON.stringify(targetData),
     });
 
-    console.log("✅ API Response Status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -401,7 +391,6 @@ export const updateSalesTarget = async (targetData, token) => {
     }
 
     const data = await response.json();
-    console.log("✅ API Response Data:", data);
 
     return data;
   } catch (error) {
@@ -441,6 +430,38 @@ export const getSalesTargetsByRange = async (dateParams, token) => {
     return data;
   } catch (error) {
     console.error("Error in getSalesTargetsByRange:", error);
+    throw error;
+  }
+};
+
+export const deleteSalesTarget = async (targetId, token) => {
+  try {
+    if (!targetId) {
+      console.error("🚨 Error: targetId is missing!");
+      throw new Error("Target ID is required");
+    }
+
+    // The correct API endpoint
+    const response = await fetch(`${API_BASE_URL}/sales/targets/${targetId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ API Error Response:", errorText);
+      throw new Error(errorText || "Failed to delete sales target");
+    }
+
+    const data = await response.json();
+    console.log("✅ Target deleted successfully:", data);
+
+    return data;
+  } catch (error) {
+    console.error("❌ Error in deleteSalesTarget:", error.message);
     throw error;
   }
 };

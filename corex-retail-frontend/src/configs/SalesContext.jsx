@@ -13,6 +13,7 @@ import {
   getSalesTargets,
   getSalesTargetsByRange,
   updateSalesTarget,
+  deleteSalesTarget as deleteSalesTargetApi,
 } from "../services/salesAPI";
 
 const SalesContext = createContext();
@@ -51,6 +52,7 @@ export const SalesProvider = ({ children }) => {
     salesTargetsByRange: false,
     createSale: false,
     updateSalesTarget: false,
+    deleteSalesTarget: false,
   });
 
   const [error, setError] = useState(null);
@@ -377,8 +379,6 @@ export const SalesProvider = ({ children }) => {
       setLoadingFor("salesTargets", true);
       setError(null);
 
-      // Ensure params has the correct format
-      // Make sure both year and month are present and formatted correctly
       if (!params.year) {
         params.year = new Date().getFullYear().toString();
       }
@@ -389,12 +389,9 @@ export const SalesProvider = ({ children }) => {
         params.month = params.month.padStart(2, "0");
       }
 
-      console.log("Loading sales targets with params:", params);
-
       const data = await getSalesTargets(params, token);
 
       if (data) {
-        console.log("Sales targets data received:", data);
         setSalesTargets(data);
         operationSuccess = true;
         return data;
@@ -407,14 +404,10 @@ export const SalesProvider = ({ children }) => {
     } catch (error) {
       console.error("Error loading sales targets:", error.message);
       setError(error.message);
-      setSalesTargets({}); // Reset to empty object on error
+      setSalesTargets({}); 
       return null;
     } finally {
       setLoadingFor("salesTargets", false);
-      console.log(
-        "loadSalesTargets operation completed. Success:",
-        operationSuccess
-      );
     }
   };
 
@@ -467,8 +460,6 @@ export const SalesProvider = ({ children }) => {
         return null;
       }
 
-      console.log("Updating Sales Target: ", targetData);
-
       const updatedTarget = await updateSalesTarget(targetData, token);
 
       if (updatedTarget) {
@@ -477,7 +468,6 @@ export const SalesProvider = ({ children }) => {
         const month = (new Date().getMonth() + 1).toString().padStart(2, "0");
         await loadSalesTargets({ year, month });
 
-        console.log("Sales target updated successfully:", updatedTarget);
         operationSuccess = true;
         return updatedTarget;
       } else {
@@ -495,6 +485,64 @@ export const SalesProvider = ({ children }) => {
         "createOrUpdateSalesTarget operation completed. Success:",
         operationSuccess
       );
+    }
+  };
+
+  const deleteSalesTarget = async (targetId) => {
+    let operationSuccess = false;
+  
+    try {
+      setLoadingFor("deleteSalesTarget", true);
+      setError(null);
+  
+      if (!targetId) {
+        console.error("Error: targetId is empty or undefined");
+        setError("Target ID is missing");
+        return null;
+      }
+  
+  
+      const result = await deleteSalesTargetApi(targetId, token);
+  
+      if (result) {
+        setSalesTargets(prev => {
+          if (!prev || !prev.allTargets) return prev;
+          
+          const updatedTargets = prev.allTargets.filter(target => {
+            // The target ID is in format "targetType-period"
+            const id = `${target.targetType}-${target.period}`;
+            return id !== targetId;
+          });
+          
+          // Also update the summary if the deleted target was in there
+          const updatedSummary = { ...prev.summary };
+          if (updatedSummary[targetId]) {
+            delete updatedSummary[targetId];
+          }
+          
+          // Return the updated state
+          return {
+            ...prev,
+            allTargets: updatedTargets,
+            summary: updatedSummary
+          };
+        });
+  
+        console.log("Sales target deleted successfully:", result);
+        operationSuccess = true;
+        return result;
+      } else {
+        console.error("Error: No response received from API");
+        setError("Failed to delete sales target");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error deleting sales target:", error.message);
+      setError(error.message);
+      return null;
+    } finally {
+      setLoadingFor("deleteSalesTarget", false);
+      console.log("deleteSalesTarget operation completed. Success:", operationSuccess);
     }
   };
 
@@ -555,7 +603,8 @@ export const SalesProvider = ({ children }) => {
       salesTargetsByRange: loadingStates.salesTargetsByRange,
       createSale: loadingStates.createSale,
       updateSalesTarget: loadingStates.updateSalesTarget,
-      // Add a general loading state for backwards compatibility
+      deleteSalesTarget: loadingStates.deleteSalesTarget,
+
       any: Object.values(loadingStates).some(Boolean),
     },
 
@@ -572,6 +621,7 @@ export const SalesProvider = ({ children }) => {
     loadSalesTargetsByRange,
     createOrUpdateSalesTarget,
     refreshDashboard: loadDashboardData,
+    deleteSalesTarget,
   };
 
   return (

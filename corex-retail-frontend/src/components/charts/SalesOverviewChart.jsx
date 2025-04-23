@@ -62,10 +62,8 @@ export function SalesOverviewChart() {
     };
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Process the data when it's available
   useEffect(() => {
     if (!salesByDateMonthly || !salesTargetsByRange) return;
 
@@ -76,13 +74,11 @@ export function SalesOverviewChart() {
         } months of data`
       );
 
-      // Create targets map by month from summary object
       const targets = {};
 
       if (salesTargetsByRange.summary) {
         Object.entries(salesTargetsByRange.summary).forEach(([key, value]) => {
           if (key.startsWith("monthly-")) {
-            // Extract the YYYY-MM part from "monthly-YYYY-MM"
             const monthKey = key.substring(8);
             targets[monthKey] = value.target;
           }
@@ -91,7 +87,6 @@ export function SalesOverviewChart() {
 
       console.log("[SalesOverviewChart] Monthly targets:", targets);
 
-      // Map the monthly data to chart data
       const chartArray = salesByDateMonthly.map((monthData) => {
         const monthKey = monthData.month;
         return {
@@ -184,7 +179,11 @@ export function SalesOverviewChart() {
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
+          <XAxis
+            dataKey="month"
+            tickFormatter={(tick) => format(new Date(`${tick}-01`), "MMM yyyy")}
+          />
+
           <YAxis
             domain={[0, yAxisMax]}
             tickFormatter={(value) =>

@@ -24,7 +24,6 @@ function SalesDashboard() {
   // Load dashboard data when component mounts
   useEffect(() => {
     refreshDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Process dashboard data when it changes
@@ -136,7 +135,7 @@ function SalesDashboard() {
                     dashboardData.today.percentChange > 0 ? "+" : ""
                   }${dashboardData.today.percentChange.toFixed(
                     1
-                  )}% from yesterday`
+                  )}% from Last Month`
                 : "No change data available"}
             </p>
           </CardContent>
@@ -329,7 +328,7 @@ function SalesDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                Advanced analytics content will appear here
+                Advanced analytics content is in development
               </div>
             </CardContent>
           </Card>
@@ -345,7 +344,7 @@ function SalesDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                Reports content will appear here
+                Reports content is in development stage
               </div>
             </CardContent>
           </Card>

@@ -24,6 +24,10 @@ import RequestsPage from "../pages/5.More/2.Requests.jsx";
 import ProfilePage from "../pages/5.More/3.Profile.jsx";
 import NotificationsPage from "../pages/5.More/4.Notifications.jsx";
 import StockUpdateReminder from "../pages/3.Invenotry_Management/StockUpdates.jsx";
+import navLinksManager from "../components/NavLinks/navLinksManager.jsx";
+import SalesPage from "../pages/4.Sales_Management/Sales.jsx";
+import SchedulePage from "../pages/2.Rosters_Management/Schedules.jsx";
+import ActivityLogs from "../components/ActivityLogs.jsx";
 
 const logoSrc = "/assets/WebsiteLogo.jpg";
 
@@ -84,12 +88,18 @@ const salesRoutes = [
   { path: "salesDashboard", element: <SalesDashboard /> },
 ];
 
+// Sales management routes for Manager
+const salesRoutesManager = [
+  { path: "Daily", element: <SalesDaily /> },
+  { path: "Dashboard", element: <SalesDashboard /> },
+];
+
 // More Routes
 const moreRoutes = [
-  {path: "reports", element: <ReportsPage />},
-  {path: "requests", element: <RequestsPage />},
-  {path: "profile", element: <ProfilePage />},
-  {path: "notifications", element: <NotificationsPage />},
+  { path: "reports", element: <ReportsPage /> },
+  { path: "requests", element: <RequestsPage /> },
+  { path: "profile", element: <ProfilePage /> },
+  { path: "notifications", element: <NotificationsPage /> },
 ];
 
 // Admin dashboard routes
@@ -122,20 +132,45 @@ const adminRoutes = {
       path: "more",
       children: moreRoutes,
     },
-    
+  ],
+};
+
+const managerRoutes = {
+  path: "/dashboardManager",
+  element: (
+    <PrivateRoute>
+      <MainLayout logoSrc={logoSrc} navLinks={navLinksManager()} />
+    </PrivateRoute>
+  ),
+  children: [
+    { path: "", element: <DashboardManager /> }, // Default Dashboard
+    { path: "schedules", element: <SchedulePage /> }, 
+    { path: "more/activity", element: <ActivityLogs /> }, 
+    {
+      path: "staff",
+      children: staffRoutes,
+    },
+    {
+      path: "rosters",
+      children: rosterRoutes,
+    },
+    {
+      path: "inventory",
+      children: inventoryRoutes,
+    },
+    {
+      path: "sales",
+      children: salesRoutesManager,
+    },
+    {
+      path: "more",
+      children: moreRoutes,
+    },
   ],
 };
 
 // Other role dashboards
 const otherDashboards = [
-  {
-    path: "/dashboardManager",
-    element: (
-      <PrivateRoute>
-        <DashboardManager />
-      </PrivateRoute>
-    ),
-  },
   {
     path: "/dashboardStaff",
     element: (
@@ -146,7 +181,8 @@ const otherDashboards = [
   },
 ];
 
+
 // Combine all routes
-const routes = [...publicRoutes, adminRoutes, ...otherDashboards];
+const routes = [...publicRoutes, adminRoutes, managerRoutes, ...otherDashboards];
 
 export default routes;

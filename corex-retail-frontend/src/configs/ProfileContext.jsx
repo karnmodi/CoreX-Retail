@@ -85,22 +85,7 @@ export const ProfileProvider = ({ children }) => {
     }
   };
 
-  // Fetch performance data
-//   const fetchPerformanceData = async () => {
-//     if (!user || !token) return null;
-
-//     return {
-//       overall: 4.2,
-//       ratings: {
-//         productivity: 4.5,
-//         communication: 4.0,
-//         teamwork: 4.3,
-//         initiative: 3.8
-//       },
-//       lastReview: '2023-10-15'
-//     };
-//   };
-
+  
   // Update profile
   const updateUserProfile = async (profileUpdateData) => {
     if (!user || !token) return null;

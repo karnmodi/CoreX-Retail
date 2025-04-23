@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
+import { parse, format } from "date-fns";
 
 export function SalesDailyTable({ sales = [] }) {
   if (!sales || sales.length === 0) {
@@ -32,17 +32,35 @@ export function SalesDailyTable({ sales = [] }) {
         </TableHeader>
         <TableBody>
           {sales.map((sale) => {
-            const time = sale.saleDatetime 
-              ? format(new Date(sale.saleDatetime), 'HH:mm:ss')
-              : 'N/A';
-              
+            let time = "N/A";
+
+            try {
+              const dateObj =
+                sale.saleDatetime?.toDate?.() ?? 
+                (typeof sale.saleDatetime === "string"
+                  ? new Date(sale.saleDatetime)
+                  : null);
+
+              if (dateObj instanceof Date && !isNaN(dateObj)) {
+                time = format(dateObj, "HH:mm:ss");
+              }
+            } catch (err) {
+              console.error("Invalid date format:", sale.saleDatetime);
+            }
+
             return (
               <TableRow key={sale.id}>
                 <TableCell>{time}</TableCell>
-                <TableCell className="font-medium">{sale.productName}</TableCell>
+                <TableCell className="font-medium">
+                  {sale.productName}
+                </TableCell>
                 <TableCell>{sale.quantity}</TableCell>
-                <TableCell>£{sale.unitPrice ? sale.unitPrice.toFixed(2) : "0.00"}</TableCell>
-                <TableCell className="text-right">£{sale.totalAmount ? sale.totalAmount.toFixed(2) : "0.00"}</TableCell>
+                <TableCell>
+                  £{sale.unitPrice ? sale.unitPrice.toFixed(2) : "0.00"}
+                </TableCell>
+                <TableCell className="text-right">
+                  £{sale.totalAmount ? sale.totalAmount.toFixed(2) : "0.00"}
+                </TableCell>
               </TableRow>
             );
           })}

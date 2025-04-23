@@ -34,10 +34,10 @@ const navLinksAdmin = () => [
     label: "Sales",
     to: "#",
     subItems: [
-      { to: "./sales/salesDaily", label: "Daily Sales" },
-      { to: "./sales/salesTarget", label: "Sales Targets" },
-      { to: "./sales/salesOverview", label: "Sales Overview" },
       { to: "./sales/salesDashboard", label: "Sales Dashboard" },
+      { to: "./sales/salesDaily", label: "Daily Sales" },
+      { to: "./sales/salesOverview", label: "Sales Overview" },
+      { to: "./sales/salesTarget", label: "Sales Targets" },
     ],
   },
   {

@@ -51,10 +51,8 @@ export const postStaff = async (staffData, token) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(staffData), // Ensure the request is properly formatted
+      body: JSON.stringify(staffData), 
     });
-
-    console.log("✅ API Response Status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();

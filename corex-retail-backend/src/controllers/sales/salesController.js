@@ -459,7 +459,7 @@ const getSalesForHour_BE = async (req, res) => {
 const getSalesDashboardData_BE = async (req, res) => {
   try {
     // Get today's date in YYYY-MM-DD format
-    const today = new Date(2025, 2, 3);
+    const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
 
     // Get yesterday's date
@@ -818,6 +818,35 @@ const updateSalesTarget_BE = async (req, res) => {
   }
 };
 
+const deleteSalesTarget_BE = async (req, res) => {
+  try {
+    const { targetId } = req.params;
+
+    if (!targetId) {
+      return res.status(400).json({ error: "Target ID is required" });
+    }
+
+    // The document ID in the sales_targets collection is the targetId directly
+    const targetRef = db.collection("sales_targets").doc(targetId);
+    const targetDoc = await targetRef.get();
+
+    if (!targetDoc.exists) {
+      return res.status(404).json({ error: "Sales target not found" });
+    }
+
+    // Delete the target
+    await targetRef.delete();
+
+    res.status(200).json({
+      message: "Sales target deleted successfully",
+      id: targetId
+    });
+  } catch (error) {
+    console.error("Error deleting sales target:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   addSale_BE,
   getAllSales_BE,
@@ -829,5 +858,6 @@ module.exports = {
   getSalesDashboardData_BE,
   getSalesTargets_BE,
   getSalesTargetsByRange_BE,
-  updateSalesTarget_BE
+  updateSalesTarget_BE,
+  deleteSalesTarget_BE
 };
