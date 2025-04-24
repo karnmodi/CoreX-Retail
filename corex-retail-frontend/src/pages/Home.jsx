@@ -5,7 +5,7 @@ const Home = () => {
   return (
     <>
       <h1 className="text-blue-600 text-3xl font-bold">
-        Hello, <br />
+        Hello,, <br />
         Welcome to Home Page.
       </h1>
       <Footer></Footer>
