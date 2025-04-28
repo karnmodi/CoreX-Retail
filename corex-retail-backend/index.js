@@ -57,15 +57,12 @@ async function initializeApp() {
       initializeScheduledFunctions();
       console.log("✅ Automated notifications initialized");
     }
-
-    // Start server
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✅ Server running on http://0.0.0.0:${PORT}`);
+    
+    app.listen(PORT, () => {
+      console.log(`✅ Server is running on http://localhost:${PORT}`);
       console.log("✅ Firebase services are connected");
-
+      
     });
-
-
   } catch (error) {
     console.error('Application initialization failed:', error);
     console.error('Detailed error:', error);
