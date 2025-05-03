@@ -3,6 +3,7 @@ import {
   postShift,
   putShift,
   deleteShiftById,
+  getUpcomingRostersByStaffId,
 } from "../services/rostersAPI";
 
 import { getAllEmployees } from "../services/staffAPI";
@@ -29,11 +30,14 @@ export const useRoster = () => {
 export const RosterProvider = ({ children }) => {
   const [employees, setEmployees] = useState([]);
   const [shifts, setShifts] = useState([]);
+  const [upcomingShifts, setUpcomingShifts] = useState({});
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [upcomingError, setUpcomingError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
-  const { token } = useAuth();
+  const { token, currentUser } = useAuth();
   const [businessHours, setBusinessHours] = useState({
     startTime: "09:00",
     endTime: "20:00",
@@ -90,6 +94,63 @@ export const RosterProvider = ({ children }) => {
     },
     [token, lastFetched]
   );
+
+  // Fetch upcoming shifts for a specific staff member
+  const fetchUpcomingShifts = useCallback(
+    async (staffId, days = 14) => {
+      if (!staffId || !token) return;
+
+      setUpcomingLoading(true);
+      setUpcomingError(null);
+
+      try {
+        const data = await getUpcomingRostersByStaffId(staffId, days, token);
+        setUpcomingShifts(data);
+        return data;
+      } catch (err) {
+        console.error("Error fetching upcoming shifts:", err);
+        setUpcomingError(err.message || "Failed to fetch upcoming shifts");
+        setUpcomingShifts({});
+        throw err;
+      } finally {
+        setUpcomingLoading(false);
+      }
+    },
+    [token]
+  );
+
+  // Format upcoming shifts data for easier consumption
+  const getFormattedUpcomingShifts = useCallback(() => {
+    if (!upcomingShifts?.shiftsByDate) {
+      return [];
+    }
+
+    return Object.entries(upcomingShifts.shiftsByDate).map(([date, shifts]) => {
+      // Format the date for display
+      const formattedDate = new Date(date).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      // Calculate total hours for the day
+      const totalHours = shifts.reduce((total, shift) => {
+        const startTime = new Date(`${date}T${shift.startTime}`);
+        const endTime = new Date(`${date}T${shift.endTime}`);
+        const hours = (endTime - startTime) / (1000 * 60 * 60);
+        return total + hours;
+      }, 0);
+
+      return {
+        date,
+        formattedDate,
+        shifts,
+        totalHours: Math.round(totalHours * 10) / 10, // Round to 1 decimal place
+        totalShifts: shifts.length,
+      };
+    });
+  }, [upcomingShifts]);
 
   // Add new shift
   const addShift = async (employeeId, date, startTime, endTime, shiftNote) => {
@@ -149,7 +210,6 @@ export const RosterProvider = ({ children }) => {
     }
   };
 
-  // Handle selected date change - using useCallback to prevent recreation on every render
   const changeSelectedDate = useCallback(
     (date) => {
       if (!date) return;
@@ -167,24 +227,28 @@ export const RosterProvider = ({ children }) => {
     [selectedDate]
   );
 
-  // Initial load - fetch employees when the provider mounts
   useEffect(() => {
     if (token) {
       fetchEmployees();
     }
   }, [token, fetchEmployees]);
 
-  // Fetch shifts whenever selectedDate changes
   useEffect(() => {
     if (selectedDate && token) {
       fetchShiftsForDate(selectedDate);
     }
   }, [selectedDate, token, fetchShiftsForDate]);
 
-  // Clear shifts when unmounting to prevent stale data on next mount
+  useEffect(() => {
+    if (currentUser?.uid && token) {
+      fetchUpcomingShifts(currentUser.uid);
+    }
+  }, [currentUser, token, fetchUpcomingShifts]);
+
   useEffect(() => {
     return () => {
       setShifts([]);
+      setUpcomingShifts({});
       setLastFetched(null);
     };
   }, []);
@@ -198,6 +262,11 @@ export const RosterProvider = ({ children }) => {
         selectedDate,
         loading,
         error,
+        upcomingShifts,
+        upcomingLoading,
+        upcomingError,
+        fetchUpcomingShifts,
+        getFormattedUpcomingShifts,
         fetchShiftsForDate,
         addShift,
         updateShift,

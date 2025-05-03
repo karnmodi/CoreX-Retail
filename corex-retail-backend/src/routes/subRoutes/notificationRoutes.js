@@ -32,7 +32,6 @@ router.delete('/:id', notificationController.deleteNotification);
 
 router.post('/check-inventory', async (req, res) => {
     try {
-        // Verify admin role
         if (req.user.role !== 'admin') {
             return res.status(403).json({ error: 'Only administrators can trigger this check' });
         }

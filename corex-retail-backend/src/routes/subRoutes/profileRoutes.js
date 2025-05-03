@@ -10,12 +10,9 @@ const verifyToken = require("../../middleware/auth");
 const { trackActivity } = require("../../controllers/profile/ActivityController");
 
 const router = express.Router();
-
-// Setup multer for memory storage (for profile pictures)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Routes that require authentication
 router.get("/:id", verifyToken, getEmployeeById_BE);
 router.put("/:id",
   verifyToken,

@@ -47,29 +47,29 @@ async function createLowStockNotificationForManager(lowStockItems) {
       message: `${lowStockItems.length} inventory items are below the reorder point and need immediate restocking.`,
       type: 'system',
       priority: 'high',
-      targetRole: 'manager',
-      read: {},
+      targetRole: 'store manager',
+      read: { },
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdBy: 'system',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      action: {
-        type: 'link',
+        createdBy: 'system',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            action: {
+      type: 'link',
         destination: '../../inventory/stockUpdates',
-        label: 'View Low Stock Items'
-      },
-      details: lowStockItems.map(item => ({
-        productName: item.name,
-        currentStock: item.currentStock,
-        reorderPoint: item.reorderPoint
-      }))
-    };
+          label: 'View Low Stock Items'
+    },
+    details: lowStockItems.map(item => ({
+      productName: item.name,
+      currentStock: item.currentStock,
+      reorderPoint: item.reorderPoint
+    }))
+  };
 
-    await db.collection('notifications').add(notification);
-    return true;
-  } catch (error) {
-    console.error('Error creating low stock notification for manager:', error);
-    return false;
-  }
+  await db.collection('notifications').add(notification);
+  return true;
+} catch (error) {
+  console.error('Error creating low stock notification for manager:', error);
+  return false;
+}
 }
 
 /**

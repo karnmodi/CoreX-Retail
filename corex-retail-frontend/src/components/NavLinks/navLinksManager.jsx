@@ -19,7 +19,7 @@ const navLinksManager = () => [
     label: "More",
     to: "#",
     subItems: [
-      { to: "./reports", label: "Reports" },
+      { to: "./more/reports", label: "Reports" },
       { to: "./more/activity", label: "Activity Logs" },
       { to: "./more/profile", label: "Settings" },
       { to: "./more/notifications", label: "Notifications" },

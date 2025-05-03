@@ -39,6 +39,42 @@ export const getShiftsByDate = async (date, token) => {
   return await response.json();
 };
 
+// Fetches upcoming roster shifts for a specific staff member
+export const getUpcomingRostersByStaffId = async (staffId, days = 7, token) => {
+  if (!staffId) {
+    throw new Error('Staff ID is required');
+  }
+
+  const lookAheadDays = parseInt(days);
+  if (isNaN(lookAheadDays) || lookAheadDays < 1) {
+    throw new Error('Days parameter must be a positive number');
+  }
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/rosters/upcoming/${staffId}?days=${lookAheadDays}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const errorMessage = errorData?.error || response.statusText;
+      throw new Error(`Failed to fetch upcoming rosters: ${errorMessage}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching upcoming rosters:', error);
+    throw error;
+  }
+};
+
 
 // Create a new shift
 export const postShift = async (shiftData, token) => {

@@ -4,15 +4,10 @@ const moment = require('moment-timezone');
 const fs = require('fs');
 const path = require('path');
 
-// Import required function modules
 const inventoryFunctions = require('./subFunctions/inventoryFunctions');
 const rosterFunctions = require('./subFunctions/rosterFunctions');
 
-/**
- * Log execution details to a file
- * @param {string} jobName - Name of the scheduled job
- * @param {string} message - Detailed message to log
- */
+
 function logJobExecution(jobName, message) {
   const logDir = path.join(__dirname, '..', 'logs');
 
@@ -35,17 +30,12 @@ function logJobExecution(jobName, message) {
 
 }
 
-/**
- * Initialize and schedule all automated functions
- */
+
 function initializeScheduledFunctions() {
-  // Get timezone from environment or default to London
   const timezone = process.env.SCHEDULED_TIMEZONE;
 
-  // Log initialization
   logJobExecution('SYSTEM', 'Scheduled functions initialization started');
 
-  // Inventory Check Job
   if (process.env.ENABLE_INVENTORY_CHECK === 'true') {
     const inventoryCheckSchedule = process.env.INVENTORY_CHECK_SCHEDULE || '10 14 * * *';
 
@@ -68,7 +58,6 @@ function initializeScheduledFunctions() {
     logJobExecution('SYSTEM', `Inventory Check Job Scheduled: ${inventoryCheckSchedule}`);
   }
 
-  // Roster Check Job
   if (process.env.ENABLE_ROSTER_CHECK === 'true') {
     const rosterCheckSchedule = process.env.ROSTER_CHECK_SCHEDULE;
 

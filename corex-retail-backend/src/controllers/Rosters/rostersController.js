@@ -27,10 +27,12 @@ const addShift_BE = async (req, res) => {
     const employeeData = empDoc.data();
     const firstName = employeeData.firstName || "";
     const lastName = employeeData.lastName || "";
+    const profilePicture = employeeData.profilePicture || "";
 
     const fullEmployee = {
       uid: employeeId.uid,
-      username: `${firstName} ${lastName}`.trim()
+      username: `${firstName} ${lastName}`.trim(),
+      profilePicture: `${profilePicture}`,
     };
 
     const rosterData = {
@@ -70,7 +72,6 @@ const getShifts_BE = async (req, res) => {
     if (date) {
       queryRef = queryRef
         .where("date", "==", date)
-        // .orderBy("createdAt", "desc"); // This triggers index requirement
     } else {
       queryRef = queryRef.orderBy("createdAt", "desc");
     }
@@ -84,6 +85,68 @@ const getShifts_BE = async (req, res) => {
     res.status(200).json(shifts);
   } catch (error) {
     console.error("Error fetching shifts:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// GET upcoming rosters by staff ID
+const getUpcomingRostersByStaffId_BE = async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    const { days = 7 } = req.query; 
+
+    if (!staffId) {
+      return res.status(400).json({ error: "Staff ID is required" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + parseInt(days));
+
+    const startDateStr = today.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    const shiftsSnapshot = await db.collection("shifts")
+      .where("employeeId.uid", "==", staffId)
+      .where("date", ">=", startDateStr)
+      .where("date", "<=", endDateStr)
+      .orderBy("date", "asc") 
+      .get();
+
+    if (shiftsSnapshot.empty) {
+      return res.status(200).json({
+        message: "No upcoming shifts found for this staff member",
+        shifts: [],
+        date: startDateStr,
+        endDate: endDateStr,
+      });
+    }
+
+    const shifts = shiftsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const shiftsByDate = shifts.reduce((acc, shift) => {
+      const date = shift.date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(shift);
+      return acc;
+    }, {});
+
+    return res.status(200).json({
+      message: "Upcoming shifts retrieved successfully",
+      totalShifts: shifts.length,
+      upcomingDays: Object.keys(shiftsByDate).length,
+      shiftsByDate,
+      shifts
+    });
+  } catch (error) {
+    console.error("Error fetching upcoming shifts:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -176,6 +239,7 @@ const getWorkingEmployeesByDate_BE = async (req, res) => {
 module.exports = {
   addShift_BE,
   getShifts_BE,
+  getUpcomingRostersByStaffId_BE,
   updateShift_BE,
   deleteShift_BE,
   getWorkingEmployeesByDate_BE

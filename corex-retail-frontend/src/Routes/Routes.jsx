@@ -27,7 +27,7 @@ import StockUpdateReminder from "../pages/3.Invenotry_Management/StockUpdates.js
 import navLinksManager from "../components/NavLinks/navLinksManager.jsx";
 import SalesPage from "../pages/4.Sales_Management/Sales.jsx";
 import SchedulePage from "../pages/2.Rosters_Management/Schedules.jsx";
-import ActivityLogs from "../components/ActivityLogs.jsx";
+import ActivityLogs from "../components/Manager/ActivityLogs.jsx";
 
 const logoSrc = "/assets/WebsiteLogo.jpg";
 
