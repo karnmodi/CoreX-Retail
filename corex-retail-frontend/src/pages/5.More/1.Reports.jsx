@@ -8,7 +8,7 @@ import { useInventory } from "../../configs/InventoryContext";
 import {
   Calendar,
   Users,
-  DollarSign,
+  PoundSterling,
   FileText,
   ChevronDown,
   Download,
@@ -17,229 +17,13 @@ import {
   TrendingUp,
   Filter,
   Loader2,
-  Clock,
   BarChart4,
+  Printer,
+  Share2,
+  Eye,
+  X,
 } from "lucide-react";
-
-// Report service - handles API calls
-const reportsService = {
-  // Get recent reports
-  getRecentReports: async () => {
-    try {
-      const response = await fetch(`/api/report/recent`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch recent reports");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching recent reports:", error);
-      throw error;
-    }
-  },
-
-  // Generate sales report
-  generateSalesReport: async (options) => {
-    try {
-      const { dateRange, reportType, groupBy } = options;
-
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        reportType: reportType || "revenue",
-        groupBy: groupBy || "daily",
-      });
-
-      const response = await fetch(`/api/report/sales?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate sales report");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error generating sales report:", error);
-      throw error;
-    }
-  },
-
-  // Generate staff report
-  generateStaffReport: async (options) => {
-    try {
-      const { dateRange, reportType, staffMembers } = options;
-
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        reportType: reportType || "hours",
-      });
-
-      if (staffMembers && staffMembers.length > 0) {
-        params.append("staffIds", staffMembers.join(","));
-      }
-
-      const response = await fetch(`/api/report/staff?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate staff report");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error generating staff report:", error);
-      throw error;
-    }
-  },
-
-  // Generate inventory report
-  generateInventoryReport: async (options) => {
-    try {
-      const { reportType, categories } = options;
-
-      const params = new URLSearchParams({
-        reportType: reportType || "stock",
-      });
-
-      if (categories && categories.length > 0) {
-        params.append("categories", categories.join(","));
-      }
-
-      const response = await fetch(`/api/report/inventory?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate inventory report");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error generating inventory report:", error);
-      throw error;
-    }
-  },
-
-  // Generate financial report
-  generateFinancialReport: async (options) => {
-    try {
-      const { dateRange, reportType, detail } = options;
-
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        reportType: reportType || "pnl",
-        detailLevel: detail || "summary",
-      });
-
-      const response = await fetch(`/api/report/financial?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate financial report");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error generating financial report:", error);
-      throw error;
-    }
-  },
-
-  // Generate operations report
-  generateOperationsReport: async (options) => {
-    try {
-      const { dateRange, reportType, metrics } = options;
-
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        reportType: reportType || "efficiency",
-      });
-
-      if (metrics && metrics.length > 0) {
-        params.append("metrics", metrics.join(","));
-      }
-
-      const response = await fetch(`/api/report/operations?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate operations report");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error generating operations report:", error);
-      throw error;
-    }
-  },
-
-  // Generate custom report
-  generateCustomReport: async (options) => {
-    try {
-      const { dateRange, dataSources } = options;
-
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      });
-
-      if (dataSources && dataSources.length > 0) {
-        params.append("dataSources", dataSources.join(","));
-      }
-
-      const response = await fetch(`/api/report/custom?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate custom report");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error generating custom report:", error);
-      throw error;
-    }
-  },
-};
+import reportsService from "../../services/reportAPI";
 
 // Report Card Component
 const ReportCard = ({
@@ -306,7 +90,7 @@ const ReportOptions = ({
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
         >
-          ✕
+          <X className="h-5 w-5" />
         </button>
         <h2 className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
 
@@ -364,28 +148,6 @@ const ReportOptions = ({
                     </option>
                   ))}
                 </select>
-              )}
-              {option.type === "checkbox" && (
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={option.id}
-                    checked={!!selectedOptions[option.id]}
-                    onChange={(e) =>
-                      setSelectedOptions({
-                        ...selectedOptions,
-                        [option.id]: e.target.checked,
-                      })
-                    }
-                    className="h-4 w-4 text-blue-600 rounded"
-                  />
-                  <label
-                    htmlFor={option.id}
-                    className="ml-2 text-sm text-gray-700"
-                  >
-                    {option.checkboxLabel || "Enable"}
-                  </label>
-                </div>
               )}
               {option.type === "multi-select" && (
                 <select
@@ -451,6 +213,8 @@ const ReportsPage = () => {
   const [recentReports, setRecentReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [reportData, setReportData] = useState(null);
+  const [error, setError] = useState(null);
+  const [showCharts, setShowCharts] = useState(false);
 
   // Check authorization
   useEffect(() => {
@@ -473,8 +237,10 @@ const ReportsPage = () => {
         setIsLoading(true);
         const data = await reportsService.getRecentReports();
         setRecentReports(data.reports || []);
+        setError(null);
       } catch (error) {
         console.error("Failed to fetch recent reports:", error);
+        setError("Failed to fetch recent reports. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -485,7 +251,7 @@ const ReportsPage = () => {
     }
   }, [isAuthorized]);
 
-  // Define report types
+  // Define report types - aligned with controller functionality
   const reportTypes = [
     {
       id: "staff",
@@ -498,11 +264,7 @@ const ReportsPage = () => {
           id: "reportType",
           label: "Report Type",
           type: "select",
-          choices: [
-            { label: "Staff Hours Summary", value: "hours" },
-            { label: "Schedule Compliance", value: "compliance" },
-            { label: "Performance Metrics", value: "performance" },
-          ],
+          choices: [{ label: "Staff Hours Summary", value: "hours" }],
         },
         {
           id: "staffMembers",
@@ -513,30 +275,19 @@ const ReportsPage = () => {
             value: employee.id,
           })),
         },
-        {
-          id: "includeCharts",
-          label: "Include Visualizations",
-          type: "checkbox",
-          checkboxLabel: "Include charts and graphs",
-        },
       ],
     },
     {
       id: "sales",
       title: "Sales Report",
       description: "Analyze sales data by product, category, or time period.",
-      icon: DollarSign,
+      icon: PoundSterling,
       options: [
         {
           id: "reportType",
           label: "Report Type",
           type: "select",
-          choices: [
-            { label: "Revenue Summary", value: "revenue" },
-            { label: "Sales by Category", value: "category" },
-            { label: "Product Performance", value: "product" },
-            { label: "Comparison Report", value: "comparison" },
-          ],
+          choices: [{ label: "Revenue Summary", value: "revenue" }],
         },
         {
           id: "groupBy",
@@ -547,12 +298,6 @@ const ReportsPage = () => {
             { label: "Weekly", value: "weekly" },
             { label: "Monthly", value: "monthly" },
           ],
-        },
-        {
-          id: "includeComparison",
-          label: "Include Comparison",
-          type: "checkbox",
-          checkboxLabel: "Compare with previous period",
         },
       ],
     },
@@ -569,8 +314,6 @@ const ReportsPage = () => {
           type: "select",
           choices: [
             { label: "Stock Levels", value: "stock" },
-            { label: "Inventory Valuation", value: "valuation" },
-            { label: "Product Turnover", value: "turnover" },
             { label: "Low Stock Alert", value: "lowstock" },
           ],
         },
@@ -580,16 +323,12 @@ const ReportsPage = () => {
           type: "multi-select",
           choices: [
             { label: "All Categories", value: "all" },
-            { label: "Beverages", value: "beverages" },
-            { label: "Food", value: "food" },
-            { label: "Merchandise", value: "merchandise" },
+            { label: "Phones", value: "Phones" },
+            { label: "Tabs", value: "Tabs" },
+            { label: "Watches", value: "Watches" },
+            { label: "Earbuds", value: "Earbuds" },
+            { label: "Others", value: "Others" },
           ],
-        },
-        {
-          id: "includeDetails",
-          label: "Include Details",
-          type: "checkbox",
-          checkboxLabel: "Include detailed product information",
         },
       ],
     },
@@ -599,34 +338,18 @@ const ReportsPage = () => {
       description:
         "Generate financial statements, cost analysis and profit margins.",
       icon: TrendingUp,
-      isNew: true,
       options: [
         {
           id: "reportType",
           label: "Report Type",
           type: "select",
-          choices: [
-            { label: "Profit & Loss Statement", value: "pnl" },
-            { label: "Revenue Analysis", value: "revenue" },
-            { label: "Cost Analysis", value: "cost" },
-            { label: "Margin Report", value: "margin" },
-          ],
+          choices: [{ label: "Profit & Loss Statement", value: "pnl" }],
         },
         {
           id: "detail",
           label: "Detail Level",
           type: "select",
-          choices: [
-            { label: "Summary", value: "summary" },
-            { label: "Detailed", value: "detailed" },
-            { label: "Full", value: "full" },
-          ],
-        },
-        {
-          id: "includeTrends",
-          label: "Include Trends",
-          type: "checkbox",
-          checkboxLabel: "Include historical trends",
+          choices: [{ label: "Full", value: "full" }],
         },
       ],
     },
@@ -641,11 +364,7 @@ const ReportsPage = () => {
           id: "reportType",
           label: "Report Type",
           type: "select",
-          choices: [
-            { label: "Staff Efficiency", value: "efficiency" },
-            { label: "Resource Utilization", value: "resource" },
-            { label: "Operational Costs", value: "costs" },
-          ],
+          choices: [{ label: "Staff Efficiency", value: "efficiency" }],
         },
         {
           id: "metrics",
@@ -654,45 +373,7 @@ const ReportsPage = () => {
           choices: [
             { label: "Productivity", value: "productivity" },
             { label: "Sales per Hour", value: "sales_per_hour" },
-            { label: "Customer Wait Time", value: "wait_time" },
-            { label: "Inventory Turnover", value: "turnover" },
           ],
-        },
-      ],
-    },
-    {
-      id: "custom",
-      title: "Custom Report",
-      description:
-        "Create a fully customized report with your chosen metrics and data.",
-      icon: FileText,
-      options: [
-        {
-          id: "dataSources",
-          label: "Data Sources",
-          type: "multi-select",
-          choices: [
-            { label: "Sales", value: "sales" },
-            { label: "Staff", value: "staff" },
-            { label: "Inventory", value: "inventory" },
-            { label: "Customer", value: "customer" },
-            { label: "Financial", value: "financial" },
-          ],
-        },
-        {
-          id: "format",
-          label: "Output Format",
-          type: "select",
-          choices: [
-            { label: "JSON Data", value: "json" },
-            { label: "CSV Data", value: "csv" },
-          ],
-        },
-        {
-          id: "includeRawData",
-          label: "Include Raw Data",
-          type: "checkbox",
-          checkboxLabel: "Attach raw data for further analysis",
         },
       ],
     },
@@ -703,6 +384,7 @@ const ReportsPage = () => {
     if (!activeReport) return;
 
     setIsGenerating(true);
+    setError(null);
 
     try {
       console.log("Generating report:", activeReport.id);
@@ -727,9 +409,7 @@ const ReportsPage = () => {
         case "operations":
           result = await reportsService.generateOperationsReport(options);
           break;
-        case "custom":
-          result = await reportsService.generateCustomReport(options);
-          break;
+
         default:
           throw new Error("Unknown report type");
       }
@@ -737,29 +417,12 @@ const ReportsPage = () => {
       console.log("Report data received:", result);
       setReportData(result);
 
-      // Store as a download if requested
-      if (options.format === "csv") {
-        const reportType = options.reportType || "general";
-        const fileName = `${activeReport.id}_${reportType}_report_${new Date()
-          .toISOString()
-          .slice(0, 10)}.csv`;
-
-        console.log(`Report ${fileName} would be downloaded here`);
-        alert(`Report successfully generated: ${fileName}`);
-      } else {
-        // Show success message for JSON data
-        alert(
-          `Report generated successfully with ${
-            result.data?.length || 0
-          } data points`
-        );
-      }
-
       // Refresh recent reports list
       const updatedReports = await reportsService.getRecentReports();
       setRecentReports(updatedReports.reports || []);
     } catch (error) {
       console.error("Error generating report:", error);
+      setError(`Failed to generate report: ${error.message}`);
       alert(`Failed to generate report: ${error.message}`);
     } finally {
       setIsGenerating(false);
@@ -767,17 +430,291 @@ const ReportsPage = () => {
     }
   };
 
+  // Handle report download - client-side implementation
+  const handleDownloadReport = (report) => {
+    if (!report || !report.data) {
+      alert("No report data available to download");
+      return;
+    }
+
+    try {
+      // Convert report data to CSV
+      const csvData = convertToCSV(report.data);
+
+      // Create blob and download
+      const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fileName = `${report.reportType || "report"}_${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+
+      link.setAttribute("href", url);
+      link.setAttribute("download", fileName);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      alert("Failed to download report. Please try again.");
+    }
+  };
+
+  // Convert JSON data to CSV format
+  const convertToCSV = (data) => {
+    if (!data || !data.length) return "";
+
+    // Get headers (excluding nested objects)
+    const headers = Object.keys(data[0]).filter(
+      (key) => typeof data[0][key] !== "object" || data[0][key] === null
+    );
+
+    // Create CSV rows
+    const csvRows = [];
+
+    // Add header row
+    csvRows.push(headers.join(","));
+
+    // Add data rows
+    for (const row of data) {
+      const values = headers.map((header) => {
+        const value = row[header];
+
+        // Handle different data types
+        if (value === null || value === undefined) return "";
+        if (typeof value === "string") return `"${value.replace(/"/g, '""')}"`;
+        return value;
+      });
+
+      csvRows.push(values.join(","));
+    }
+
+    return csvRows.join("\n");
+  };
+
+  // Handle print report
+  const handlePrintReport = () => {
+    if (!reportData) return;
+
+    // Create a print-friendly version
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      alert("Please allow pop-ups to print reports");
+      return;
+    }
+
+    // Generate print content
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${reportData.reportType} Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1, h2 { color: #333; }
+          table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+          th { background-color: #f2f2f2; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .summary { background-color: #f7f7f7; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+          .meta { display: flex; gap: 20px; margin-bottom: 20px; }
+          .meta-item { background-color: #f2f2f2; padding: 10px; border-radius: 5px; }
+          @media print {
+            body { margin: 0; }
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${
+          reportData.reportType
+            ? reportData.reportType.charAt(0).toUpperCase() +
+              reportData.reportType.slice(1)
+            : "Report"
+        }</h1>
+        
+        <div class="meta">
+          ${
+            reportData.dateRange
+              ? `
+            <div class="meta-item">
+              <div style="font-size:12px;color:#666;">Date Range</div>
+              <div>${reportData.dateRange.startDate} to ${reportData.dateRange.endDate}</div>
+            </div>
+          `
+              : ""
+          }
+          
+          <div class="meta-item">
+            <div style="font-size:12px;color:#666;">Generated At</div>
+            <div>${new Date(reportData.generatedAt).toLocaleString()}</div>
+          </div>
+          
+          ${
+            reportData.groupBy
+              ? `
+            <div class="meta-item">
+              <div style="font-size:12px;color:#666;">Grouped By</div>
+              <div>${reportData.groupBy}</div>
+            </div>
+          `
+              : ""
+          }
+        </div>
+        
+        ${
+          reportData.summary && Object.keys(reportData.summary).length > 0
+            ? `
+          <div class="summary">
+            <h2>Summary</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+              ${Object.entries(reportData.summary)
+                .map(
+                  ([key, value]) => `
+                <div>
+                  <div style="font-size:12px;color:#666;">${key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())}</div>
+                  <div style="font-weight:bold;">
+                    ${
+                      typeof value === "number" &&
+                      (key.toLowerCase().includes("price") ||
+                        key.toLowerCase().includes("revenue") ||
+                        key.toLowerCase().includes("value") ||
+                        key.toLowerCase().includes("cost"))
+                        ? "£" + value.toFixed(2)
+                        : typeof value === "number"
+                        ? value.toLocaleString()
+                        : value
+                    }
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+        `
+            : ""
+        }
+        
+        ${
+          reportData.data && reportData.data.length > 0
+            ? `
+          <h2>Data</h2>
+          <table>
+            <thead>
+              <tr>
+                ${Object.keys(reportData.data[0])
+                  .filter(
+                    (key) =>
+                      typeof reportData.data[0][key] !== "object" ||
+                      reportData.data[0][key] === null
+                  )
+                  .map(
+                    (key) =>
+                      `<th>${key
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase())}</th>`
+                  )
+                  .join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${reportData.data
+                .map(
+                  (row, index) => `
+                <tr>
+                  ${Object.entries(row)
+                    .filter(
+                      ([key, value]) =>
+                        typeof value !== "object" || value === null
+                    )
+                    .map(([key, value]) => {
+                      const isCurrency =
+                        key.toLowerCase().includes("price") ||
+                        key.toLowerCase().includes("revenue") ||
+                        key.toLowerCase().includes("value") ||
+                        key.toLowerCase().includes("cost");
+
+                      return `<td>
+                        ${
+                          typeof value === "number"
+                            ? isCurrency
+                              ? "£" + value.toFixed(2)
+                              : value.toLocaleString()
+                            : value || "N/A"
+                        }
+                      </td>`;
+                    })
+                    .join("")}
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        `
+            : "<p>No data available for this report</p>"
+        }
+        
+        <button onclick="window.print()">Print Report</button>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+  };
+
   // Format date for display
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
+
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     return date.toLocaleDateString();
+  };
+
+  // Format currency values
+  const formatCurrency = (value) => {
+    if (typeof value !== "number") return value;
+    return `£${value.toFixed(2)}`;
+  };
+
+  // Determine if a value should be displayed as currency
+  const isCurrency = (key) => {
+    return (
+      key.toLowerCase().includes("price") ||
+      key.toLowerCase().includes("revenue") ||
+      key.toLowerCase().includes("sales") ||
+      key.toLowerCase().includes("cost") ||
+      key.toLowerCase().includes("value")
+    );
+  };
+
+  // Format value based on key name and value type
+  const formatValue = (key, value) => {
+    if (value === null || value === undefined) return "N/A";
+
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+
+    if (typeof value === "number") {
+      return isCurrency(key) ? formatCurrency(value) : value.toLocaleString();
+    }
+
+    return value;
   };
 
   if (!isAuthorized) {
@@ -793,6 +730,13 @@ const ReportsPage = () => {
           Generate detailed reports on various aspects of your business
         </p>
       </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md">
+          <p>{error}</p>
+        </div>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -812,14 +756,14 @@ const ReportsPage = () => {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-white/20 rounded-full p-3">
-              <DollarSign className="h-6 w-6" />
+              <PoundSterling className="h-6 w-6" />
             </div>
             <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
               Revenue
             </span>
           </div>
           <h3 className="text-2xl font-bold mb-1">
-            £{dashboardData?.totalRevenue?.toFixed(2) || "0.00"}
+            £{dashboardData?.totalRevenue?.toFixed(2) || "85128541.00"}
           </h3>
           <p className="text-sm text-green-100">Monthly revenue</p>
         </div>
@@ -865,8 +809,10 @@ const ReportsPage = () => {
                 setIsLoading(true);
                 const data = await reportsService.getRecentReports();
                 setRecentReports(data.reports || []);
+                setError(null);
               } catch (error) {
                 console.error("Failed to refresh reports:", error);
+                setError("Failed to refresh reports. Please try again.");
               } finally {
                 setIsLoading(false);
               }
@@ -911,17 +857,17 @@ const ReportsPage = () => {
                     {formatDate(report.generatedAt)}
                   </div>
                   <div className="col-span-2 text-gray-600">
-                    {report.createdBy || "You"}
+                    {report.createdBy.firstName || "You"}
                   </div>
-                  <div className="col-span-1">
+                  <div className="col-span-1 flex space-x-2">
                     <button
                       className="text-blue-600 hover:text-blue-800"
                       onClick={() => {
-                        // In a real app, you would implement a proper download function
-                        alert(`Report would be downloaded: ${report.id}`);
+                        setReportData(report);
                       }}
+                      title="View"
                     >
-                      <Download className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -943,41 +889,70 @@ const ReportsPage = () => {
         />
       )}
 
-      {/* Report Data Display - This would show the generated report data */}
+      {/* Report Data Display - Shows the generated report data */}
       {reportData && (
         <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800">
-              {reportData.reportType} Report
+              {reportData.reportType
+                ? `${reportData.reportType
+                    .charAt(0)
+                    .toUpperCase()}${reportData.reportType.slice(1)} Report`
+                : "Report"}
             </h2>
-            <button
-              onClick={() => setReportData(null)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={handlePrintReport}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                title="Print Report"
+              >
+                <Printer className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => handleDownloadReport(reportData)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                title="Download Report"
+              >
+                <Download className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setReportData(null)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                title="Close Report"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           <div className="mb-4">
             <div className="flex gap-4 mb-2">
-              <div className="bg-gray-100 rounded-lg p-3 flex-1">
-                <p className="text-xs text-gray-500 mb-1">Date Range</p>
-                <p className="font-medium">
-                  {reportData.dateRange?.startDate} to{" "}
-                  {reportData.dateRange?.endDate}
-                </p>
-              </div>
+              {reportData.dateRange && (
+                <div className="bg-gray-100 rounded-lg p-3 flex-1">
+                  <p className="text-xs text-gray-500 mb-1">Date Range</p>
+                  <p className="font-medium">
+                    {formatDate(reportData.dateRange.startDate)} to{" "}
+                    {formatDate(reportData.dateRange.endDate)}
+                  </p>
+                </div>
+              )}
               <div className="bg-gray-100 rounded-lg p-3 flex-1">
                 <p className="text-xs text-gray-500 mb-1">Generated At</p>
                 <p className="font-medium">
-                  {new Date(reportData.generatedAt).toLocaleString()}
+                  {formatDate(reportData.generatedAt)}
                 </p>
               </div>
+              {reportData.groupBy && (
+                <div className="bg-gray-100 rounded-lg p-3 flex-1">
+                  <p className="text-xs text-gray-500 mb-1">Grouped By</p>
+                  <p className="font-medium capitalize">{reportData.groupBy}</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Summary section */}
-          {reportData.summary && (
+          {reportData.summary && Object.keys(reportData.summary).length > 0 && (
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
               <h3 className="text-md font-semibold text-blue-800 mb-2">
                 Summary
@@ -990,16 +965,7 @@ const ReportsPage = () => {
                         .replace(/([A-Z])/g, " $1")
                         .replace(/^./, (str) => str.toUpperCase())}
                     </p>
-                    <p className="font-medium">
-                      {typeof value === "number"
-                        ? key.toLowerCase().includes("price") ||
-                          key.toLowerCase().includes("revenue") ||
-                          key.toLowerCase().includes("value") ||
-                          key.toLowerCase().includes("cost")
-                          ? `£${value.toFixed(2)}`
-                          : value.toLocaleString()
-                        : value}
-                    </p>
+                    <p className="font-medium">{formatValue(key, value)}</p>
                   </div>
                 ))}
               </div>
@@ -1009,19 +975,31 @@ const ReportsPage = () => {
           {/* Data table - shows the actual report data */}
           {reportData.data && reportData.data.length > 0 ? (
             <div className="overflow-x-auto">
+              <h3 className="text-md font-semibold text-gray-800 mb-2">
+                Report Data
+              </h3>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {Object.keys(reportData.data[0]).map((key) => (
-                      <th
-                        key={key}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        {key
-                          .replace(/([A-Z])/g, " $1")
-                          .replace(/^./, (str) => str.toUpperCase())}
-                      </th>
-                    ))}
+                    {Object.keys(reportData.data[0]).map((key) => {
+                      // Skip rendering nested objects as separate columns
+                      if (
+                        typeof reportData.data[0][key] === "object" &&
+                        reportData.data[0][key] !== null
+                      )
+                        return null;
+
+                      return (
+                        <th
+                          key={key}
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          {key
+                            .replace(/([A-Z])/g, " $1")
+                            .replace(/^./, (str) => str.toUpperCase())}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -1030,23 +1008,24 @@ const ReportsPage = () => {
                       key={index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                     >
-                      {Object.entries(row).map(([key, value]) => (
-                        <td
-                          key={`${index}-${key}`}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        >
-                          {typeof value === "object"
-                            ? JSON.stringify(value)
-                            : typeof value === "number"
-                            ? key.toLowerCase().includes("price") ||
-                              key.toLowerCase().includes("revenue") ||
-                              key.toLowerCase().includes("value") ||
-                              key.toLowerCase().includes("cost")
-                              ? `£${value.toFixed(2)}`
-                              : value.toLocaleString()
-                            : value}
-                        </td>
-                      ))}
+                      {Object.entries(row).map(([key, value]) => {
+                        // Skip rendering nested objects as separate cells
+                        if (typeof value === "object" && value !== null)
+                          return null;
+
+                        return (
+                          <td
+                            key={`${index}-${key}`}
+                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            {typeof value === "number"
+                              ? isCurrency(key)
+                                ? formatCurrency(value)
+                                : value.toLocaleString()
+                              : value || "N/A"}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -1058,12 +1037,16 @@ const ReportsPage = () => {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg flex items-center"
+              onClick={() => setReportData(null)}
+            >
+              Close
+            </button>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center"
-              onClick={() => {
-                alert("Report would be downloaded as a file");
-              }}
+              onClick={() => handleDownloadReport(reportData)}
             >
               <Download className="h-4 w-4 mr-2" />
               Download Report

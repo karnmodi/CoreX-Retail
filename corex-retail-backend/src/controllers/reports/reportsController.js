@@ -4,6 +4,7 @@ const db = admin.firestore();
 const getSalesReport_BE = async (req, res) => {
   try {
     const { startDate, endDate, reportType, groupBy } = req.query;
+    const userId = req.user.uid; // Get the user ID from the request
 
     if (!startDate || !endDate) {
       return res.status(400).json({ error: "Start date and end date are required" });
@@ -36,6 +37,9 @@ const getSalesReport_BE = async (req, res) => {
       summary: calculateSummary(processedData)
     };
 
+    // Save the report to collection
+    await saveReportToCollection(report, userId);
+
     res.status(200).json(report);
   } catch (error) {
     console.error("Error generating sales report:", error);
@@ -43,9 +47,11 @@ const getSalesReport_BE = async (req, res) => {
   }
 };
 
+
 const getStaffReport_BE = async (req, res) => {
   try {
     const { startDate, endDate, reportType, staffIds } = req.query;
+    const userId = req.user.uid;
 
     if (!startDate || !endDate) {
       return res.status(400).json({ error: "Start date and end date are required" });
@@ -98,6 +104,9 @@ const getStaffReport_BE = async (req, res) => {
       summary: calculateStaffSummary(processedData)
     };
 
+    // Save the report to collection
+    await saveReportToCollection(report, userId);
+
     res.status(200).json(report);
   } catch (error) {
     console.error("Error generating staff report:", error);
@@ -105,9 +114,11 @@ const getStaffReport_BE = async (req, res) => {
   }
 };
 
+
 const getInventoryReport_BE = async (req, res) => {
   try {
     const { reportType, categories } = req.query;
+    const userId = req.user.uid;
 
     const userRole = req.user.role;
     if (userRole !== 'admin' && userRole !== 'manager' && userRole !== 'store manager') {
@@ -137,6 +148,8 @@ const getInventoryReport_BE = async (req, res) => {
       data: processedData,
       summary: calculateInventorySummary(processedData, reportType)
     };
+
+    await saveReportToCollection(report, userId);
 
     res.status(200).json(report);
   } catch (error) {
@@ -186,6 +199,7 @@ const getFinancialReport_BE = async (req, res) => {
       summary: calculateFinancialSummary(processedData, reportType)
     };
 
+    await saveReportToCollection(report);
     res.status(200).json(report);
   } catch (error) {
     console.error("Error generating financial report:", error);
@@ -242,7 +256,8 @@ const getOperationsReport_BE = async (req, res) => {
       data: processedData,
       summary: calculateOperationsSummary(processedData, reportType)
     };
-
+    
+    await saveReportToCollection(report);
     res.status(200).json(report);
   } catch (error) {
     console.error("Error generating operations report:", error);
@@ -330,6 +345,34 @@ const getCustomReport_BE = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+async function saveReportToCollection(reportData, userId) {
+  try {
+    const reportDoc = {
+      reportType: reportData.reportType,
+      generatedAt: reportData.generatedAt,
+      createdBy: userId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      name: `${reportData.reportType} Report - ${new Date(reportData.generatedAt).toLocaleDateString()}`,
+      summary: reportData.summary,
+      dateRange: reportData.dateRange,
+      groupBy: reportData.groupBy || null,
+      metrics: reportData.metrics || null,
+      dataSources: reportData.dataSources || null,
+      sampleDataIds: reportData.data && reportData.data.length > 0
+        ? reportData.data.slice(0, 3).map(item => item.id || '')
+        : [],
+      dataCount: reportData.data ? reportData.data.length : 0
+    };
+
+    const reportRef = await db.collection("reports").add(reportDoc);
+    console.log(`Report saved with ID: ${reportRef.id}`);
+    return reportRef.id;
+  } catch (error) {
+    console.error("Error saving report to collection:", error);
+    return null;
+  }
+}
 
 const getRecentReports_BE = async (req, res) => {
   try {
@@ -588,16 +631,10 @@ function calculateProductivity(shifts, sales) {
 }
 
 function calculateSalesPerHour(shifts, sales) {
-  const totalShiftHours = shifts.reduce((total, shift) => {
-    const start = new Date(`${shift.date}T${shift.startTime}`);
-    const end = new Date(`${shift.date}T${shift.endTime}`);
-    return total + (end - start) / (1000 * 60 * 60);
-  }, 0);
-
-  const totalTransactions = sales.reduce((total, sale) => total + (sale.transactionCount || 0), 0);
-
-  return totalShiftHours > 0 ? totalTransactions / totalShiftHours : 0;
+  const totalSalesAmount = sales.reduce((total, sale) => total + (sale.totalAmount || 0), 0);
+  return totalSalesAmount;
 }
+
 
 function calculateRevenue(saleDay) {
   return saleDay.totalAmount || 0;
