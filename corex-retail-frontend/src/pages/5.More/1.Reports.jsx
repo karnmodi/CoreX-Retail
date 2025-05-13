@@ -722,338 +722,343 @@ const ReportsPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Reports</h1>
-        <p className="text-gray-600">
-          Generate detailed reports on various aspects of your business
-        </p>
-      </div>
-
-      {/* Error display */}
-      {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md">
-          <p>{error}</p>
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+      <div className="container mx-auto px-4 py-8 max-w-100%">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Reports</h1>
+          <p className="text-gray-600">
+            Generate detailed reports on various aspects of your business
+          </p>
         </div>
-      )}
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-full p-3">
-              <Users className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
-              Staff
-            </span>
+        {/* Error display */}
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md">
+            <p>{error}</p>
           </div>
-          <h3 className="text-2xl font-bold mb-1">{staff?.length || 0}</h3>
-          <p className="text-sm text-blue-100">Active team members</p>
-        </div>
+        )}
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-full p-3">
-              <PoundSterling className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
-              Revenue
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold mb-1">
-            £{dashboardData?.totalRevenue?.toFixed(2) || "85128541.00"}
-          </h3>
-          <p className="text-sm text-green-100">Monthly revenue</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-full p-3">
-              <Package className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
-              Inventory
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold mb-1">
-            £{inventoryValue?.currentValue?.toFixed(2) || "0.00"}
-          </h3>
-          <p className="text-sm text-purple-100">Current inventory value</p>
-        </div>
-      </div>
-
-      {/* Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reportTypes.map((report) => (
-          <ReportCard
-            key={report.id}
-            title={report.title}
-            description={report.description}
-            icon={report.icon}
-            isNew={report.isNew}
-            onClick={() => setActiveReport(report)}
-          />
-        ))}
-      </div>
-
-      {/* Recently Generated Reports */}
-      <div className="mt-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Recent Reports</h2>
-          <button
-            className="text-blue-600 text-sm flex items-center"
-            onClick={async () => {
-              try {
-                setIsLoading(true);
-                const data = await reportsService.getRecentReports();
-                setRecentReports(data.reports || []);
-                setError(null);
-              } catch (error) {
-                console.error("Failed to refresh reports:", error);
-                setError("Failed to refresh reports. Please try again.");
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-          >
-            Refresh <ChevronDown className="h-4 w-4 ml-1" />
-          </button>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-500 grid grid-cols-12 gap-4">
-            <div className="col-span-5">Report Name</div>
-            <div className="col-span-2">Type</div>
-            <div className="col-span-2">Generated</div>
-            <div className="col-span-2">Generated By</div>
-            <div className="col-span-1">Action</div>
-          </div>
-
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-              <p className="text-gray-500">Loading recent reports...</p>
-            </div>
-          ) : recentReports.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No recent reports found. Generate a report to see it here.
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {recentReports.map((report) => (
-                <div
-                  key={report.id}
-                  className="p-4 text-sm grid grid-cols-12 gap-4 items-center hover:bg-gray-50"
-                >
-                  <div className="col-span-5 font-medium text-gray-800">
-                    {report.name || `${report.reportType} Report`}
-                  </div>
-                  <div className="col-span-2 text-gray-600">
-                    {report.reportType}
-                  </div>
-                  <div className="col-span-2 text-gray-600">
-                    {formatDate(report.generatedAt)}
-                  </div>
-                  <div className="col-span-2 text-gray-600">
-                    {report.createdBy.firstName || "You"}
-                  </div>
-                  <div className="col-span-1 flex space-x-2">
-                    <button
-                      className="text-blue-600 hover:text-blue-800"
-                      onClick={() => {
-                        setReportData(report);
-                      }}
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Report Options Modal */}
-      {activeReport && (
-        <ReportOptions
-          isOpen={!!activeReport}
-          title={`Generate ${activeReport.title}`}
-          onClose={() => setActiveReport(null)}
-          onGenerate={handleGenerateReport}
-          options={activeReport.options || []}
-          loading={isGenerating}
-        />
-      )}
-
-      {/* Report Data Display - Shows the generated report data */}
-      {reportData && (
-        <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800">
-              {reportData.reportType
-                ? `${reportData.reportType
-                    .charAt(0)
-                    .toUpperCase()}${reportData.reportType.slice(1)} Report`
-                : "Report"}
-            </h2>
-            <div className="flex space-x-2">
-              <button
-                onClick={handlePrintReport}
-                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-                title="Print Report"
-              >
-                <Printer className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => handleDownloadReport(reportData)}
-                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-                title="Download Report"
-              >
-                <Download className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setReportData(null)}
-                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-                title="Close Report"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <div className="flex gap-4 mb-2">
-              {reportData.dateRange && (
-                <div className="bg-gray-100 rounded-lg p-3 flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Date Range</p>
-                  <p className="font-medium">
-                    {formatDate(reportData.dateRange.startDate)} to{" "}
-                    {formatDate(reportData.dateRange.endDate)}
-                  </p>
-                </div>
-              )}
-              <div className="bg-gray-100 rounded-lg p-3 flex-1">
-                <p className="text-xs text-gray-500 mb-1">Generated At</p>
-                <p className="font-medium">
-                  {formatDate(reportData.generatedAt)}
-                </p>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md p-6 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-white/20 rounded-full p-3">
+                <Users className="h-6 w-6" />
               </div>
-              {reportData.groupBy && (
-                <div className="bg-gray-100 rounded-lg p-3 flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Grouped By</p>
-                  <p className="font-medium capitalize">{reportData.groupBy}</p>
-                </div>
-              )}
+              <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
+                Staff
+              </span>
             </div>
+            <h3 className="text-2xl font-bold mb-1">{staff?.length || 0}</h3>
+            <p className="text-sm text-blue-100">Active team members</p>
           </div>
 
-          {/* Summary section */}
-          {reportData.summary && Object.keys(reportData.summary).length > 0 && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="text-md font-semibold text-blue-800 mb-2">
-                Summary
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(reportData.summary).map(([key, value]) => (
-                  <div key={key}>
-                    <p className="text-xs text-gray-500 mb-1">
-                      {key
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())}
-                    </p>
-                    <p className="font-medium">{formatValue(key, value)}</p>
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md p-6 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-white/20 rounded-full p-3">
+                <PoundSterling className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
+                Revenue
+              </span>
+            </div>
+            <h3 className="text-2xl font-bold mb-1">
+              £{dashboardData?.totalRevenue?.toFixed(2) || "85128541.00"}
+            </h3>
+            <p className="text-sm text-green-100">Monthly revenue</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md p-6 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-white/20 rounded-full p-3">
+                <Package className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
+                Inventory
+              </span>
+            </div>
+            <h3 className="text-2xl font-bold mb-1">
+              £{inventoryValue?.currentValue?.toFixed(2) || "0.00"}
+            </h3>
+            <p className="text-sm text-purple-100">Current inventory value</p>
+          </div>
+        </div>
+
+        {/* Reports Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reportTypes.map((report) => (
+            <ReportCard
+              key={report.id}
+              title={report.title}
+              description={report.description}
+              icon={report.icon}
+              isNew={report.isNew}
+              onClick={() => setActiveReport(report)}
+            />
+          ))}
+        </div>
+
+        {/* Recently Generated Reports */}
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-800">Recent Reports</h2>
+            <button
+              className="text-blue-600 text-sm flex items-center"
+              onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  const data = await reportsService.getRecentReports();
+                  setRecentReports(data.reports || []);
+                  setError(null);
+                } catch (error) {
+                  console.error("Failed to refresh reports:", error);
+                  setError("Failed to refresh reports. Please try again.");
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              Refresh <ChevronDown className="h-4 w-4 ml-1" />
+            </button>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-500 grid grid-cols-12 gap-4">
+              <div className="col-span-5">Report Name</div>
+              <div className="col-span-2">Type</div>
+              <div className="col-span-2">Generated</div>
+              <div className="col-span-2">Generated By</div>
+              <div className="col-span-1">Action</div>
+            </div>
+
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                <p className="text-gray-500">Loading recent reports...</p>
+              </div>
+            ) : recentReports.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No recent reports found. Generate a report to see it here.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {recentReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="p-4 text-sm grid grid-cols-12 gap-4 items-center hover:bg-gray-50"
+                  >
+                    <div className="col-span-5 font-medium text-gray-800">
+                      {report.name || `${report.reportType} Report`}
+                    </div>
+                    <div className="col-span-2 text-gray-600">
+                      {report.reportType}
+                    </div>
+                    <div className="col-span-2 text-gray-600">
+                      {formatDate(report.generatedAt)}
+                    </div>
+                    <div className="col-span-2 text-gray-600">
+                      {report.createdBy.firstName || "You"}
+                    </div>
+                    <div className="col-span-1 flex space-x-2">
+                      <button
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => {
+                          setReportData(report);
+                        }}
+                        title="View"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Report Options Modal */}
+        {activeReport && (
+          <ReportOptions
+            isOpen={!!activeReport}
+            title={`Generate ${activeReport.title}`}
+            onClose={() => setActiveReport(null)}
+            onGenerate={handleGenerateReport}
+            options={activeReport.options || []}
+            loading={isGenerating}
+          />
+        )}
+
+        {/* Report Data Display - Shows the generated report data */}
+        {reportData && (
+          <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                {reportData.reportType
+                  ? `${reportData.reportType
+                      .charAt(0)
+                      .toUpperCase()}${reportData.reportType.slice(1)} Report`
+                  : "Report"}
+              </h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handlePrintReport}
+                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                  title="Print Report"
+                >
+                  <Printer className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => handleDownloadReport(reportData)}
+                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                  title="Download Report"
+                >
+                  <Download className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setReportData(null)}
+                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                  title="Close Report"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
-          )}
 
-          {/* Data table - shows the actual report data */}
-          {reportData.data && reportData.data.length > 0 ? (
-            <div className="overflow-x-auto">
-              <h3 className="text-md font-semibold text-gray-800 mb-2">
-                Report Data
-              </h3>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {Object.keys(reportData.data[0]).map((key) => {
-                      // Skip rendering nested objects as separate columns
-                      if (
-                        typeof reportData.data[0][key] === "object" &&
-                        reportData.data[0][key] !== null
-                      )
-                        return null;
+            <div className="mb-4">
+              <div className="flex gap-4 mb-2">
+                {reportData.dateRange && (
+                  <div className="bg-gray-100 rounded-lg p-3 flex-1">
+                    <p className="text-xs text-gray-500 mb-1">Date Range</p>
+                    <p className="font-medium">
+                      {formatDate(reportData.dateRange.startDate)} to{" "}
+                      {formatDate(reportData.dateRange.endDate)}
+                    </p>
+                  </div>
+                )}
+                <div className="bg-gray-100 rounded-lg p-3 flex-1">
+                  <p className="text-xs text-gray-500 mb-1">Generated At</p>
+                  <p className="font-medium">
+                    {formatDate(reportData.generatedAt)}
+                  </p>
+                </div>
+                {reportData.groupBy && (
+                  <div className="bg-gray-100 rounded-lg p-3 flex-1">
+                    <p className="text-xs text-gray-500 mb-1">Grouped By</p>
+                    <p className="font-medium capitalize">
+                      {reportData.groupBy}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
-                      return (
-                        <th
-                          key={key}
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
+            {/* Summary section */}
+            {reportData.summary &&
+              Object.keys(reportData.summary).length > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="text-md font-semibold text-blue-800 mb-2">
+                    Summary
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(reportData.summary).map(([key, value]) => (
+                      <div key={key}>
+                        <p className="text-xs text-gray-500 mb-1">
                           {key
                             .replace(/([A-Z])/g, " $1")
                             .replace(/^./, (str) => str.toUpperCase())}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {reportData.data.map((row, index) => (
-                    <tr
-                      key={index}
-                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                    >
-                      {Object.entries(row).map(([key, value]) => {
-                        // Skip rendering nested objects as separate cells
-                        if (typeof value === "object" && value !== null)
+                        </p>
+                        <p className="font-medium">{formatValue(key, value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Data table - shows the actual report data */}
+            {reportData.data && reportData.data.length > 0 ? (
+              <div className="overflow-x-auto">
+                <h3 className="text-md font-semibold text-gray-800 mb-2">
+                  Report Data
+                </h3>
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {Object.keys(reportData.data[0]).map((key) => {
+                        // Skip rendering nested objects as separate columns
+                        if (
+                          typeof reportData.data[0][key] === "object" &&
+                          reportData.data[0][key] !== null
+                        )
                           return null;
 
                         return (
-                          <td
-                            key={`${index}-${key}`}
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          <th
+                            key={key}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                           >
-                            {typeof value === "number"
-                              ? isCurrency(key)
-                                ? formatCurrency(value)
-                                : value.toLocaleString()
-                              : value || "N/A"}
-                          </td>
+                            {key
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (str) => str.toUpperCase())}
+                          </th>
                         );
                       })}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center p-8 text-gray-500">
-              No data available for this report
-            </div>
-          )}
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {reportData.data.map((row, index) => (
+                      <tr
+                        key={index}
+                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      >
+                        {Object.entries(row).map(([key, value]) => {
+                          // Skip rendering nested objects as separate cells
+                          if (typeof value === "object" && value !== null)
+                            return null;
 
-          <div className="mt-6 flex justify-end space-x-3">
-            <button
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg flex items-center"
-              onClick={() => setReportData(null)}
-            >
-              Close
-            </button>
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center"
-              onClick={() => handleDownloadReport(reportData)}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download Report
-            </button>
+                          return (
+                            <td
+                              key={`${index}-${key}`}
+                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            >
+                              {typeof value === "number"
+                                ? isCurrency(key)
+                                  ? formatCurrency(value)
+                                  : value.toLocaleString()
+                                : value || "N/A"}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center p-8 text-gray-500">
+                No data available for this report
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg flex items-center"
+                onClick={() => setReportData(null)}
+              >
+                Close
+              </button>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center"
+                onClick={() => handleDownloadReport(reportData)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Report
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

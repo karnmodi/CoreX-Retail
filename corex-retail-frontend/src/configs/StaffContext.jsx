@@ -34,14 +34,10 @@ export const StaffProvider = ({ children }) => {
         const users = await getAllEmployees(token);
         setStaff(users);
         
-        // Calculate new staff in the last month
         const oneMonthAgo = new Date();
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         
-        // Assuming each staff member has a 'createdAt' or similar date field
-        // If your API returns a different date field, adjust accordingly
         const recentlyAddedStaff = users.filter(user => {
-          // Check if createdAt exists and is a valid date string
           if (user.createdAt) {
             const createdDate = new Date(user.createdAt);
             return createdDate >= oneMonthAgo;

@@ -37,7 +37,7 @@ export const RosterProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [upcomingError, setUpcomingError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
-  const { token, currentUser } = useAuth();
+  const { token, userData } = useAuth();
   const [businessHours, setBusinessHours] = useState({
     startTime: "09:00",
     endTime: "20:00",
@@ -240,10 +240,10 @@ export const RosterProvider = ({ children }) => {
   }, [selectedDate, token, fetchShiftsForDate]);
 
   useEffect(() => {
-    if (currentUser?.uid && token) {
-      fetchUpcomingShifts(currentUser.uid);
+    if (userData?.uid && token) {
+      fetchUpcomingShifts(userData.uid);
     }
-  }, [currentUser, token, fetchUpcomingShifts]);
+  }, [userData, token, fetchUpcomingShifts]);
 
   useEffect(() => {
     return () => {

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 
 // Simple utility function to join classnames
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -19,9 +25,35 @@ const DropdownMenu = ({ children }) => {
   const contentRef = useRef(null);
 
   return (
-    <DropdownMenuContext.Provider value={{ open, setOpen, triggerRef, contentRef }}>
+    <DropdownMenuContext.Provider
+      value={{ open, setOpen, triggerRef, contentRef }}
+    >
       <div className="relative inline-block">{children}</div>
     </DropdownMenuContext.Provider>
+  );
+};
+
+const DropdownMenuLabel = ({ children, className, ...props }) => {
+  return (
+    <div
+      className={cn(
+        "px-2 py-1.5 text-sm font-semibold text-gray-500",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+const DropdownMenuSeparator = ({ className, ...props }) => {
+  return (
+    <div
+      className={cn("my-1 h-px bg-gray-200", className)}
+      role="separator"
+      {...props}
+    />
   );
 };
 
@@ -59,19 +91,20 @@ const DropdownMenuTrigger = ({ children, asChild, className, ...props }) => {
   );
 };
 
-const DropdownMenuContent = ({ 
-  children, 
-  className, 
-  align = "center", 
+const DropdownMenuContent = ({
+  children,
+  className,
+  align = "center",
   sideOffset = 4,
-  ...props 
+  ...props
 }) => {
-  const { open, setOpen, triggerRef, contentRef } = useContext(DropdownMenuContext);
+  const { open, setOpen, triggerRef, contentRef } =
+    useContext(DropdownMenuContext);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
-        contentRef.current && 
+        contentRef.current &&
         !contentRef.current.contains(event.target) &&
         triggerRef.current &&
         !triggerRef.current.contains(event.target)
@@ -104,13 +137,13 @@ const DropdownMenuContent = ({
     const updatePosition = () => {
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const contentRect = contentRef.current.getBoundingClientRect();
-      
+
       const scrollX = window.scrollX || document.documentElement.scrollLeft;
       const scrollY = window.scrollY || document.documentElement.scrollTop;
-      
+
       let top = triggerRect.bottom + sideOffset + scrollY;
       let left = 0;
-      
+
       // Horizontal alignment
       if (align === "start") {
         left = triggerRect.left + scrollX;
@@ -118,28 +151,32 @@ const DropdownMenuContent = ({
         left = triggerRect.right - contentRect.width + scrollX;
       } else {
         // Center
-        left = triggerRect.left + (triggerRect.width / 2) - (contentRect.width / 2) + scrollX;
+        left =
+          triggerRect.left +
+          triggerRect.width / 2 -
+          contentRect.width / 2 +
+          scrollX;
       }
-      
+
       // Check if dropdown would go off-screen to the right
       if (left + contentRect.width > window.innerWidth) {
         left = window.innerWidth - contentRect.width - 10;
       }
-      
+
       // Check if dropdown would go off-screen to the left
       if (left < 0) {
         left = 10;
       }
-      
+
       contentRef.current.style.top = `${top}px`;
       contentRef.current.style.left = `${left}px`;
     };
-    
+
     updatePosition();
-    window.addEventListener('resize', updatePosition);
-    
+    window.addEventListener("resize", updatePosition);
+
     return () => {
-      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener("resize", updatePosition);
     };
   }, [open, align, sideOffset]);
 
@@ -159,12 +196,7 @@ const DropdownMenuContent = ({
   );
 };
 
-const DropdownMenuItem = ({ 
-  children, 
-  className, 
-  onSelect,
-  ...props 
-}) => {
+const DropdownMenuItem = ({ children, className, onSelect, ...props }) => {
   const { setOpen } = useContext(DropdownMenuContext);
 
   const handleClick = (e) => {
@@ -188,4 +220,11 @@ const DropdownMenuItem = ({
   );
 };
 
-export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem };
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+};

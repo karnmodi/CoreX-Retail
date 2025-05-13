@@ -9,6 +9,7 @@ const notificationRoutes = require("./subRoutes/notificationRoutes");
 const profileRoutes = require("./subRoutes/profileRoutes");
 const salesRoutes = require("./subRoutes/salesRoutes");
 const reportRoutes = require("./subRoutes/reportRoutes");
+const requestRoutes = require("./subRoutes/requestRoutes");
 
 router.get("/", (req, res) => {
   res.status(200).json({
@@ -25,6 +26,7 @@ router.use("/sales", salesRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/profile", profileRoutes);
 router.use("/report", reportRoutes);
+router.use('/requests', requestRoutes);
 
 // 404 Handler - Page Not Found
 router.use((req, res, next) => {

@@ -1,0 +1,22 @@
+{
+  "name": "CoreX Retail Solutions",
+  "short_name": "CoreX Retail",
+  "description": "A powerful and responsive retail management platform for businesses of all sizes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

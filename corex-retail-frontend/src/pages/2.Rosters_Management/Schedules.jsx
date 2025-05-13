@@ -327,7 +327,7 @@ const StaffSearchPopup = ({ isOpen, onClose, onSelectStaff, staff }) => {
 const SchedulePage = () => {
   const navigate = useNavigate();
   const { staffId } = useParams();
-  const { currentUser } = useAuth();
+  const { userData } = useAuth();
   const { staff, getStaffById } = useStaff();
   const { upcomingShifts, fetchUpcomingShifts } = useRoster();
 
@@ -343,14 +343,14 @@ const SchedulePage = () => {
 
   // Determine if current user is a manager
   useEffect(() => {
-    if (currentUser) {
+    if (userData) {
       setIsManager(
-        currentUser.role === "manager" ||
-          currentUser.role === "store manager" ||
-          currentUser.role === "admin"
+        userData.role === "manager" ||
+          userData.role === "store manager" ||
+          userData.role === "admin"
       );
     }
-  }, [currentUser]);
+  }, [userData]);
 
   // Load staff details if staffId is provided
   useEffect(() => {
@@ -406,7 +406,7 @@ const SchedulePage = () => {
   };
 
   // Used to determine who's schedule we're viewing
-  const targetStaffId = staffId || currentUser?.uid;
+  const targetStaffId = staffId || userData?.uid;
 
   // Get staff name for display
   const getDisplayName = () => {

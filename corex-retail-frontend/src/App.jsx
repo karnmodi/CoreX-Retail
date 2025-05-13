@@ -10,6 +10,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { ToastProvider } from "./components/ui/use-toast";
 import routes from "./Routes/Routes";
 import { NotificationProvider } from "./configs/notificationsContext";
+import { RequestProvider } from "./configs/RequestsContext";
 
 
 function App() {
@@ -26,7 +27,9 @@ function App() {
                 <RosterProvider>
                   <SalesProvider>
                     <NotificationProvider>
+                      <RequestProvider>
                       <RouterProvider router={router} />
+                      </RequestProvider>
                     </NotificationProvider>
                   </SalesProvider>
                 </RosterProvider>

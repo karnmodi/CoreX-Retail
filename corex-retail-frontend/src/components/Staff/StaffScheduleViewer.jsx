@@ -21,10 +21,10 @@ const StaffScheduleViewer = ({ staffId }) => {
     getFormattedUpcomingShifts
   } = useRoster();
   
-  const { currentUser } = useAuth();
+  const { userData } = useAuth();
   
   // Use provided staffId or fall back to current user
-  const userIdToFetch = staffId || (currentUser?.uid);
+  const userIdToFetch = staffId || (userData?.uid);
   
   const [currentView, setCurrentView] = useState("week");
   const [lookAheadDays, setLookAheadDays] = useState(14);

@@ -1,4 +1,3 @@
-// src/components/notifications/CreateNotification.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';

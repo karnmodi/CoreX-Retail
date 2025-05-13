@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from '../components/Header';
+import Header from './Header';
 import { Menu } from 'lucide-react'; 
 import '../css/mainLayout.css';
-import Sidebar from '../components/sidebar';
+import Sidebar from './sidebar';
 
 const MainLayout = ({ navLinks, buttons }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

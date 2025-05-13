@@ -128,22 +128,7 @@ function Loginn() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="RememberMe"
-                    name="remember-me"
-                    type="checkbox"
-                    className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300"
-                    disabled={loading}
-                  />
-                  <label
-                    htmlFor="RememberMe"
-                    className="ml-2 text-sm text-gray-600"
-                  >
-                    Remember me
-                  </label>
-                </div>
+              <div className="flex items-center justify-end">
 
                 <div className="text-sm">
                   <button

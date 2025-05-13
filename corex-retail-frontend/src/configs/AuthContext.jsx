@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error("Error fetching user data:", error.message);
         }
-      }else{
+      } else {
         setUser(null);
       }
       setLoading(false);
@@ -57,36 +57,37 @@ export const AuthProvider = ({ children }) => {
   const loginwithEmailPassword = async (email, password) => {
     try {
       // Firebase authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user;
       const firebaseToken = await user.getIdToken();
-  
-      // API call with better error handling
+
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          // Adding Accept header to explicitly request JSON
-          "Accept": "application/json"
+          Accept: "application/json",
         },
         body: JSON.stringify({ firebaseToken }),
       });
-  
-      // Check response type before parsing
+
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        // Log the actual response text for debugging
         const text = await response.text();
         console.error("Received non-JSON response:", text);
         throw new Error(`Expected JSON response but got ${contentType}`);
       }
-  
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Backend login failed");
-  
+
       localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("userRole", data.role);
       localStorage.setItem("firebaseToken", firebaseToken);
-  
+
       setToken(data.token);
       setUserData(data);
       return data;
@@ -145,6 +146,20 @@ export const AuthProvider = ({ children }) => {
     await signOut(auth);
   };
 
+  // Check if the user has the required role
+  const hasRole = (requiredRole) => {
+    if (!userData || !userData.role) return false;
+
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(userData.role);
+    }
+
+    return userData.role === requiredRole;
+  };
+
+  // Check if user is authenticated
+  const isAuthenticated = !!user && !!token;
+
   return (
     <AuthContext.Provider
       value={{
@@ -156,6 +171,8 @@ export const AuthProvider = ({ children }) => {
         PasswordResetEmail,
         logout,
         loading,
+        hasRole,
+        isAuthenticated,
       }}
     >
       {!loading && children}
