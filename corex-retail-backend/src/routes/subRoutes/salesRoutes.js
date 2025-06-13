@@ -11,7 +11,9 @@ const {
   getSalesTargets_BE, 
   getSalesTargetsByRange_BE,
   updateSalesTarget_BE,
-  deleteSalesTarget_BE
+  deleteSalesTarget_BE,
+  getPredictionForDate_BE,
+  getAllPredictions_BE
 } = require("../../controllers/sales/salesController");
 const verifyToken = require("../../middleware/auth");
 const { trackActivity } = require("../../controllers/profile/ActivityController");
@@ -20,6 +22,10 @@ const router = express.Router();
 
 // Dashboard data endpoint
 router.get("/dashboard", verifyToken,  getSalesDashboardData_BE);
+
+// Prediction endpoints
+router.get("/predictions/all", verifyToken, getAllPredictions_BE);
+router.get("/predictions/:date", verifyToken, getPredictionForDate_BE);
 
 // Sales endpoints
 router.post("/", verifyToken, trackActivity(
@@ -48,5 +54,7 @@ router.post("/targets", verifyToken, trackActivity(
   (req) => 'User updated a sales target'
 ), updateSalesTarget_BE);
 router.delete('/targets/:targetId(*)' , verifyToken, deleteSalesTarget_BE);
+
+
 
 module.exports = router;

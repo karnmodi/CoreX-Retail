@@ -28,6 +28,7 @@ const RosterManagementPage = () => {
     addShift,
     updateShift,
     deleteShift,
+    error,
   } = useRoster();
 
   useEffect(() => {
@@ -180,7 +181,7 @@ const RosterManagementPage = () => {
       });
       alert("Shift Added Successfully");
     } else {
-      alert("Failed to add shift");
+      alert (error || "Failed to add shift");
     }
   };
 
@@ -219,7 +220,7 @@ const RosterManagementPage = () => {
       });
       alert("Shift modified successfully");
     } else {
-      alert("Failed to update shift");
+      alert(error || "Failed to update shift");
     }
   };
 
@@ -236,7 +237,7 @@ const RosterManagementPage = () => {
       alert("Shift deleted successfully");
 
       if (!result.success) {
-        alert("Failed to delete shift");
+        alert(error || "Failed to delete shift");
       }
     }
   };

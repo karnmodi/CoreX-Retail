@@ -1,330 +1,477 @@
-
 const fs = require('fs');
 const path = require('path');
 const { parse } = require('csv-parse');
 const admin = require('firebase-admin');
 const serviceAccount = require('../serviceAccountKey.json');
-const { prepareSalesRecord, validateSalesRecord } = require('../../models/salesSchema');
+const { prepareSalesItem, validateSalesItem } = require('../../models/salesSchema');
+const readline = require('readline');
 
-// Initialize Firebase with the service account
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
 
-// Get Firestore instance
 const db = admin.firestore();
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+// Promise wrapper for readline question
+function askQuestion(question) {
+    return new Promise(resolve => {
+        rl.question(question, answer => {
+            resolve(answer);
+        });
+    });
+}
 
 // Main function to process the import
 async function importSalesData(filePath) {
     try {
-        console.log(`Starting import from ${filePath}`);
+        console.log(`Starting import process from ${filePath}`);
+        console.log('1. Parsing CSV file...');
 
-        const csvData = fs.readFileSync(filePath, 'utf8');
+        // Read and parse CSV file
+        const records = await parseCSVFile(filePath);
 
-        const records = await new Promise((resolve, reject) => {
-            parse(csvData, {
-                columns: true,
-                trim: true,
-                skip_empty_lines: true,
-                cast: true, 
-                bom: true   
-            }, (err, records) => {
-                if (err) reject(err);
-                else resolve(records);
-            });
-        });
+        console.log(`Found ${records.length} records in CSV file`);
 
-        console.log(`Found ${records.length} records to import`);
-
+        // Log column names to identify any issues
         if (records.length > 0) {
             console.log("Column names in CSV:", Object.keys(records[0]));
         }
 
         // Prepare records for import
-        const validRecords = [];
-        const invalidRecords = [];
-
-        for (const [index, record] of records.entries()) {
-            try {
-                let dateKey = null;
-                let dateValue = null;
-
-                for (const key of Object.keys(record)) {
-                    if (key.endsWith('datetime')) {
-                        dateKey = key;
-                        dateValue = record[key];
-                        break;
-                    }
-                }               
-
-                let isDateValid = false;
-                const dateMatch = dateValue.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+)/);
-                if (dateMatch) {
-                    const [_, month, day, year, hour, minute] = dateMatch;
-                    const date = new Date(
-                        parseInt(year),
-                        parseInt(month) - 1,
-                        parseInt(day),
-                        parseInt(hour),
-                        parseInt(minute)
-                    );
-
-                    // Validate the date is a real date
-                    if (!isNaN(date.getTime())) {
-                        // Format keys in the required format
-                        const paddedMonth = String(parseInt(month)).padStart(2, '0');
-                        const paddedDay = String(parseInt(day)).padStart(2, '0');
-                        const paddedHour = String(parseInt(hour)).padStart(2, '0');
-                        const paddedMinute = String(parseInt(minute)).padStart(2, '0');
-
-                        // Set both datetime and saleDateTime for compatibility
-                        record.datetime = date;
-                        record.saleDateTime = date;
-
-                        // Set the required key fields directly
-                        record.dateKey = `${year}-${paddedMonth}-${paddedDay}`;
-                        record.hourKey = `${year}-${paddedMonth}-${paddedDay}-${paddedHour}`;
-                        record.minuteKey = `${year}-${paddedMonth}-${paddedDay}-${paddedHour}-${paddedMinute}`;
-
-                        isDateValid = true;
-                    } else {
-                        console.warn(`Invalid date created from pattern match: "${dateValue}"`);
-                    }
-                } else {
-                    console.warn(`Failed to match date pattern for: "${dateValue}"`);
-                }
-
-                // If we couldn't parse a valid date, skip this record
-                if (!isDateValid) {
-                    invalidRecords.push({
-                        record,
-                        errors: [`Could not parse valid datetime from value: "${dateValue}"`]
-                    });
-                    continue;
-                }
-
-                // For product_id
-                if (!record.productId) {
-                    for (const key of Object.keys(record)) {
-                        if (key.endsWith('product_id')) {
-                            record.productId = record[key];
-                            break;
-                        }
-                    }
-                }
-
-                // For product_name
-                if (!record.productName) {
-                    for (const key of Object.keys(record)) {
-                        if (key.endsWith('product_name')) {
-                            record.productName = record[key];
-                            break;
-                        }
-                    }
-                }
-
-                // For unit_price
-                if (!record.unitPrice) {
-                    for (const key of Object.keys(record)) {
-                        if (key.endsWith('unit_price')) {
-                            record.unitPrice = parseFloat(record[key]);
-                            break;
-                        }
-                    }
-                }
-
-                // For store_location
-                if (!record.storeLocation) {
-                    for (const key of Object.keys(record)) {
-                        if (key.endsWith('store_location')) {
-                            record.storeLocation = record[key];
-                            break;
-                        }
-                    }
-                }
-
-                // Prepare and validate the record
-                const preparedRecord = prepareSalesRecord(record);
-
-                // Double-check the time keys are still present
-                if (!preparedRecord.dateKey || !preparedRecord.hourKey || !preparedRecord.minuteKey) {
-                    console.warn(`Time keys were lost during record preparation for record ${index}`);
-                    preparedRecord.dateKey = record.dateKey;
-                    preparedRecord.hourKey = record.hourKey;
-                    preparedRecord.minuteKey = record.minuteKey;
-                }
-
-                const validation = validateSalesRecord(preparedRecord);
-
-                if (validation.valid) {
-                    // Generate transaction ID if missing
-                    if (!preparedRecord.transactionId) {
-                        preparedRecord.transactionId = `TRX-IMPORT-${Date.now()}-${index}`;
-                    }
-                    validRecords.push(preparedRecord);
-                } else {
-                    invalidRecords.push({
-                        record,
-                        errors: validation.errors
-                    });
-                }
-            } catch (error) {
-                console.error(`Error processing record at index ${index}:`, error);
-                invalidRecords.push({
-                    record,
-                    errors: [error.message]
-                });
-            }
-        }
+        console.log('2. Preparing and validating records...');
+        const { validRecords, invalidRecords } = await prepareRecords(records);
 
         console.log(`Prepared ${validRecords.length} valid records`);
         console.log(`Found ${invalidRecords.length} invalid records`);
 
+        // Save invalid records for review
         if (invalidRecords.length > 0) {
+            const invalidPath = path.join(__dirname, 'invalid_records.json');
             fs.writeFileSync(
-                path.join(__dirname, 'invalid_records.json'),
+                invalidPath,
                 JSON.stringify(invalidRecords, null, 2)
             );
-            console.log('Invalid records saved to invalid_records.json');
+            console.log(`Invalid records saved to ${invalidPath}`);
         }
 
         if (validRecords.length === 0) {
             console.log('No valid records to import. Exiting.');
+            rl.close();
             return;
         }
 
-        // Confirm before proceeding
-        const readline = require('readline').createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
+        // Confirm before proceeding with upload
+        const uploadAnswer = await askQuestion(`Ready to upload ${validRecords.length} records to Firestore. Continue? (y/n) `);
 
-        readline.question(`Ready to import ${validRecords.length} records. Continue? (y/n) `, async (answer) => {
-            if (answer.toLowerCase() === 'y') {
-                await importValidRecords(validRecords);
-                console.log('Import complete!');
-            } else {
-                console.log('Import cancelled.');
-            }
-            readline.close();
-        });
+        if (uploadAnswer.toLowerCase() !== 'y') {
+            console.log('Import cancelled.');
+            rl.close();
+            return;
+        }
+
+        // Upload data to Firestore
+        console.log('3. Uploading records to Firestore...');
+        const uploadedRecords = await uploadToFirestore(validRecords);
+
+        console.log(`Successfully uploaded ${uploadedRecords.length} records to Firestore!`);
+
+        // Ask if user wants to run aggregation
+        const aggregateAnswer = await askQuestion('Do you want to run aggregation functions now? (y/n) ');
+
+        if (aggregateAnswer.toLowerCase() === 'y') {
+            console.log('4. Running aggregation functions...');
+            await runAggregations(uploadedRecords);
+            console.log('Aggregation complete!');
+        } else {
+            console.log('Aggregation skipped. You can run it later using the separate aggregation script.');
+        }
+
+        console.log('Import process complete!');
+        rl.close();
+
     } catch (error) {
         console.error('Import failed:', error);
+        rl.close();
     }
 }
 
-async function importValidRecords(records) {
-    const batchSize = 500; 
-    const batches = [];
+// Function to parse CSV file
+function parseCSVFile(filePath) {
+    return new Promise((resolve, reject) => {
+        // Read CSV file
+        const csvData = fs.readFileSync(filePath, 'utf8');
 
+        // Parse CSV data
+        parse(csvData, {
+            columns: true,
+            trim: true,
+            skip_empty_lines: true,
+            cast: true,
+            bom: true
+        }, (err, records) => {
+            if (err) reject(err);
+            else resolve(records);
+        });
+    });
+}
+
+// Function to prepare and validate records
+async function prepareRecords(records) {
+    const validRecords = [];
+    const invalidRecords = [];
+
+    for (const [index, record] of records.entries()) {
+        try {
+            // Process the datetime field
+            const processedRecord = processDateFields(record, index);
+
+            if (!processedRecord.isValid) {
+                invalidRecords.push({
+                    record,
+                    errors: [processedRecord.error]
+                });
+                continue;
+            }
+
+            // Process other fields
+            const standardizedRecord = standardizeFieldNames(processedRecord.record);
+
+            // Prepare and validate the record
+            const preparedRecord = prepareSalesItem(standardizedRecord);
+
+            // Make sure time keys are preserved
+            preserveTimeKeys(preparedRecord, standardizedRecord);
+
+            // Double-check totalAmount calculation
+            ensureTotalAmount(preparedRecord);
+
+            // Validate the record
+            const validation = validateSalesItem(preparedRecord);
+
+            if (validation.valid) {
+                // Generate transaction ID if missing
+                if (!preparedRecord.transactionId) {
+                    preparedRecord.transactionId = `TRX-IMPORT-${Date.now()}-${index}`;
+                }
+                validRecords.push(preparedRecord);
+            } else {
+                invalidRecords.push({
+                    record,
+                    errors: validation.errors
+                });
+            }
+        } catch (error) {
+            console.error(`Error processing record at index ${index}:`, error);
+            invalidRecords.push({
+                record,
+                errors: [error.message]
+            });
+        }
+    }
+
+    return { validRecords, invalidRecords };
+}
+
+// Function to process date fields
+function processDateFields(record, index) {
+    // Find the datetime field
+    let dateKey = null;
+    let dateValue = null;
+
+    for (const key of Object.keys(record)) {
+        if (key.toLowerCase().endsWith('datetime') || key.toLowerCase().endsWith('date_time')) {
+            dateKey = key;
+            dateValue = record[key];
+            break;
+        }
+    }
+
+    if (!dateKey || !dateValue) {
+        return {
+            isValid: false,
+            error: 'No datetime field found',
+            record
+        };
+    }
+
+    // Parse the date from the format: MM/DD/YYYY HH:MM
+    const dateMatch = dateValue.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+)/);
+    if (!dateMatch) {
+        return {
+            isValid: false,
+            error: `Failed to match date pattern for: "${dateValue}"`,
+            record
+        };
+    }
+
+    const [_, month, day, year, hour, minute] = dateMatch;
+    const date = new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hour),
+        parseInt(minute)
+    );
+
+    // Validate the date is a real date
+    if (isNaN(date.getTime())) {
+        return {
+            isValid: false,
+            error: `Invalid date created from pattern match: "${dateValue}"`,
+            record
+        };
+    }
+
+    // Format keys in the required format
+    const paddedMonth = String(parseInt(month)).padStart(2, '0');
+    const paddedDay = String(parseInt(day)).padStart(2, '0');
+    const paddedHour = String(parseInt(hour)).padStart(2, '0');
+    const paddedMinute = String(parseInt(minute)).padStart(2, '0');
+
+    // Set datetime fields
+    record.datetime = date;
+    record.saleDateTime = date;  // Using consistent field naming
+    record.dateKey = `${year}-${paddedMonth}-${paddedDay}`;
+    record.hourKey = `${year}-${paddedMonth}-${paddedDay}-${paddedHour}`;
+    record.minuteKey = `${year}-${paddedMonth}-${paddedDay}-${paddedHour}-${paddedMinute}`;
+
+    return {
+        isValid: true,
+        record
+    };
+}
+
+// Function to standardize field names
+function standardizeFieldNames(record) {
+    // Create a new record with standardized field names
+    const standardized = { ...record };
+
+    // Map various column formats to standard field names
+    const fieldMappings = [
+        { suffix: 'product_id', standard: 'productId' },
+        { suffix: 'product_name', standard: 'productName' },
+        { suffix: 'unit_price', standard: 'unitPrice', process: val => parseFloat(val) },
+        { suffix: 'quantity', standard: 'quantity', process: val => parseInt(val) },
+        { suffix: 'store_location', standard: 'storeLocation' },
+        { suffix: 'total_amount', standard: 'totalAmount', process: val => parseFloat(val) },
+        { suffix: 'payment_method', standard: 'paymentMethod' }
+    ];
+
+    for (const mapping of fieldMappings) {
+        if (!standardized[mapping.standard]) {
+            for (const key of Object.keys(standardized)) {
+                const keyLower = key.toLowerCase();
+                if (keyLower.endsWith(mapping.suffix) || keyLower === mapping.suffix) {
+                    let value = standardized[key];
+                    if (mapping.process) {
+                        value = mapping.process(value);
+                    }
+                    standardized[mapping.standard] = value;
+                    break;
+                }
+            }
+        }
+    }
+
+    return standardized;
+}
+
+// Make sure time keys are preserved
+function preserveTimeKeys(preparedRecord, originalRecord) {
+    // Double-check the time keys are still present
+    if (!preparedRecord.dateKey || !preparedRecord.hourKey || !preparedRecord.minuteKey) {
+        preparedRecord.dateKey = originalRecord.dateKey;
+        preparedRecord.hourKey = originalRecord.hourKey;
+        preparedRecord.minuteKey = originalRecord.minuteKey;
+    }
+}
+
+// Ensure totalAmount is calculated
+function ensureTotalAmount(record) {
+    if ((!record.totalAmount || record.totalAmount === 0) && record.unitPrice && record.quantity) {
+        record.totalAmount = parseFloat((record.unitPrice * record.quantity).toFixed(2));
+    }
+}
+
+// Function to upload records to Firestore in parallel batches
+async function uploadToFirestore(records) {
+    const batchSize = 500; // Firestore batch size limit is 500
+    const batches = [];
+    const uploadedRecords = [];
+
+    // Split records into batches
     for (let i = 0; i < records.length; i += batchSize) {
         const batch = records.slice(i, i + batchSize);
         batches.push(batch);
     }
 
-    console.log(`Splitting import into ${batches.length} batches`);
+    console.log(`Splitting upload into ${batches.length} batches`);
 
-    for (const [batchIndex, recordBatch] of batches.entries()) {
-        console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
+    // Create a promise for each batch to allow parallel execution
+    const batchPromises = batches.map(async (recordBatch, batchIndex) => {
+        try {
+            console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
 
-        const writeBatch = db.batch();
+            const writeBatch = db.batch();
+            const batchRecords = [];
 
-        for (const record of recordBatch) {
-            const docRef = db.collection('sales').doc();
-            record.id = docRef.id;
-            writeBatch.set(docRef, record);
+            for (const record of recordBatch) {
+                const docRef = db.collection('sales').doc();
+                record.id = docRef.id;
+                writeBatch.set(docRef, record);
+                batchRecords.push({ ...record }); // Clone to avoid reference issues
+            }
+
+            await writeBatch.commit();
+            console.log(`Batch ${batchIndex + 1} committed successfully!`);
+
+            return batchRecords;
+        } catch (error) {
+            console.error(`Error processing batch ${batchIndex + 1}:`, error);
+            throw error;
+        }
+    });
+
+    // Wait for all batches to complete
+    const results = await Promise.all(batchPromises);
+
+    // Flatten the results array
+    results.forEach(batchRecords => {
+        uploadedRecords.push(...batchRecords);
+    });
+
+    return uploadedRecords;
+}
+
+// Function to run aggregations in bulk
+async function runAggregations(records) {
+    console.log(`Starting aggregation for ${records.length} records`);
+
+    // Group records by minute, hour, and date keys
+    const minuteGroups = {};
+    const hourGroups = {};
+    const dateGroups = {};
+
+    for (const record of records) {
+        // Skip records without required keys
+        if (!record.minuteKey || !record.hourKey || !record.dateKey) {
+            console.warn(`Skipping aggregation for record ${record.id}: Missing time keys`);
+            continue;
         }
 
-        await writeBatch.commit();
-        console.log(`Batch ${batchIndex + 1} committed successfully!`);
-
-        // Update aggregations for each record
-        console.log(`Updating aggregations for batch ${batchIndex + 1}`);
-        for (const record of recordBatch) {
-            await updateMinuteAggregation(record);
+        // Group by minute
+        if (!minuteGroups[record.minuteKey]) {
+            minuteGroups[record.minuteKey] = [];
         }
+        minuteGroups[record.minuteKey].push(record);
+
+        // Group by hour
+        if (!hourGroups[record.hourKey]) {
+            hourGroups[record.hourKey] = [];
+        }
+        hourGroups[record.hourKey].push(record);
+
+        // Group by date
+        if (!dateGroups[record.dateKey]) {
+            dateGroups[record.dateKey] = [];
+        }
+        dateGroups[record.dateKey].push(record);
+    }
+
+    // Process aggregation by groups
+    console.log(`Aggregating data by minute (${Object.keys(minuteGroups).length} groups)...`);
+    await processAggregationGroups("sales_by_minute", minuteGroups);
+
+    console.log(`Aggregating data by hour (${Object.keys(hourGroups).length} groups)...`);
+    await processAggregationGroups("sales_by_hour", hourGroups);
+
+    console.log(`Aggregating data by date (${Object.keys(dateGroups).length} groups)...`);
+    await processAggregationGroups("sales_by_date", dateGroups);
+}
+
+// Process aggregation groups in batches
+async function processAggregationGroups(collection, groups) {
+    const keys = Object.keys(groups);
+    const batchSize = 10;
+
+    for (let i = 0; i < keys.length; i += batchSize) {
+        const batchKeys = keys.slice(i, i + batchSize);
+        const promises = batchKeys.map(key => updateBulkAggregation(collection, key, groups[key]));
+
+        await Promise.all(promises);
+        console.log(`Processed ${Math.min(i + batchSize, keys.length)}/${keys.length} ${collection} aggregations`);
     }
 }
 
-async function updateMinuteAggregation(saleData) {
-    try {
-        // Get the relevant keys
-        const { minuteKey, hourKey, dateKey } = saleData;
-
-        if (!minuteKey || !hourKey || !dateKey) {
-            console.error("Missing time keys for aggregation");
-            return;
-        }
-
-        // Update minute aggregation
-        await updateAggregation("sales_by_minute", minuteKey, saleData);
-
-        // Update hour aggregation
-        await updateAggregation("sales_by_hour", hourKey, saleData);
-
-        // Update date aggregation
-        await updateAggregation("sales_by_date", dateKey, saleData);
-    } catch (error) {
-        console.error("Error updating minute aggregation:", error);
-    }
-}
-
-// Generic function to update an aggregation document (copied from salesController.js)
-async function updateAggregation(collection, docId, saleData) {
+// Update aggregation for a group of records with the same key
+async function updateBulkAggregation(collection, docId, records) {
     const docRef = db.collection(collection).doc(docId);
 
-    // Try to update the existing document
     try {
-        await db.runTransaction(async (transaction) => {
+        return await db.runTransaction(async (transaction) => {
             const doc = await transaction.get(docRef);
+
+            // Calculate aggregate values
+            let totalAmount = 0;
+            let totalQuantity = 0;
+            const salesArray = [];
+
+            for (const record of records) {
+                // Ensure record has totalAmount calculated
+                if ((!record.totalAmount || record.totalAmount === 0) && record.unitPrice && record.quantity) {
+                    record.totalAmount = parseFloat((record.unitPrice * record.quantity).toFixed(2));
+                }
+
+                totalAmount += (record.totalAmount || 0);
+                totalQuantity += (record.quantity || 0);
+
+                salesArray.push({
+                    id: record.id,
+                    productId: record.productId,
+                    productName: record.productName,
+                    quantity: record.quantity,
+                    unitPrice: record.unitPrice,
+                    totalAmount: record.totalAmount,
+                    storeLocation: record.storeLocation,
+                    saleDateTime: record.saleDateTime
+                });
+            }
 
             if (doc.exists) {
                 // Update existing aggregation
                 const currentData = doc.data();
 
                 transaction.update(docRef, {
-                    totalAmount: admin.firestore.FieldValue.increment(saleData.totalAmount || 0),
-                    totalQuantity: admin.firestore.FieldValue.increment(saleData.quantity || 0),
-                    transactionCount: admin.firestore.FieldValue.increment(1),
-                    sales: admin.firestore.FieldValue.arrayUnion({
-                        id: saleData.id,
-                        productId: saleData.productId,
-                        productName: saleData.productName,
-                        quantity: saleData.quantity,
-                        unitPrice: saleData.unitPrice,
-                        totalAmount: saleData.totalAmount,
-                        storeLocation: saleData.storeLocation,
-                        saleDateTime: saleData.saleDateTime
-                    }),
+                    totalAmount: admin.firestore.FieldValue.increment(totalAmount),
+                    totalQuantity: admin.firestore.FieldValue.increment(totalQuantity),
+                    transactionCount: admin.firestore.FieldValue.increment(records.length),
+                    sales: admin.firestore.FieldValue.arrayUnion(...salesArray),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             } else {
                 // Create new aggregation document
                 transaction.set(docRef, {
-                    totalAmount: saleData.totalAmount || 0,
-                    totalQuantity: saleData.quantity || 0,
-                    transactionCount: 1,
-                    sales: [{
-                        id: saleData.id,
-                        productId: saleData.productId,
-                        productName: saleData.productName,
-                        quantity: saleData.quantity,
-                        unitPrice: saleData.unitPrice,
-                        totalAmount: saleData.totalAmount,
-                        storeLocation: saleData.storeLocation,
-                        saleDateTime: saleData.saleDateTime
-                    }],
+                    totalAmount: totalAmount,
+                    totalQuantity: totalQuantity,
+                    transactionCount: records.length,
+                    sales: salesArray,
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             }
         });
     } catch (error) {
-        console.error(`Error updating ${collection} aggregation:`, error);
+        console.error(`Error updating ${collection} aggregation for ${docId}:`, error);
         throw error;
     }
 }
 
+// Get command line arguments
 const filePath = process.argv[2];
 
 if (!filePath) {

@@ -10,10 +10,33 @@ const {
 const addShift_BE = async (req, res) => {
   try {
     console.log("Incoming shift data:", req.body);
-    const { employeeId } = req.body;
+    const { employeeId, date } = req.body;
 
     if (!employeeId || !employeeId.uid) {
       return res.status(400).json({ error: "Employee UID is required in employeeId" });
+    }
+
+    if (!date) {
+      return res.status(400).json({ error: "Date is required" });
+    }
+
+    // Check if employee already has a shift on this date
+    const existingShiftQuery = await db
+      .collection("shifts")
+      .where("employeeId.uid", "==", employeeId.uid)
+      .where("date", "==", date)
+      .get();
+
+    if (!existingShiftQuery.empty) {
+      const existingShift = existingShiftQuery.docs[0].data();
+      return res.status(409).json({
+        error: "Shift already exists",
+        message: `Employee already has a shift scheduled for ${date} from ${existingShift.startTime} to ${existingShift.endTime}`,
+        existingShift: {
+          id: existingShiftQuery.docs[0].id,
+          ...existingShift
+        }
+      });
     }
 
     // Fetch employee details from Firestore
@@ -93,14 +116,14 @@ const getShifts_BE = async (req, res) => {
 const getUpcomingRostersByStaffId_BE = async (req, res) => {
   try {
     const { staffId } = req.params;
-    const { days = 7 } = req.query; 
+    const { days = 7 } = req.query;
 
     if (!staffId) {
       return res.status(400).json({ error: "Staff ID is required" });
     }
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); 
+    today.setHours(0, 0, 0, 0);
 
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + parseInt(days));
@@ -112,7 +135,7 @@ const getUpcomingRostersByStaffId_BE = async (req, res) => {
       .where("employeeId.uid", "==", staffId)
       .where("date", ">=", startDateStr)
       .where("date", "<=", endDateStr)
-      .orderBy("date", "asc") 
+      .orderBy("date", "asc")
       .get();
 
     if (shiftsSnapshot.empty) {
@@ -150,6 +173,46 @@ const getUpcomingRostersByStaffId_BE = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const getMonthlyShiftsByEmployeeId_BE = async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    const { month, year } = req.query;
+
+    if (!staffId || !month || !year) {
+      return res.status(400).json({ error: "staffId, month, and year are required" });
+    }
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr = endDate.toISOString().split('T')[0];
+
+    const shiftsSnapshot = await db.collection("shifts")
+      .where("employeeId.uid", "==", staffId)
+      .where("date", ">=", startStr)
+      .where("date", "<=", endStr)
+      .orderBy("date", "asc")
+      .get();
+
+    const shifts = shiftsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return res.status(200).json({
+      message: `Shifts for ${staffId} in ${month}/${year} retrieved successfully`,
+      total: shifts.length,
+      shifts
+    });
+  } catch (error) {
+    console.error("Error fetching monthly shifts:", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+
 
 // Update shift by ID
 const updateShift_BE = async (req, res) => {
@@ -242,5 +305,6 @@ module.exports = {
   getUpcomingRostersByStaffId_BE,
   updateShift_BE,
   deleteShift_BE,
-  getWorkingEmployeesByDate_BE
+  getWorkingEmployeesByDate_BE,
+  getMonthlyShiftsByEmployeeId_BE
 };

@@ -1,3 +1,4 @@
+// Updated salesSchema.js
 const firebase = require('firebase-admin');
 
 const salesSchema = {
@@ -18,7 +19,7 @@ const salesSchema = {
     enum: ['Phones', 'Tabs', 'Watches', 'Earbuds', 'Others'],
     default: 'Others'
   },
-  
+
   // Transaction Information
   quantity: {
     type: 'number',
@@ -36,9 +37,16 @@ const salesSchema = {
     type: 'number',
     required: true,
     min: 0,
-    default: 0.0
+    default: 0.0,
+    calculated: true,
+    calculate: (item) => {
+      if (item.unitPrice && item.quantity) {
+        return parseFloat((item.unitPrice * item.quantity).toFixed(2));
+      }
+      return 0;
+    }
   },
-  
+
   // Location and Payment Info
   storeLocation: {
     type: 'string',
@@ -51,9 +59,9 @@ const salesSchema = {
     enum: ['Cash', 'Credit Card', 'Debit Card', 'Mobile Payment', 'Other'],
     default: 'Cash'
   },
+
   
-  // Time-related fields for aggregations
-  saleDatetime: {
+  saleDatetime  : {  
     type: 'timestamp',
     required: true,
     default: () => firebase.firestore.FieldValue.serverTimestamp()
@@ -73,14 +81,14 @@ const salesSchema = {
     required: true,
     default: ''
   },
-  
+
   // Identifiers
   transactionId: {
     type: 'string',
     required: true,
     default: ''
   },
-  
+
   // Timestamps
   createdAt: {
     type: 'timestamp',
@@ -113,6 +121,9 @@ function validateSalesItem(item) {
 
   for (const [field, config] of Object.entries(salesSchema)) {
     if (field === 'id') continue;
+
+    // Skip validation for calculated fields
+    if (config.calculated) continue;
 
     if (config.required && (item[field] === undefined || item[field] === null)) {
       errors.push(`${field} is required`);
@@ -152,31 +163,41 @@ function validateSalesItem(item) {
 function prepareSalesItem(itemData) {
   const item = createDefaultSalesItem();
 
+  // First pass: Copy all non-calculated fields
   for (const [key, value] of Object.entries(itemData)) {
     if (value !== undefined && value !== null) {
-      if (salesSchema[key] && salesSchema[key].type === 'number' && typeof value !== 'number') {
-        item[key] = parseFloat(value) || salesSchema[key].default;
-      } else {
-        item[key] = value;
+      if (salesSchema[key] && !salesSchema[key].calculated) {
+        if (salesSchema[key].type === 'number' && typeof value !== 'number') {
+          item[key] = parseFloat(value) || salesSchema[key].default;
+        } else {
+          item[key] = value;
+        }
       }
     }
   }
 
-  // Generate time-based keys if not provided
-  if (itemData.saleDatetime && (!itemData.dateKey || !itemData.hourKey || !itemData.minuteKey)) {
-    const date = new Date(itemData.saleDatetime);
-    
-    if (!itemData.dateKey) {
-      item.dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+  // Second pass: Handle all calculated fields
+  for (const [field, config] of Object.entries(salesSchema)) {
+    if (config.calculated && config.calculate) {
+      item[field] = config.calculate(item);
     }
-    
-    if (!itemData.hourKey) {
-      const hours = date.getHours().toString().padStart(2, '0');
+  }
+
+  // Generate time-based keys if not provided
+  if (item.saleDatetime   && (!item.dateKey || !item.hourKey || !item.minuteKey)) {
+    const date = new Date(item.saleDatetime  );
+
+    if (!item.dateKey) {
+      item.dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    }
+
+    if (!item.hourKey) {
+      const hours = date.getUTCHours().toString().padStart(2, '0');
       item.hourKey = `${item.dateKey}-${hours}`;
     }
-    
-    if (!itemData.minuteKey) {
-      const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    if (!item.minuteKey) {
+      const minutes = date.getUTCMinutes().toString().padStart(2, '0');
       item.minuteKey = `${item.hourKey}-${minutes}`;
     }
   }

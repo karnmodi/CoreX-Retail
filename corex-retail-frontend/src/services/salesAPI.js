@@ -177,7 +177,6 @@ export const getSalesByDate = async (dateParams, token) => {
 // Get sales for a specific date
 export const getSalesForDate = async (date, token) => {
   try {
-    console.log(`Fetching sales for date: ${date}`);
 
     const response = await fetch(`${API_BASE_URL}/sales/date/${date}`, {
       method: "GET",
@@ -355,19 +354,16 @@ export const updateSalesTarget = async (targetData, token) => {
       throw new Error("Cannot send empty target data");
     }
 
-    // Ensure targetType is valid
     if (!['daily', 'monthly', 'quarterly', 'yearly'].includes(targetData.targetType)) {
       console.error("🚨 Error: Invalid targetType in data:", targetData.targetType);
       throw new Error("targetType must be one of: daily, monthly, quarterly, yearly");
     }
 
-    // Ensure period is formatted correctly based on targetType
     if (!targetData.period) {
       console.error("🚨 Error: Missing period in target data");
       throw new Error("period is required for target data");
     }
 
-    // Ensure amount is present and is a number
     if (typeof targetData.amount !== 'number' || isNaN(targetData.amount)) {
       console.error("🚨 Error: Invalid or missing amount in target data");
       throw new Error("amount must be a valid number");
@@ -462,6 +458,72 @@ export const deleteSalesTarget = async (targetId, token) => {
     return data;
   } catch (error) {
     console.error("❌ Error in deleteSalesTarget:", error.message);
+    throw error;
+  }
+};
+
+// New functions for sales predictions
+
+// Get prediction for a specific date
+export const getPredictionForDate = async (date, token) => {
+  try {
+    console.log(`Fetching prediction for date: ${date}`);
+
+    const response = await fetch(`${API_BASE_URL}/sales/predictions/${date}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error("Prediction API error response:", errorDetails);
+      throw new Error(`Failed to fetch prediction: ${errorDetails}`);
+    }
+
+    const data = await response.json();
+    console.log(`Received prediction data for ${date}`);
+    return data;
+  } catch (error) {
+    console.error("Error in getPredictionForDate:", error);
+    throw error;
+  }
+};
+
+// Get all predictions with optional date range filtering
+export const getAllPredictions = async (dateParams, token) => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (dateParams) {
+      if (dateParams.startDate) queryParams.append('startDate', dateParams.startDate);
+      if (dateParams.endDate) queryParams.append('endDate', dateParams.endDate);
+    }
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    console.log(`Fetching all predictions with query parameters: ${queryString}`);
+
+    const response = await fetch(`${API_BASE_URL}/sales/predictions/all${queryString}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error("Predictions API error response:", errorDetails);
+      throw new Error(`Failed to fetch predictions: ${errorDetails}`);
+    }
+
+    const data = await response.json();
+    console.log(`Received predictions: ${data.predictions?.length || 0} records`);
+    return data;
+  } catch (error) {
+    console.error("Error in getAllPredictions:", error);
     throw error;
   }
 };

@@ -61,7 +61,7 @@ export function SalesTargetsTable({ targets = [], onEditTarget }) {
     const parts = period.split("-");
 
     if (targetType === "yearly") {
-      return parts[0]; // Just the year
+      return parts[0]; 
     }
 
     if (targetType === "quarterly") {
@@ -83,7 +83,6 @@ export function SalesTargetsTable({ targets = [], onEditTarget }) {
     return period;
   };
 
-  // Calculate achievement percentage using the target's summary if available
   const getTargetAchievement = (target) => {
     const achieved = target.achieved || 0;
     const percentage = target.amount > 0 ? (achieved / target.amount) * 100 : 0;

@@ -16,10 +16,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from "../../components/Loading.jsx";
 import { useStaff } from "../../configs/StaffContext.jsx";
+import { useSales } from "../../configs/SalesContext.jsx";
 import { useProfile } from "../../configs/ProfileContext.jsx";
 import NotificationHeader from "../../components/NotificationHeader.jsx";
 
-// Import icons from lucide-react
 import {
   BarChart3,
   Bell,
@@ -27,6 +27,7 @@ import {
   Clock,
   FileText,
   Package,
+  LogOut,
   PoundSterling,
   Settings,
   ShoppingBag,
@@ -54,6 +55,14 @@ const DashboardAdmin = () => {
   const [refreshingActivities, setRefreshingActivities] = useState(false);
   const { inventoryValue, formatCurrency, refreshInventoryValue } =
     useInventory();
+  const {
+    dashboardData,
+    loading,
+    error,
+    refreshDashboard,
+    salesByDate,
+    salesByDateDaily,
+  } = useSales();
   const { activityData, activityLoading, activityError, fetchActivityData } =
     useProfile();
 
@@ -107,6 +116,11 @@ const DashboardAdmin = () => {
       title: "Refreshing",
       description: "Updating inventory value data...",
     });
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
   const handleRefreshActivities = async () => {
@@ -238,10 +252,10 @@ const DashboardAdmin = () => {
               <PoundSterling className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">£89,432</div>
-              <p className="text-xs text-muted-foreground">
-                +12% from last month
-              </p>
+              <div className="text-2xl font-bold">
+                £ {dashboardData.last30Days.totalAmount}
+              </div>
+              <p className="text-xs text-muted-foreground">of Last 30 Days</p>
             </CardContent>
           </Card>
         </div>
@@ -339,127 +353,144 @@ const DashboardAdmin = () => {
 
         <h2 className="text-2xl font-bold mb-4">Reports & Requests</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Reports</CardTitle>
-              <CardDescription>Access business analytics</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="flex items-center gap-4">
-                <FileText className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Sales Reports</p>
-                  <p className="text-sm text-muted-foreground">
-                    View sales performance data
-                  </p>
+          <Link to="./more/reports" className="block">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Reports</CardTitle>
+                <CardDescription>Access business analytics</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="flex items-center gap-4">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Sales Reports</p>
+                    <p className="text-sm text-muted-foreground">
+                      View sales performance data
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Package className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Inventory Reports</p>
-                  <p className="text-sm text-muted-foreground">
-                    Track stock levels and movement
-                  </p>
+                <div className="flex items-center gap-4">
+                  <Package className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Inventory Reports</p>
+                    <p className="text-sm text-muted-foreground">
+                      Track stock levels and movement
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Users className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Staff Reports</p>
-                  <p className="text-sm text-muted-foreground">
-                    Monitor employee performance
-                  </p>
+                <div className="flex items-center gap-4">
+                  <Users className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Staff Reports</p>
+                    <p className="text-sm text-muted-foreground">
+                      Monitor employee performance
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                <Link to="./more/reports">Go to Reports</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full pointer-events-none">
+                  Go to Reports
+                </Button>
+              </CardFooter>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Requests</CardTitle>
-              <CardDescription>Manage time off and supplies</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="flex items-center gap-4">
-                <Calendar className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Time Off Requests</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage employee leave
-                  </p>
+          <Link to="./more/requests">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Requests</CardTitle>
+                <CardDescription>Manage time off and supplies</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="flex items-center gap-4">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Time Off Requests</p>
+                    <p className="text-sm text-muted-foreground">
+                      Manage employee leave
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Supply Requests</p>
-                  <p className="text-sm text-muted-foreground">
-                    Handle inventory orders
-                  </p>
+                <div className="flex items-center gap-4">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Supply Requests</p>
+                    <p className="text-sm text-muted-foreground">
+                      Handle inventory orders
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <FileText className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Other Requests</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage miscellaneous requests
-                  </p>
+                <div className="flex items-center gap-4">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Other Requests</p>
+                    <p className="text-sm text-muted-foreground">
+                      Manage miscellaneous requests
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                <Link to="./more/requests">Go to Requests</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full">Go to Requests</Button>
+              </CardFooter>
+            </Card>
+          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Notifications</CardTitle>
-              <CardDescription>View your alerts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-4">
-                <Bell className="h-12 w-12 text-primary/50" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                <Link to="./more/notifications">Go to Notifications</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+          <Link to="./more/notifications">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Notifications</CardTitle>
+                <CardDescription>View your alerts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-4">
+                  <Bell className="h-12 w-12 text-primary/50" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full">Go to Notifications</Button>
+              </CardFooter>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Profile</CardTitle>
-              <CardDescription>Manage your information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-4">
-                <User className="h-12 w-12 text-primary/50" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                <Link to="./more/profile">Go to Profile</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+          <Link to="./more/profile">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Profile</CardTitle>
+                <CardDescription>Manage your information</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-4">
+                  <User className="h-12 w-12 text-primary/50" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full">Go to Profile</Button>
+              </CardFooter>
+            </Card>
+          </Link>
 
-        <div className="flex justify-center">
-          <LogoutButton />
+          <Card
+            onClick={handleLogout}
+            className="cursor-pointer hover:shadow-md hover:bg-red-100 transition-all rounded-xl border p-6"
+          >
+            <CardContent className="flex flex-col items-center justify-between h-full">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold mb-1">Logout</h2>
+                <p className="text-sm text-muted-foreground">
+                  Sign out of your account
+                </p>
+              </div>
+
+              <LogOut className="h-12 w-12 my-4 -center" />
+              <Button variant="destructive" onClick={handleLogout}>
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

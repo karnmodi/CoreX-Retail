@@ -1,4 +1,3 @@
-// src/functions/scheduledJobs.js
 const cron = require('node-cron');
 const moment = require('moment-timezone');
 const fs = require('fs');

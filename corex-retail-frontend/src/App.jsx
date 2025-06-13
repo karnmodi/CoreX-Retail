@@ -14,7 +14,6 @@ import { RequestProvider } from "./configs/RequestsContext";
 
 
 function App() {
-  // Create router using the imported routes configuration
   const router = createBrowserRouter(routes);
 
   return (

@@ -94,13 +94,19 @@ const DropdownMenuTrigger = ({ children, asChild, className, ...props }) => {
 const DropdownMenuContent = ({
   children,
   className,
-  align = "center",
+  align = "start",
+  side = "bottom",
   sideOffset = 4,
+  alignOffset = 0,
+  avoidCollisions = true,
   ...props
 }) => {
   const { open, setOpen, triggerRef, contentRef } =
     useContext(DropdownMenuContext);
 
+  const [mounted, setMounted] = useState(false);
+
+  // Handle outside clicks and Escape key
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -130,55 +136,115 @@ const DropdownMenuContent = ({
     };
   }, [open, setOpen]);
 
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   // Position the content
   useEffect(() => {
-    if (!open || !contentRef.current || !triggerRef.current) return;
+    if (!open || !mounted || !contentRef.current || !triggerRef.current) return;
 
-    const updatePosition = () => {
+    const positionDropdown = () => {
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const contentRect = contentRef.current.getBoundingClientRect();
 
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Get scroll position
       const scrollX = window.scrollX || document.documentElement.scrollLeft;
       const scrollY = window.scrollY || document.documentElement.scrollTop;
 
-      let top = triggerRect.bottom + sideOffset + scrollY;
+      // Determine the initial position based on side and align props
+      let top = 0;
       let left = 0;
 
-      // Horizontal alignment
-      if (align === "start") {
-        left = triggerRect.left + scrollX;
-      } else if (align === "end") {
-        left = triggerRect.right - contentRect.width + scrollX;
-      } else {
-        // Center
-        left =
-          triggerRect.left +
-          triggerRect.width / 2 -
-          contentRect.width / 2 +
-          scrollX;
+      // Calculate vertical position based on side
+      if (side === "bottom") {
+        top = triggerRect.bottom + sideOffset;
+      } else if (side === "top") {
+        top = triggerRect.top - contentRect.height - sideOffset;
+      } else if (side === "right") {
+        top = triggerRect.top + triggerRect.height / 2 - contentRect.height / 2;
+        left = triggerRect.right + sideOffset;
+      } else if (side === "left") {
+        top = triggerRect.top + triggerRect.height / 2 - contentRect.height / 2;
+        left = triggerRect.left - contentRect.width - sideOffset;
       }
 
-      // Check if dropdown would go off-screen to the right
-      if (left + contentRect.width > window.innerWidth) {
-        left = window.innerWidth - contentRect.width - 10;
+      // Calculate horizontal position based on align (for top and bottom sides)
+      if (side === "top" || side === "bottom") {
+        if (align === "start") {
+          left = triggerRect.left + alignOffset;
+        } else if (align === "end") {
+          left = triggerRect.right - contentRect.width - alignOffset;
+        } else if (align === "center") {
+          left =
+            triggerRect.left + triggerRect.width / 2 - contentRect.width / 2;
+        }
       }
 
-      // Check if dropdown would go off-screen to the left
-      if (left < 0) {
-        left = 10;
+      // Avoid collisions with viewport edges if avoidCollisions is enabled
+      if (avoidCollisions) {
+        // Right edge collision detection
+        if (left + contentRect.width > viewportWidth - 8) {
+          left = Math.max(8, viewportWidth - contentRect.width - 8);
+        }
+
+        // Left edge collision detection
+        if (left < 8) {
+          left = 8;
+        }
+
+        // Bottom edge collision detection
+        if (top + contentRect.height > viewportHeight - 8) {
+          // If side is bottom, flip to top
+          if (side === "bottom") {
+            top = triggerRect.top - contentRect.height - sideOffset;
+          }
+
+          // If still colliding, position at bottom of viewport
+          if (top + contentRect.height > viewportHeight - 8) {
+            top = viewportHeight - contentRect.height - 8;
+          }
+        }
+
+        // Top edge collision detection
+        if (top < 8) {
+          // If side is top, flip to bottom
+          if (side === "top") {
+            top = triggerRect.bottom + sideOffset;
+          }
+
+          // If still colliding, position at top of viewport
+          if (top < 8) {
+            top = 8;
+          }
+        }
       }
 
-      contentRef.current.style.top = `${top}px`;
-      contentRef.current.style.left = `${left}px`;
+      // Apply the computed position (adding scroll position for absolute positioning)
+      contentRef.current.style.top = `${top + scrollY}px`;
+      contentRef.current.style.left = `${left + scrollX}px`;
     };
 
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
+    // Position initially and on window resize
+    positionDropdown();
+
+    const handleResize = () => {
+      positionDropdown();
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleResize, true);
 
     return () => {
-      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleResize, true);
     };
-  }, [open, align, sideOffset]);
+  }, [open, mounted, align, side, sideOffset, alignOffset, avoidCollisions]);
 
   if (!open) return null;
 
@@ -186,9 +252,12 @@ const DropdownMenuContent = ({
     <div
       ref={contentRef}
       className={cn(
-        "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white py-1 shadow-md",
+        "fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white p-1 shadow-lg",
         className
       )}
+      style={{ position: "fixed" }}
+      role="menu"
+      aria-orientation="vertical"
       {...props}
     >
       {children}
@@ -213,11 +282,16 @@ const DropdownMenuItem = ({ children, className, onSelect, ...props }) => {
         className
       )}
       onClick={handleClick}
+      role="menuitem"
       {...props}
     >
       {children}
     </button>
   );
+};
+
+const DropdownMenuPortal = ({ children }) => {
+  return <>{children}</>;
 };
 
 export {
@@ -227,4 +301,5 @@ export {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuPortal,
 };

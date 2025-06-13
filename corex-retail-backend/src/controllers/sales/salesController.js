@@ -4,8 +4,11 @@ const {
   validateSalesItem,
   prepareSalesItem
 } = require("../../models/salesSchema");
+const axios = require('axios');
+const { createPredictionDoc } = require('../../models/predictedSalesSchema');
+const ML_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:5000";
 
-// Add a new sale
+
 const addSale_BE = async (req, res) => {
   try {
     const saleData = prepareSalesItem(req.body);
@@ -18,12 +21,10 @@ const addSale_BE = async (req, res) => {
       });
     }
 
-    // Calculate total amount if not provided
     if (!saleData.totalAmount && saleData.unitPrice && saleData.quantity) {
       saleData.totalAmount = saleData.unitPrice * saleData.quantity;
     }
 
-    // Step 1: Fetch the inventory item
     const inventoryRef = db.collection("inventory").doc(saleData.productId);
     const inventoryDoc = await inventoryRef.get();
 
@@ -33,7 +34,6 @@ const addSale_BE = async (req, res) => {
 
     const inventoryData = inventoryDoc.data();
 
-    // Step 2: Check if there is enough stock
     if (inventoryData.currentStock < saleData.quantity) {
       return res.status(400).json({
         error: "Insufficient stock",
@@ -41,18 +41,15 @@ const addSale_BE = async (req, res) => {
       });
     }
 
-    // Step 3: Deduct stock
     await inventoryRef.update({
       currentStock: inventoryData.currentStock - saleData.quantity
     });
 
-    // Step 4: Save the sale
     const saleRef = db.collection("sales").doc();
     saleData.id = saleRef.id;
 
     await saleRef.set(saleData);
 
-    // Also add to time-based collections for aggregation
     if (saleData.dateKey) {
       const dateRef = db.collection("sales_by_date").doc(saleData.dateKey);
       await updateAggregation(dateRef, saleData);
@@ -68,6 +65,186 @@ const addSale_BE = async (req, res) => {
       await updateAggregation(minuteRef, saleData);
     }
 
+    try {
+      const saleDate = new Date(saleData.saleDatetime);
+      const currentHour = saleDate.getUTCHours();
+      const currentDate = saleData.dateKey;
+
+      console.log(`Processing sale at hour: ${currentHour} for date: ${currentDate}`);
+
+      // Calculate day of week (0-6, monday is 0, sunday is 6)
+      const dayOfWeek = (saleDate.getUTCDay() + 6) % 7;
+
+      const isWeekend = dayOfWeek >= 5 ? 1 : 0;
+
+      const month = saleDate.getMonth() + 1;
+
+      const dateRef = db.collection("sales_by_date").doc(saleData.dateKey);
+      const dateDoc = await dateRef.get();
+      let cumulativeSales = 0;
+
+      if (dateDoc.exists) {
+        const dateData = dateDoc.data();
+        cumulativeSales = dateData.totalAmount || 0;
+      }
+
+      console.log(`Cumulative sales for ${currentDate}: ${cumulativeSales}`);
+
+      const hourString = currentHour.toString().padStart(2, '0');
+      const currentHourKey = `${currentDate}-${hourString}`;
+
+      const hourlyPredictionRef = db.collection("predicted_sales_hourly").doc(currentHourKey);
+      const hourlyPredictionDoc = await hourlyPredictionRef.get();
+
+      if (!hourlyPredictionDoc.exists) {
+        const features = [
+          currentHour,
+          cumulativeSales,
+          dayOfWeek,
+          isWeekend,
+          month
+        ];
+
+        console.log(`Making prediction with features:`, features);
+
+        const response = await axios.post(`${ML_URL}/predict`, {
+  features: features
+});
+
+        const predictedSales = response.data.prediction[0];
+        console.log(`Prediction result: ${predictedSales}`);
+
+        const hourlyPredictionData = {
+          dateKey: currentDate,
+          hourKey: currentHourKey,
+          hour: currentHour,
+          cumulativeSales: cumulativeSales,
+          predictedSales: predictedSales,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        await hourlyPredictionRef.set(hourlyPredictionData);
+        console.log(`Saved hourly prediction for ${currentHourKey}`);
+
+        const dailyPredictionRef = db.collection("predicted_sales").doc(currentDate);
+        await dailyPredictionRef.set({
+          dateKey: currentDate,
+          hourKey: currentHourKey,
+          cumulativeSales: cumulativeSales,
+          predictedSales: predictedSales,
+          actualSalesEndOfDay: null,
+          accuracy: null,
+          createdAt: hourlyPredictionData.createdAt,
+          updatedAt: hourlyPredictionData.updatedAt
+        }, { merge: true });
+        console.log(`Updated daily prediction for ${currentDate}`);
+      }
+
+      if (currentHour >= 21) {
+        console.log(`Sale time ${currentHour}:00 is after business hours. Processing EOD...`);
+
+        const hourlyPredictions = await db.collection("predicted_sales_hourly")
+          .where("dateKey", "==", currentDate)
+          .orderBy("hour", "desc")
+          .limit(1)
+          .get();
+
+        let finalPrediction = null;
+
+        if (!hourlyPredictions.empty) {
+          finalPrediction = hourlyPredictions.docs[0].data();
+          console.log(`Final prediction for EOD: ${finalPrediction.predictedSales}`);
+        } else {
+          console.log(`No hourly predictions found for ${currentDate}`);
+
+          const mainPredictionRef = db.collection("predicted_sales").doc(currentDate);
+          const mainPredictionDoc = await mainPredictionRef.get();
+
+          if (mainPredictionDoc.exists) {
+            finalPrediction = mainPredictionDoc.data();
+            console.log(`Using main prediction document: ${finalPrediction.predictedSales}`);
+          }
+        }
+
+        let accuracyValue = null;
+
+        if (finalPrediction && finalPrediction.predictedSales && cumulativeSales > 0) {
+          const predictedValue = parseFloat(finalPrediction.predictedSales);
+          const actualValue = parseFloat(cumulativeSales);
+
+          const absoluteError = Math.abs(predictedValue - actualValue);
+
+          const largerValue = Math.max(predictedValue, actualValue);
+          const scaledError = (absoluteError / largerValue) * 100;
+
+          accuracyValue = Math.max(0, Math.min(100, 100 - scaledError));
+
+          console.log(`Predicted: ${predictedValue}, Actual: ${actualValue}`);
+          console.log(`Absolute error: ${absoluteError}, Scaled error: ${scaledError.toFixed(2)}%`);
+          console.log(`Adjusted accuracy: ${accuracyValue.toFixed(2)}%`);
+        } else {
+          console.log(`Cannot calculate accuracy - missing predicted or actual values`);
+        }
+
+        const eodRef = db.collection("predicted_sales_eod").doc(currentDate);
+
+        const eodData = {
+          dateKey: currentDate,
+          actualSalesEndOfDay: cumulativeSales,
+          predictedSales: finalPrediction ? finalPrediction.predictedSales : null,
+          accuracy: accuracyValue,
+          processedAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        // Save EOD data
+        await eodRef.set(eodData);
+        console.log(`Saved EOD data to predicted_sales_eod/${currentDate}`);
+
+        // Update main prediction document
+        const dailyPredictionRef = db.collection("predicted_sales").doc(currentDate);
+        await dailyPredictionRef.update({
+          actualSalesEndOfDay: cumulativeSales,
+          accuracy: accuracyValue,
+          updatedAt: new Date()
+        });
+        console.log(`Updated main prediction document with EOD data`);
+
+        const allHourlyPredictions = await db.collection("predicted_sales_hourly")
+          .where("dateKey", "==", currentDate)
+          .get();
+
+        if (!allHourlyPredictions.empty) {
+          const hourlyUpdates = allHourlyPredictions.docs.map(async (doc) => {
+            const predData = doc.data();
+            const predDocRef = db.collection("predicted_sales_hourly").doc(doc.id);
+
+            let hourlyAccuracy = null;
+            if (cumulativeSales > 0 && predData.predictedSales) {
+              const predValue = parseFloat(predData.predictedSales);
+              const actValue = parseFloat(cumulativeSales);
+
+              const absError = Math.abs(predValue - actValue);
+              const largerVal = Math.max(predValue, actValue);
+              const scaledErr = (absError / largerVal) * 100;
+              hourlyAccuracy = Math.max(0, Math.min(100, 100 - scaledErr));
+            }
+
+            return predDocRef.update({
+              actualSalesEndOfDay: cumulativeSales,
+              accuracy: hourlyAccuracy
+            });
+          });
+
+          await Promise.all(hourlyUpdates);
+          console.log(`Updated all ${allHourlyPredictions.size} hourly predictions with accuracy values`);
+        }
+      }
+    } catch (predictionError) {
+      console.error("Error in sales prediction process:", predictionError);
+    }
+
     res.status(201).json({
       message: "Sale recorded and inventory updated successfully!",
       id: saleRef.id,
@@ -79,7 +256,6 @@ const addSale_BE = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 // Helper function to update aggregation documents
 const updateAggregation = async (docRef, saleData) => {
@@ -206,41 +382,6 @@ const getAllSales_BE = async (req, res) => {
   }
 };
 
-
-// Get sales by date
-// const getSalesByDate_BE = async (req, res) => {
-//   try {
-//     const { startDate, endDate } = req.query;
-
-//     let query = db.collection("sales_by_date");
-
-//     if (startDate && endDate) {
-//       query = query.where(admin.firestore.FieldPath.documentId(), ">=", startDate)
-//         .where(admin.firestore.FieldPath.documentId(), "<=", endDate);
-//     } else if (startDate) {
-//       query = query.where(admin.firestore.FieldPath.documentId(), ">=", startDate);
-//     } else if (endDate) {
-//       query = query.where(admin.firestore.FieldPath.documentId(), "<=", endDate);
-//     }
-
-//     query = query.orderBy(admin.firestore.FieldPath.documentId(), "desc");
-
-//     const snapshot = await query.get();
-//     const salesByDate = snapshot.docs.map((doc) => ({
-//       date: doc.id,
-//       totalAmount: doc.data().totalAmount || 0,
-//       totalQuantity: doc.data().totalQuantity || 0,
-//       transactionCount: doc.data().transactionCount || 0
-//     }));
-
-//     res.json(salesByDate);
-//   } catch (error) {
-//     console.error("Error fetching sales by date:", error.message);
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-
-
 const getSalesByDate_Daily = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -273,8 +414,7 @@ const getSalesByDate_Daily = async (req, res) => {
   }
 };
 
-
-// Function to get monthly sales data
+// Function to get monthly sales data 
 const getSalesByDate_Monthly = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -328,7 +468,7 @@ const getSalesByDate_Monthly = async (req, res) => {
   }
 };
 
-// Get sales for a specific date
+// Get sales for a specific date // prediction included
 const getSalesForDate_BE = async (req, res) => {
   try {
     const { date } = req.params;
@@ -337,33 +477,56 @@ const getSalesForDate_BE = async (req, res) => {
       return res.status(400).json({ error: "Date parameter is required" });
     }
 
+    // Get sales data
     const docRef = db.collection("sales_by_date").doc(date);
     const docSnapshot = await docRef.get();
 
-    if (!docSnapshot.exists) {
-      return res.json({
-        date,
-        totalAmount: 0,
-        totalQuantity: 0,
-        transactionCount: 0,
-        sales: []
-      });
-    }
-
-    const data = docSnapshot.data();
-
-    res.json({
+    const salesData = !docSnapshot.exists ? {
       date,
-      totalAmount: data.totalAmount || 0,
-      totalQuantity: data.totalQuantity || 0,
-      transactionCount: data.transactionCount || 0,
-      sales: data.sales || []
-    });
+      totalAmount: 0,
+      totalQuantity: 0,
+      transactionCount: 0,
+      sales: []
+    } : {
+      date,
+      totalAmount: docSnapshot.data().totalAmount || 0,
+      totalQuantity: docSnapshot.data().totalQuantity || 0,
+      transactionCount: docSnapshot.data().transactionCount || 0,
+      sales: docSnapshot.data().sales || []
+    };
+
+    // Get prediction data
+    const predictionRef = db.collection("predicted_sales").doc(date);
+    const predictionDoc = await predictionRef.get();
+
+    // Get EOD prediction if available
+    const eodRef = db.collection("predicted_sales_eod").doc(date);
+    const eodDoc = await eodRef.get();
+
+    // Add prediction data to response
+    salesData.prediction = predictionDoc.exists ? {
+      cumulativeSales: predictionDoc.data().cumulativeSales || 0,
+      predictedSales: predictionDoc.data().predictedSales || 0,
+      hourKey: predictionDoc.data().hourKey || null,
+      updatedAt: predictionDoc.data().updatedAt || null,
+      actualSalesEndOfDay: predictionDoc.data().actualSalesEndOfDay || null,
+      accuracy: predictionDoc.data().accuracy || null
+    } : null;
+
+    salesData.endOfDayPrediction = eodDoc.exists ? {
+      actualSalesEndOfDay: eodDoc.data().actualSalesEndOfDay || 0,
+      predictedSales: eodDoc.data().predictedSales || 0,
+      accuracy: eodDoc.data().accuracy || null,
+      processedAt: eodDoc.data().processedAt || null
+    } : null;
+
+    res.json(salesData);
   } catch (error) {
     console.error("Error fetching sales for date:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // Get hourly sales for a specific date
 const getHourlySalesForDate_BE = async (req, res) => {
@@ -374,6 +537,7 @@ const getHourlySalesForDate_BE = async (req, res) => {
       return res.status(400).json({ error: "Date parameter is required" });
     }
 
+    // Get hourly sales data
     const query = db.collection("sales_by_hour")
       .where(admin.firestore.FieldPath.documentId(), ">=", `${date}-10`)
       .where(admin.firestore.FieldPath.documentId(), "<=", `${date}-23`)
@@ -391,27 +555,75 @@ const getHourlySalesForDate_BE = async (req, res) => {
       };
     });
 
-    // Fill in missing hours with zero values
+    // Get hourly predictions
+    const hourlyPredictionsQuery = db.collection("predicted_sales_hourly")
+      .where("dateKey", "==", date)
+      .orderBy("hour", "asc");
+
+    const hourlyPredictionsSnapshot = await hourlyPredictionsQuery.get();
+    const hourlyPredictions = {};
+
+    hourlyPredictionsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      hourlyPredictions[data.hour] = {
+        predictedSales: data.predictedSales,
+        cumulativeSales: data.cumulativeSales,
+        accuracy: data.accuracy,
+        actualSalesEndOfDay: data.actualSalesEndOfDay
+      };
+    });
+
+    // Fill in missing hours with zero values and add prediction data
     const completeHourlySales = [];
     for (let i = 10; i < 22; i++) {
       const hour = i.toString().padStart(2, '0');
       const hourKey = `${date}-${hour}`;
       const existingData = hourlySales.find(item => item.hourKey === hourKey);
+      const predictionData = hourlyPredictions[i] || null;
 
       if (existingData) {
-        completeHourlySales.push(existingData);
+        completeHourlySales.push({
+          ...existingData,
+          prediction: predictionData
+        });
       } else {
         completeHourlySales.push({
           hour,
           hourKey,
           totalAmount: 0,
           totalQuantity: 0,
-          transactionCount: 0
+          transactionCount: 0,
+          prediction: predictionData
         });
       }
     }
 
-    res.json({ Sales_Dated_For: date, completeHourlySales });
+    // Get main prediction document
+    const predictionRef = db.collection("predicted_sales").doc(date);
+    const predictionDoc = await predictionRef.get();
+
+    // Get EOD prediction
+    const eodRef = db.collection("predicted_sales_eod").doc(date);
+    const eodDoc = await eodRef.get();
+
+    res.json({
+      Sales_Dated_For: date,
+      completeHourlySales,
+      currentPrediction: predictionDoc.exists ? {
+        cumulativeSales: predictionDoc.data().cumulativeSales || 0,
+        predictedSales: predictionDoc.data().predictedSales || 0,
+        hourKey: predictionDoc.data().hourKey || null,
+        updatedAt: predictionDoc.data().updatedAt || null,
+        actualSalesEndOfDay: predictionDoc.data().actualSalesEndOfDay || null,
+        accuracy: predictionDoc.data().accuracy || null
+      } : null,
+      endOfDayPrediction: eodDoc.exists ? {
+        actualSalesEndOfDay: eodDoc.data().actualSalesEndOfDay || 0,
+        predictedSales: eodDoc.data().predictedSales || 0,
+        accuracy: eodDoc.data().accuracy || null,
+        processedAt: eodDoc.data().processedAt || null
+      } : null
+    });
   } catch (error) {
     console.error("Error fetching hourly sales:", error.message);
     res.status(500).json({ error: error.message });
@@ -455,7 +667,7 @@ const getSalesForHour_BE = async (req, res) => {
   }
 };
 
-// Get sales data for dashboard
+// Optimized sales dashboard data controller
 const getSalesDashboardData_BE = async (req, res) => {
   try {
     // Get today's date in YYYY-MM-DD format
@@ -472,76 +684,154 @@ const getSalesDashboardData_BE = async (req, res) => {
     last30DaysStart.setDate(last30DaysStart.getDate() - 30);
     const last30DaysStartStr = last30DaysStart.toISOString().split('T')[0];
 
-    // Get today's data
-    const todayDocRef = db.collection("sales_by_date").doc(todayStr);
-    const todayDoc = await todayDocRef.get();
+    // Run all the main queries in parallel to save time
+    const [
+      todayDoc,
+      todayPredictionDoc,
+      yesterdayDoc,
+      yesterdayEODDoc,
+      last30DaysSnapshot,
+      eodSnapshot
+    ] = await Promise.all([
+      // Get today's data
+      db.collection("sales_by_date").doc(todayStr).get(),
+
+      // Get today's prediction
+      db.collection("predicted_sales").doc(todayStr).get(),
+
+      // Get yesterday's data
+      db.collection("sales_by_date").doc(yesterdayStr).get(),
+
+      // Get yesterday's prediction accuracy
+      db.collection("predicted_sales_eod").doc(yesterdayStr).get(),
+
+      // Get data for last 30 days
+      db.collection("sales_by_date")
+        .where(admin.firestore.FieldPath.documentId(), ">=", last30DaysStartStr)
+        .where(admin.firestore.FieldPath.documentId(), "<=", todayStr)
+        .orderBy(admin.firestore.FieldPath.documentId())
+        .get(),
+
+      // Get predictions for last 30 days
+      db.collection("predicted_sales_eod")
+        .where("dateKey", ">=", last30DaysStartStr)
+        .where("dateKey", "<=", todayStr)
+        .get()
+    ]);
+
+    // Process the results
     const todaySales = todayDoc.exists ? todayDoc.data() : { totalAmount: 0, totalQuantity: 0, transactionCount: 0 };
-
-    // Get yesterday's data
-    const yesterdayDocRef = db.collection("sales_by_date").doc(yesterdayStr);
-    const yesterdayDoc = await yesterdayDocRef.get();
+    const todayPrediction = todayPredictionDoc.exists ? todayPredictionDoc.data() : null;
     const yesterdaySales = yesterdayDoc.exists ? yesterdayDoc.data() : { totalAmount: 0, totalQuantity: 0, transactionCount: 0 };
+    const yesterdayPrediction = yesterdayEODDoc.exists ? yesterdayEODDoc.data() : null;
 
-    // Get data for last 30 days
-    const last30DaysQuery = db.collection("sales_by_date")
-      .where(admin.firestore.FieldPath.documentId(), ">=", last30DaysStartStr)
-      .where(admin.firestore.FieldPath.documentId(), "<=", todayStr)
-      .orderBy(admin.firestore.FieldPath.documentId());
+    // Process EOD predictions
+    const eodPredictions = {};
+    eodSnapshot.forEach(doc => {
+      eodPredictions[doc.id] = doc.data();
+    });
 
-    const last30DaysSnapshot = await last30DaysQuery.get();
-    const last30DaysData = last30DaysSnapshot.docs.map(doc => ({
-      date: doc.id,
-      totalAmount: doc.data().totalAmount || 0,
-      totalQuantity: doc.data().totalQuantity || 0,
-      transactionCount: doc.data().transactionCount || 0
-    }));
+    // Process last 30 days data
+    const last30DaysData = [];
+    let last30DaysTotal = 0;
+    let last30DaysTransactions = 0;
 
-    const last30DaysTotal = last30DaysData.reduce((sum, day) => sum + day.totalAmount, 0);
-    const last30DaysTransactions = last30DaysData.reduce((sum, day) => sum + day.transactionCount, 0);
+    // Combine sales data with predictions
+    for (const doc of last30DaysSnapshot.docs) {
+      const date = doc.id;
+      const docData = doc.data();
+      const totalAmount = docData.totalAmount || 0;
+      const transactionCount = docData.transactionCount || 0;
 
-    const recentSalesQuery = db.collection("sales")
-      .orderBy("saleDatetime", "desc")
-      .limit(10);
+      // Add to totals
+      last30DaysTotal += totalAmount;
+      last30DaysTransactions += transactionCount;
 
-    const recentSalesSnapshot = await recentSalesQuery.get();
-    const recentSales = recentSalesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+      const sales = {
+        date,
+        totalAmount,
+        totalQuantity: docData.totalQuantity || 0,
+        transactionCount
+      };
 
-    const productSalesQuery = db.collection("sales")
-      .where("saleDatetime", ">=", last30DaysStart);
-
-    const productSalesSnapshot = await productSalesQuery.get();
-    const productSalesData = productSalesSnapshot.docs.map(doc => ({
-      productId: doc.data().productId,
-      productName: doc.data().productName,
-      amount: doc.data().totalAmount || 0,
-      quantity: doc.data().quantity || 0
-    }));
-
-    const productSales = {};
-    productSalesData.forEach(sale => {
-      if (!productSales[sale.productId]) {
-        productSales[sale.productId] = {
-          productId: sale.productId,
-          productName: sale.productName,
-          totalAmount: 0,
-          totalQuantity: 0,
-          count: 0
+      // Add prediction if available
+      if (eodPredictions[date]) {
+        sales.prediction = {
+          predictedSales: eodPredictions[date].predictedSales || 0,
+          accuracy: eodPredictions[date].accuracy || null
         };
       }
 
-      productSales[sale.productId].totalAmount += sale.amount;
-      productSales[sale.productId].totalQuantity += sale.quantity;
-      productSales[sale.productId].count += 1;
-    });
+      last30DaysData.push(sales);
+    }
 
-    const topProducts = Object.values(productSales)
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 5);
+    // For recent sales and top products, we'll limit data to improve performance
+    // Get only 5 recent sales instead of 10
+    const recentSalesQuery = await db.collection("sales")
+      .orderBy("saleDatetime", "desc")
+      .limit(5)
+      .get();
 
-    res.json({
+    const recentSales = recentSalesQuery.docs.map(doc => ({
+      id: doc.id,
+      productId: doc.data().productId,
+      productName: doc.data().productName,
+      totalAmount: doc.data().totalAmount,
+      quantity: doc.data().quantity,
+      saleDatetime: doc.data().saleDatetime,
+      storeLocation: doc.data().storeLocation
+    }));
+
+    let topProducts = [];
+
+    try {
+      const topProductsSnapshot = await db.collection("top_products")
+        .orderBy("totalAmount", "desc")
+        .limit(5)
+        .get();
+
+      if (!topProductsSnapshot.empty) {
+        topProducts = topProductsSnapshot.docs.map(doc => doc.data());
+      } else {
+        const last7DaysStart = new Date(today);
+        last7DaysStart.setDate(last7DaysStart.getDate() - 7);
+
+        const productSalesSnapshot = await db.collection("sales")
+          .where("saleDatetime", ">=", last7DaysStart)
+          .limit(100)
+          .get();
+
+        const productSales = {};
+        productSalesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const productId = data.productId;
+
+          if (!productSales[productId]) {
+            productSales[productId] = {
+              productId,
+              productName: data.productName,
+              totalAmount: 0,
+              totalQuantity: 0,
+              count: 0
+            };
+          }
+
+          productSales[productId].totalAmount += data.totalAmount || 0;
+          productSales[productId].totalQuantity += data.quantity || 0;
+          productSales[productId].count += 1;
+        });
+
+        topProducts = Object.values(productSales)
+          .sort((a, b) => b.totalAmount - a.totalAmount)
+          .slice(0, 5);
+      }
+    } catch (topProductsError) {
+      console.error("Error fetching top products:", topProductsError);
+      // In case of error, just return an empty array
+      topProducts = [];
+    }
+
+    const response = {
       today: {
         date: todayStr,
         totalAmount: todaySales.totalAmount || 0,
@@ -549,7 +839,21 @@ const getSalesDashboardData_BE = async (req, res) => {
         transactionCount: todaySales.transactionCount || 0,
         percentChange: yesterdaySales.totalAmount > 0
           ? ((todaySales.totalAmount - yesterdaySales.totalAmount) / yesterdaySales.totalAmount) * 100
-          : 0
+          : 0,
+        prediction: todayPrediction ? {
+          currentSales: todayPrediction.cumulativeSales || 0,
+          predictedEndOfDay: todayPrediction.predictedSales || 0,
+          lastUpdated: todayPrediction.updatedAt
+        } : null
+      },
+      yesterday: {
+        date: yesterdayStr,
+        totalAmount: yesterdaySales.totalAmount || 0,
+        prediction: yesterdayPrediction ? {
+          predictedSales: yesterdayPrediction.predictedSales || 0,
+          actualSales: yesterdayPrediction.actualSalesEndOfDay || 0,
+          accuracy: yesterdayPrediction.accuracy || 0
+        } : null
       },
       last30Days: {
         totalAmount: last30DaysTotal,
@@ -558,10 +862,35 @@ const getSalesDashboardData_BE = async (req, res) => {
       },
       recentSales,
       topProducts
-    });
+    };
+
+    res.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+    res.json(response);
+
   } catch (error) {
     console.error("Error fetching dashboard data:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+      dashboard: {
+        today: {
+          date: new Date().toISOString().split('T')[0],
+          totalAmount: 0,
+          prediction: null
+        },
+        yesterday: {
+          date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+          totalAmount: 0,
+          prediction: null
+        },
+        last30Days: {
+          totalAmount: 0,
+          totalTransactions: 0,
+          dailySales: []
+        },
+        recentSales: [],
+        topProducts: []
+      }
+    });
   }
 };
 
@@ -847,17 +1176,215 @@ const deleteSalesTarget_BE = async (req, res) => {
   }
 };
 
+const getPredictionForDate_BE = async (req, res) => {
+  try {
+    const { date } = req.params;
+
+    if (!date) {
+      return res.status(400).json({ error: "Date parameter is required" });
+    }
+
+    const predictionRef = db.collection("predicted_sales").doc(date);
+    const predictionDoc = await predictionRef.get();
+
+    const eodRef = db.collection("predicted_sales_eod").doc(date);
+    const eodDoc = await eodRef.get();
+
+    const hourlyQuery = db.collection("predicted_sales_hourly")
+      .where("dateKey", "==", date)
+      .orderBy("hour", "asc");
+
+    const hourlySnapshot = await hourlyQuery.get();
+    const hourlyPredictions = hourlySnapshot.docs.map(doc => doc.data());
+
+    const result = {
+      date,
+      currentPrediction: predictionDoc.exists ? {
+        cumulativeSales: predictionDoc.data().cumulativeSales || 0,
+        predictedSales: predictionDoc.data().predictedSales || 0,
+        hourKey: predictionDoc.data().hourKey || null,
+        updatedAt: predictionDoc.data().updatedAt || null,
+        actualSalesEndOfDay: predictionDoc.data().actualSalesEndOfDay || null,
+        accuracy: predictionDoc.data().accuracy || null
+      } : null,
+      endOfDayPrediction: eodDoc.exists ? {
+        actualSalesEndOfDay: eodDoc.data().actualSalesEndOfDay || 0,
+        predictedSales: eodDoc.data().predictedSales || 0,
+        accuracy: eodDoc.data().accuracy || null,
+        processedAt: eodDoc.data().processedAt || null
+      } : null,
+      hourlyPredictions: hourlyPredictions
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching prediction for date:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllPredictions_BE = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Both startDate and endDate are required" });
+    }
+
+    // Get EOD predictions (highest priority)
+    const eodQuery = db.collection("predicted_sales_eod")
+      .where("dateKey", ">=", startDate)
+      .where("dateKey", "<=", endDate)
+      .orderBy("dateKey", "desc");
+    const eodSnapshot = await eodQuery.get();
+
+    // Create a map of EOD predictions by date
+    const eodPredictions = {};
+    eodSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      eodPredictions[data.dateKey] = {
+        date: data.dateKey,
+        source: "eod",
+        ...data
+      };
+    });
+
+    // Get regular daily predictions (medium priority)
+    const regularQuery = db.collection("predicted_sales")
+      .where("dateKey", ">=", startDate)
+      .where("dateKey", "<=", endDate)
+      .orderBy("dateKey", "desc");
+    const regularSnapshot = await regularQuery.get();
+
+    const regularPredictions = {};
+    regularSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      regularPredictions[data.dateKey] = {
+        date: data.dateKey,
+        source: "daily",
+        ...data
+      };
+    });
+
+    // Get hourly predictions (lowest priority)
+    // We'll get the latest hourly prediction for each date by filtering later
+    const hourlyQuery = db.collection("predicted_sales_hourly")
+      .where("dateKey", ">=", startDate)
+      .where("dateKey", "<=", endDate)
+      .orderBy("dateKey", "desc")
+      .orderBy("hour", "desc"); // Latest hour first for each date
+    const hourlySnapshot = await hourlyQuery.get();
+
+    // Group hourly predictions by date, keeping only the latest hour
+    const hourlyPredictions = {};
+    hourlySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const dateKey = data.dateKey;
+
+      // Only add if we don't already have an entry for this date
+      // This works because we ordered by hour desc, so first entry for a date is latest
+      if (!hourlyPredictions[dateKey]) {
+        hourlyPredictions[dateKey] = {
+          date: dateKey,
+          source: "hourly",
+          ...data
+        };
+      }
+    });
+
+    // Get actual sales for comparison
+    const salesQuery = db.collection("sales_by_date")
+      .where(admin.firestore.FieldPath.documentId(), ">=", startDate)
+      .where(admin.firestore.FieldPath.documentId(), "<=", endDate)
+      .orderBy(admin.firestore.FieldPath.documentId(), "desc");
+    const salesSnapshot = await salesQuery.get();
+    const salesData = {};
+    salesSnapshot.docs.forEach(doc => {
+      salesData[doc.id] = {
+        totalAmount: doc.data().totalAmount || 0
+      };
+    });
+
+    // Create a list of all dates in the range
+    const allDates = [];
+    let currentDate = new Date(startDate);
+    const end = new Date(endDate);
+
+    while (currentDate <= end) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      allDates.push(dateKey);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Combine all predictions with priority: EOD > Daily > Hourly
+    const result = allDates.map(dateKey => {
+      // Choose prediction source with priority: EOD > Regular > Hourly
+      const prediction =
+        eodPredictions[dateKey] ||
+        regularPredictions[dateKey] ||
+        hourlyPredictions[dateKey] ||
+        { date: dateKey, dateKey: dateKey };
+
+      const salesInfo = salesData[dateKey] || { totalAmount: 0 };
+
+      return {
+        ...prediction,
+        actualSales: prediction.actualSalesEndOfDay || salesInfo.totalAmount
+      };
+    });
+
+    // Sort results by date descending
+    result.sort((a, b) => {
+      if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
+      return 0;
+    });
+
+    // Filter out entries that have no predictions from any collection
+    const filteredResult = result.filter(item =>
+      eodPredictions[item.dateKey] || regularPredictions[item.dateKey] || hourlyPredictions[item.dateKey]
+    );
+
+    // Calculate overall accuracy
+    const totalPredicted = filteredResult.reduce((sum, item) => sum + (item.predictedSales || 0), 0);
+    const totalActual = filteredResult.reduce((sum, item) => sum + (item.actualSales || 0), 0);
+    let overallAccuracy = null;
+    if (totalPredicted > 0 && totalActual > 0) {
+      const absError = Math.abs(totalPredicted - totalActual);
+      const largerVal = Math.max(totalPredicted, totalActual);
+      const scaledErr = (absError / largerVal) * 100;
+      overallAccuracy = Math.max(0, Math.min(100, 100 - scaledErr));
+    }
+
+    // Remove the source field from the final output
+    const cleanResult = filteredResult.map(({ source, ...rest }) => rest);
+
+    res.json({
+      predictions: cleanResult,
+      summary: {
+        totalPredicted,
+        totalActual,
+        overallAccuracy
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching predictions:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   addSale_BE,
   getAllSales_BE,
   getSalesByDate_Daily,
   getSalesByDate_Monthly,
-  getSalesForDate_BE,
-  getHourlySalesForDate_BE,
+  getSalesForDate_BE, // Prediction included
+  getHourlySalesForDate_BE, // Prediction included
   getSalesForHour_BE,
-  getSalesDashboardData_BE,
+  getSalesDashboardData_BE, // Prediction included
   getSalesTargets_BE,
   getSalesTargetsByRange_BE,
   updateSalesTarget_BE,
-  deleteSalesTarget_BE
+  deleteSalesTarget_BE,
+  getPredictionForDate_BE,
+  getAllPredictions_BE,
 };

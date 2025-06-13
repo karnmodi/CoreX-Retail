@@ -8,6 +8,7 @@ const {
   deleteShift_BE,
   getWorkingEmployeesByDate_BE,
   getUpcomingRostersByStaffId_BE,
+  getMonthlyShiftsByEmployeeId_BE
 } = require("../../controllers/Rosters/rostersController");
 const { trackActivity } = require("../../controllers/profile/ActivityController");
 
@@ -21,5 +22,7 @@ router.put("/:id", verifyToken, trackActivity(
 router.delete("/:id", verifyToken, deleteShift_BE);
 router.get("/by-date", getWorkingEmployeesByDate_BE);
 router.get("/upcoming/:staffId/", getUpcomingRostersByStaffId_BE);
+router.get("/by-month/:staffId/", getMonthlyShiftsByEmployeeId_BE);
+
 
 module.exports = router;

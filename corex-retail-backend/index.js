@@ -3,28 +3,24 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const admin = require("firebase-admin");
-
-// Import Firebase configuration
 const { db, auth, storage } = require("./src/config/firebase");
-
-// Import routes and functions
 const routes = require("./src/routes/mainRoute");
 const {
   createFirestoreIndexes,
   cleanupSampleNotification
 } = require("./src/models/notificationSchema");
 
-// Load environment variables
+const logger = require("./functions/logger"); 
+
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Middleware to attach Firebase services to request
+// Middleware to inject Firebase services
 app.use((req, res, next) => {
   req.db = db;
   req.auth = auth;
@@ -32,12 +28,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount API routes
+// Main API routes
 app.use("/api", routes);
 
-// Simple error handling middleware
+// Central error handler
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err.stack);
+  logger.error(`Server Error: ${err.stack}`);
   res.status(500).json({
     status: "error",
     message: "Something went wrong on the server",
@@ -45,45 +41,36 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Main application initialization function
 async function initializeApp() {
   try {
-    // Create Firestore indexes
-    // const indexesCreated = await createFirestoreIndexes();
-
-    // Initialize scheduled functions if enabled
+    // Optional: initialize automated functions
     if (process.env.ENABLE_AUTOMATED_NOTIFICATIONS === 'true') {
       const { initializeScheduledFunctions } = require("./functions/scheduledNotifications");
       initializeScheduledFunctions();
-      console.log("✅ Automated notifications initialized");
+      logger.info("✅ Automated notifications initialized");
     }
-    
+
+    // Start the server
     app.listen(PORT, () => {
-      console.log(`✅ Server is running on http://localhost:${PORT}`);
-      console.log("✅ Firebase services are connected");
-      
+      logger.info(`✅ Server is running on http://localhost:${PORT}`);
+      logger.info("✅ Firebase services are connected");
     });
+
   } catch (error) {
-    console.error('Application initialization failed:', error);
-    console.error('Detailed error:', error);
-
-    // Log index creation instructions
-    console.warn('Index Creation Instructions:');
-
+    logger.error("❌ Application initialization failed");
+    logger.error(`Detailed error: ${error.stack}`);
     process.exit(1);
   }
 }
 
-// Handle any unhandled promise rejections
+// Global error listeners
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
 });
 
-// Handle any uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  logger.error(`Uncaught Exception: ${error.stack}`);
   process.exit(1);
 });
 
-// Initialize the application
 initializeApp();

@@ -14,6 +14,8 @@ import {
   getSalesTargetsByRange,
   updateSalesTarget,
   deleteSalesTarget as deleteSalesTargetApi,
+  getPredictionForDate,
+  getAllPredictions,
 } from "../services/salesAPI";
 
 const SalesContext = createContext();
@@ -38,7 +40,11 @@ export const SalesProvider = ({ children }) => {
   const [salesTargets, setSalesTargets] = useState({});
   const [salesTargetsByRange, setSalesTargetsByRange] = useState([]);
 
-  // Replace single loading state with loading states object
+  // New state for predictions
+  const [datePrediction, setDatePrediction] = useState(null);
+  const [allPredictions, setAllPredictions] = useState([]);
+  const [predictionSummary, setPredictionSummary] = useState(null);
+
   const [loadingStates, setLoadingStates] = useState({
     dashboard: false,
     sales: false,
@@ -53,12 +59,13 @@ export const SalesProvider = ({ children }) => {
     createSale: false,
     updateSalesTarget: false,
     deleteSalesTarget: false,
+    datePrediction: false,
+    allPredictions: false,
   });
 
   const [error, setError] = useState(null);
   const { token } = useAuth();
 
-  // Helper to update loading state for a specific operation
   const setLoadingFor = (operation, isLoading) => {
     setLoadingStates((prevState) => ({
       ...prevState,
@@ -69,7 +76,6 @@ export const SalesProvider = ({ children }) => {
   useEffect(() => {
     if (!token) return;
 
-    // Initial dashboard data load
     const loadInitialData = async () => {
       try {
         setLoadingFor("dashboard", true);
@@ -90,7 +96,6 @@ export const SalesProvider = ({ children }) => {
     let operationSuccess = false;
 
     try {
-      // Set loading for this specific operation
       setLoadingFor("sales", true);
       setError(null); // Reset error state before new request
 
@@ -235,7 +240,6 @@ export const SalesProvider = ({ children }) => {
       setLoadingFor("salesForDate", true);
       setError(null);
 
-      console.log("Loading sales for date:", date);
       const data = await getSalesForDate(date, token);
 
       if (data) {
@@ -404,7 +408,7 @@ export const SalesProvider = ({ children }) => {
     } catch (error) {
       console.error("Error loading sales targets:", error.message);
       setError(error.message);
-      setSalesTargets({}); 
+      setSalesTargets({});
       return null;
     } finally {
       setLoadingFor("salesTargets", false);
@@ -490,44 +494,43 @@ export const SalesProvider = ({ children }) => {
 
   const deleteSalesTarget = async (targetId) => {
     let operationSuccess = false;
-  
+
     try {
       setLoadingFor("deleteSalesTarget", true);
       setError(null);
-  
+
       if (!targetId) {
         console.error("Error: targetId is empty or undefined");
         setError("Target ID is missing");
         return null;
       }
-  
-  
+
       const result = await deleteSalesTargetApi(targetId, token);
-  
+
       if (result) {
-        setSalesTargets(prev => {
+        setSalesTargets((prev) => {
           if (!prev || !prev.allTargets) return prev;
-          
-          const updatedTargets = prev.allTargets.filter(target => {
+
+          const updatedTargets = prev.allTargets.filter((target) => {
             // The target ID is in format "targetType-period"
             const id = `${target.targetType}-${target.period}`;
             return id !== targetId;
           });
-          
+
           // Also update the summary if the deleted target was in there
           const updatedSummary = { ...prev.summary };
           if (updatedSummary[targetId]) {
             delete updatedSummary[targetId];
           }
-          
+
           // Return the updated state
           return {
             ...prev,
             allTargets: updatedTargets,
-            summary: updatedSummary
+            summary: updatedSummary,
           };
         });
-  
+
         console.log("Sales target deleted successfully:", result);
         operationSuccess = true;
         return result;
@@ -542,7 +545,80 @@ export const SalesProvider = ({ children }) => {
       return null;
     } finally {
       setLoadingFor("deleteSalesTarget", false);
-      console.log("deleteSalesTarget operation completed. Success:", operationSuccess);
+      console.log(
+        "deleteSalesTarget operation completed. Success:",
+        operationSuccess
+      );
+    }
+  };
+
+  // New function to load prediction for a specific date
+  const loadPredictionForDate = async (date) => {
+    let operationSuccess = false;
+
+    try {
+      setLoadingFor("datePrediction", true);
+      setError(null);
+
+      console.log("Loading prediction for date:", date);
+      const data = await getPredictionForDate(date, token);
+
+      if (data) {
+        setDatePrediction(data);
+        operationSuccess = true;
+        return data;
+      } else {
+        console.warn("Received invalid data from getPredictionForDate:", data);
+        setDatePrediction(null);
+        setError("Received invalid data from API");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error loading prediction for date:", error.message);
+      setError(error.message);
+      return null;
+    } finally {
+      setLoadingFor("datePrediction", false);
+      console.log(
+        "loadPredictionForDate operation completed. Success:",
+        operationSuccess
+      );
+    }
+  };
+
+  // New function to load all predictions
+  const loadAllPredictions = async (dateParams = {}) => {
+    let operationSuccess = false;
+
+    try {
+      setLoadingFor("allPredictions", true);
+      setError(null);
+
+      console.log("Loading all predictions with params:", dateParams);
+      const data = await getAllPredictions(dateParams, token);
+
+      if (data && data.predictions) {
+        setAllPredictions(data.predictions);
+        setPredictionSummary(data.summary);
+        operationSuccess = true;
+        return data;
+      } else {
+        console.warn("Received invalid data from getAllPredictions:", data);
+        setAllPredictions([]);
+        setPredictionSummary(null);
+        setError("Received invalid data from API");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error loading all predictions:", error.message);
+      setError(error.message);
+      return null;
+    } finally {
+      setLoadingFor("allPredictions", false);
+      console.log(
+        "loadAllPredictions operation completed. Success:",
+        operationSuccess
+      );
     }
   };
 
@@ -589,6 +665,10 @@ export const SalesProvider = ({ children }) => {
     selectedHourSales,
     salesTargets,
     salesTargetsByRange,
+    // Add new prediction states
+    datePrediction,
+    allPredictions,
+    predictionSummary,
 
     loading: {
       dashboard: loadingStates.dashboard,
@@ -604,6 +684,9 @@ export const SalesProvider = ({ children }) => {
       createSale: loadingStates.createSale,
       updateSalesTarget: loadingStates.updateSalesTarget,
       deleteSalesTarget: loadingStates.deleteSalesTarget,
+      // Add new prediction loading states
+      datePrediction: loadingStates.datePrediction,
+      allPredictions: loadingStates.allPredictions,
 
       any: Object.values(loadingStates).some(Boolean),
     },
@@ -622,6 +705,8 @@ export const SalesProvider = ({ children }) => {
     createOrUpdateSalesTarget,
     refreshDashboard: loadDashboardData,
     deleteSalesTarget,
+    loadPredictionForDate,
+    loadAllPredictions,
   };
 
   return (

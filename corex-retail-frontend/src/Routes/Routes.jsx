@@ -8,6 +8,7 @@ import DashboardManager from "../pages/DashboardManager";
 import DashboardStaff from "../pages/DashboardStaff";
 import DashboardAdmin from "../pages/0.admin/DashboardAdmin";
 import navLinksAdmin from "../components/NavLinks/navLinksAdmin";
+import navLinksStaff from "../components/NavLinks/navLinksStaff.jsx";
 import MainLayout from "../components/MainLayout";
 import ManageStaffPage from "../pages/1.Staff_Management/ManageStaff";
 import Add_Update_StaffPage from "../pages/1.Staff_Management/Add_UpdateStaff";
@@ -30,6 +31,7 @@ import navLinksManager from "../components/NavLinks/navLinksManager.jsx";
 import SalesPage from "../pages/4.Sales_Management/Sales.jsx";
 import SchedulePage from "../pages/2.Rosters_Management/Schedules.jsx";
 import ActivityLogs from "../components/Manager/ActivityLogs.jsx";
+import StaffRequestForm from "../components/Staff/StaffRequestForm.jsx";
 
 const logoSrc = "/assets/WebsiteLogo.jpg";
 
@@ -137,6 +139,7 @@ const adminRoutes = {
   ],
 };
 
+// Manager dashboard routes
 const managerRoutes = {
   path: "/dashboardManager",
   element: (
@@ -176,27 +179,33 @@ const managerRoutes = {
   ],
 };
 
-// Other role dashboards
-const otherDashboards = [
-  {
-    path: "/dashboardStaff",
-    element: (
-      <RoleBasedRoute
-        allowedRoles={["staff", "store manager", "admin"]}
-        redirectPath="auto"
-      >
-        <DashboardStaff />
-      </RoleBasedRoute>
-    ),
-  },
-];
+const employeeRoutes = {
+  path: "/dashboardStaff",
+  element: (
+    <RoleBasedRoute
+      allowedRoles={["staff", "store manager", "admin"]}
+      redirectPath="auto"
+    >
+      <MainLayout logoSrc={logoSrc} navLinks={navLinksStaff()} />
+    </RoleBasedRoute>
+  ),
+  children: [
+    { path: "", element: <DashboardStaff /> },
+    { path: "profile", element: <ProfilePage /> },
+    { path: "request", element: <RequestsPage /> },
+    { path: "activityLogs", element: <ActivityLogs /> },
+    { path: "more/notifications", element: <NotificationsPage /> },
+    { path: "requests/create", element: <StaffRequestForm /> },
+  ],
+};
 
 // Combine all routes
 const routes = [
   ...publicRoutes,
   adminRoutes,
   managerRoutes,
-  ...otherDashboards,
+  employeeRoutes,
+  // ...otherDashboards,
 ];
 
 export default routes;

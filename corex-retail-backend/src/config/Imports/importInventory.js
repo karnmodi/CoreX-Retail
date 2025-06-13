@@ -3,32 +3,26 @@ const xlsx = require("xlsx");
 const path = require("path");
 const fs = require("fs");
 
-// Load service account credentials directly
 const serviceAccount = require(path.resolve(__dirname, "../serviceAccountKey.json"));
 
-// Initialize Firebase Admin
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
 const db = admin.firestore();
 
-// Enhanced Excel date parser
 function parseExcelDate(value) {
   if (!value) return null;
 
-  // If it's already a Date object
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
     return value;
   }
 
-  // Excel serial number (numeric)
   if (typeof value === 'number') {
     const excelEpoch = new Date(Date.UTC(1899, 11, 30));
     return new Date(excelEpoch.getTime() + value * 86400000);
   }
 
-  // Handle 'yyyy-MM-dd hh:mm:ss' style strings by converting to ISO
   if (typeof value === 'string' && value.includes(' ')) {
     const fixed = value.replace(' ', 'T') + 'Z';
     const parsed = new Date(fixed);

@@ -4,6 +4,7 @@ import {
   putShift,
   deleteShiftById,
   getUpcomingRostersByStaffId,
+  getMonthlyShiftsByEmployeeId,
 } from "../services/rostersAPI";
 
 import { getAllEmployees } from "../services/staffAPI";
@@ -37,7 +38,7 @@ export const RosterProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [upcomingError, setUpcomingError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
-  const { token, userData } = useAuth();
+  const { token, user, userData } = useAuth();
   const [businessHours, setBusinessHours] = useState({
     startTime: "09:00",
     endTime: "20:00",
@@ -62,10 +63,15 @@ export const RosterProvider = ({ children }) => {
     async (date) => {
       if (!date || !token) return;
 
-      // Format the date string
-      const formattedDate = date.toISOString().split("T")[0];
+      let formattedDate;
+      if (typeof date === "string") {
+        formattedDate = date;
+      } else if (date instanceof Date) {
+        formattedDate = date.toISOString().split("T")[0];
+      } else {
+        formattedDate = new Date(date).toISOString().split("T")[0];
+      }
 
-      // Check if we've already fetched this date recently (within the last minute)
       if (
         lastFetched &&
         lastFetched.date === formattedDate &&
@@ -95,7 +101,6 @@ export const RosterProvider = ({ children }) => {
     [token, lastFetched]
   );
 
-  // Fetch upcoming shifts for a specific staff member
   const fetchUpcomingShifts = useCallback(
     async (staffId, days = 14) => {
       if (!staffId || !token) return;
@@ -117,6 +122,28 @@ export const RosterProvider = ({ children }) => {
       }
     },
     [token]
+  );
+
+  const fetchMonthlyShifts = useCallback(
+    async (month, year) => {
+      if (!user?.uid || !token || !month || !year) {
+        return;
+      }
+
+      try {
+        const data = await getMonthlyShiftsByEmployeeId(
+          user.uid,
+          month,
+          year,
+          token
+        );
+
+        return data;
+      } catch (err) {
+        throw err;
+      }
+    },
+    [token, user]
   );
 
   // Format upcoming shifts data for easier consumption
@@ -173,7 +200,8 @@ export const RosterProvider = ({ children }) => {
 
       return { success: true, message: res.message };
     } catch (err) {
-      console.error("Error adding shift:", err);
+      setError(err.message);
+      console.error("Error adding shift:", err.message);
       return { success: false, message: err.message };
     }
   };
@@ -191,6 +219,7 @@ export const RosterProvider = ({ children }) => {
       return { success: true, message: res.message };
     } catch (err) {
       console.error("Error updating shift:", err);
+      setError(err.message);
       return { success: false, message: err.message };
     }
   };
@@ -206,6 +235,7 @@ export const RosterProvider = ({ children }) => {
       return { success: true, message: "Shift deleted successfully" };
     } catch (err) {
       console.error("Error deleting shift:", err);
+      setError(err.message);
       return { success: false, message: err.message };
     }
   };
@@ -266,6 +296,7 @@ export const RosterProvider = ({ children }) => {
         upcomingLoading,
         upcomingError,
         fetchUpcomingShifts,
+        fetchMonthlyShifts,
         getFormattedUpcomingShifts,
         fetchShiftsForDate,
         addShift,

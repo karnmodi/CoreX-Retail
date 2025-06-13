@@ -1,6 +1,5 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
 
 export function RecentSales({ data = [] }) {
   if (!data || data.length === 0) {
@@ -11,26 +10,55 @@ export function RecentSales({ data = [] }) {
     );
   }
 
-  // Limit to 5 sales
-  const displayData = data.slice(0, 5);
+  const displayData = data;
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+
+    try {
+      let date;
+
+      if (typeof dateString === "object" && dateString._seconds) {
+        date = new Date(dateString._seconds * 1000);
+      } else {
+        date = new Date(dateString);
+      }
+
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+
+      return new Intl.DateTimeFormat("en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+      }).format(date);
+
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return "Date error";
+    }
+  };
 
   return (
     <div className="space-y-8">
       {displayData.map((sale) => {
-        // Generate initials for the avatar from the product name
         const productNameParts = (sale.productName || "Product").split(" ");
         const initials =
           productNameParts.length > 1
             ? `${productNameParts[0][0]}${productNameParts[1][0]}`
             : productNameParts[0].substring(0, 2);
 
-        // Format date if available
-        const formattedDate = sale.saleDatetime
-          ? format(new Date(sale.saleDatetime), "MMM dd, yyyy HH:mm")
-          : "";
+        const formattedDate = formatDate(sale.saleDatetime);
 
         return (
-          <div key={sale.id} className="flex items-center">
+          <div
+            key={sale.id || `sale-${Math.random()}`}
+            className="flex items-center"
+          >
             <Avatar className="h-9 w-9 bg-gray-300">
               <AvatarFallback>{initials.toUpperCase()}</AvatarFallback>
             </Avatar>

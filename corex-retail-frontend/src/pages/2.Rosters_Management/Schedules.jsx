@@ -10,6 +10,7 @@ import {
   UserCircle2,
   Loader2,
   CalendarDays,
+  Plus,
   ChevronRight,
 } from "lucide-react";
 import StaffSchedule from "../../components/Manager/StaffScehdule";
@@ -341,6 +342,10 @@ const SchedulePage = () => {
     upcomingTimeOff: "0",
   });
 
+  const HandletoCreateNewRequest = () => {
+    navigate("../more/requests/create");
+  };
+
   // Determine if current user is a manager
   useEffect(() => {
     if (userData) {
@@ -408,17 +413,15 @@ const SchedulePage = () => {
   // Used to determine who's schedule we're viewing
   const targetStaffId = staffId || userData?.uid;
 
-  // Get staff name for display
   const getDisplayName = () => {
     if (staffId && selectedStaff) {
       return `${selectedStaff.firstName} ${selectedStaff.lastName}'s`;
     }
-    return "My";
+    return "Store";
   };
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
-      {/* Header with back navigation and staff search */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center space-x-3">
           <button
@@ -442,6 +445,13 @@ const SchedulePage = () => {
             <span>Search Staff Schedules</span>
           </button>
         )}
+        <button
+          onClick={HandletoCreateNewRequest}
+          className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow text-green-700 font-medium"
+        >
+          <Plus className="h-4 w-4" />
+          New Request
+        </button>
       </div>
 
       {/* Quick Access - Recently Viewed or Top Staff */}
@@ -453,7 +463,7 @@ const SchedulePage = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full text-sm whitespace-nowrap"
             >
               <UserCircle2 className="w-4 h-4" />
-              <span>My Schedule</span>
+              <span>Store Schedule</span>
             </button>
 
             {/* Quick access to some staff members */}

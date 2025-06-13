@@ -1,5 +1,3 @@
-// rostersAPI.js
-
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Get all shifts (optional filter by date)
@@ -14,13 +12,13 @@ export const getAllShifts = async (date, token) => {
   });
 
   if (!response.ok) {
-    const errorDetails = await response.text();
-    throw new Error(`Failed to fetch shifts: ${errorDetails}`);
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || errorData?.error || "Failed to fetch shifts";
+    throw new Error(errorMessage);
   }
 
   return await response.json();
 };
-
 
 // Get all shifts on a specific date
 export const getShiftsByDate = async (date, token) => {
@@ -32,8 +30,9 @@ export const getShiftsByDate = async (date, token) => {
   });
 
   if (!response.ok) {
-    const errorDetails = await response.text();
-    throw new Error(`Failed to fetch shifts by date: ${errorDetails}`);
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || errorData?.error || "Failed to fetch shifts by date";
+    throw new Error(errorMessage);
   }
 
   return await response.json();
@@ -64,8 +63,8 @@ export const getUpcomingRostersByStaffId = async (staffId, days = 7, token) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      const errorMessage = errorData?.error || response.statusText;
-      throw new Error(`Failed to fetch upcoming rosters: ${errorMessage}`);
+      const errorMessage = errorData?.message || errorData?.error || response.statusText;
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -74,7 +73,6 @@ export const getUpcomingRostersByStaffId = async (staffId, days = 7, token) => {
     throw error;
   }
 };
-
 
 // Create a new shift
 export const postShift = async (shiftData, token) => {
@@ -88,8 +86,9 @@ export const postShift = async (shiftData, token) => {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Failed to add shift");
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || errorData?.error || "Failed to add shift";
+    throw new Error(errorMessage);
   }
 
   return await response.json();
@@ -107,8 +106,9 @@ export const putShift = async (id, updates, token) => {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Failed to update shift");
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || errorData?.error || "Failed to update shift";
+    throw new Error(errorMessage);
   }
 
   return await response.json();
@@ -124,7 +124,32 @@ export const deleteShiftById = async (id, token) => {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to delete shift");
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || errorData?.error || "Failed to delete shift";
+    throw new Error(errorMessage);
+  }
+
+  return await response.json();
+};
+
+export const getMonthlyShiftsByEmployeeId = async (staffId, month, year, token) => {
+  if (!staffId || !month || !year) {
+    throw new Error("Staff ID, month, and year are required");
+  }
+
+  const url = `${API_BASE_URL}/rosters/by-month/${staffId}?month=${month}&year=${year}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || errorData?.error || "Failed to fetch monthly shifts";
+    throw new Error(errorMessage);
   }
 
   return await response.json();

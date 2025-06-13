@@ -26,7 +26,6 @@ const formatDate = (dateString) => {
   }
 };
 
-// Custom tooltip to display date and values nicely
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -59,7 +58,6 @@ export function DailySalesChart() {
   const [maxValue, setMaxValue] = useState(10000);
   const dataFetched = useRef(false);
 
-  // Load sales data when component mounts
   useEffect(() => {
     const loadData = async () => {
       if (dataFetched.current) return;
@@ -93,7 +91,6 @@ export function DailySalesChart() {
     };
 
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

@@ -1,10 +1,6 @@
-// notificationFunctions.js
 const admin = require('firebase-admin');
 const { db } = require("../../src/config/firebase");
 
-/**
- * Create a low stock notification for admins
- */
 async function createLowStockNotification(lowStockItems) {
   try {
     const notification = {
@@ -37,9 +33,7 @@ async function createLowStockNotification(lowStockItems) {
   }
 }
 
-/**
- * Create a low stock notification for store managers
- */
+
 async function createLowStockNotificationForManager(lowStockItems) {
   try {
     const notification = {
@@ -72,9 +66,7 @@ async function createLowStockNotificationForManager(lowStockItems) {
 }
 }
 
-/**
- * Create a missing roster notification for admin
- */
+
 async function createMissingRosterNotificationForAdmin() {
   try {
     const notification = {

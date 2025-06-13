@@ -110,7 +110,7 @@ const createRequestNotification = async (requestData, targetRole) => {
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             action: {
                 type: 'link',
-                destination: 'more/requests',
+                destination: '../requests',
                 label: 'Review Request'
             }
         };

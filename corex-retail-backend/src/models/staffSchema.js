@@ -92,7 +92,7 @@ const employeeSchema = {
     type: 'string',
     required: false,
     enum: ['single', 'married', 'divorced', 'widowed', 'separated'],
-    default: ''
+    default: 'single'
   },
 
   // Location Information
@@ -148,20 +148,17 @@ const employeeSchema = {
   },
 
   // Timestamps
-
-  lastNotificationCheck: {
+lastNotificationCheck: {
     type: 'timestamp',
     default: admin.firestore.FieldValue.serverTimestamp()
   },
-    createdAt: {
+  createdAt: {
     type: 'timestamp',
-    required: true,
-    default: () => new Date()
+    default: admin.firestore.FieldValue.serverTimestamp()
   },
   updatedAt: {
     type: 'timestamp',
-    required: true,
-    default: () => new Date()
+    default: admin.firestore.FieldValue.serverTimestamp()
   }
 };
 

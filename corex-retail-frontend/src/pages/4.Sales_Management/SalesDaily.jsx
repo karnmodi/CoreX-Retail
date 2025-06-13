@@ -127,7 +127,7 @@ function SalesDaily() {
               (sale.quantity &&
                 sale.quantity.toString().includes(lowercaseTerm)) ||
               (sale.totalAmount &&
-                sale.totalAmount.toString().includes(lowercaseTerm)) || 
+                sale.totalAmount.toString().includes(lowercaseTerm)) ||
               (sale.invoiceNumber &&
                 sale.invoiceNumber.toLowerCase().includes(lowercaseTerm)) ||
               (sale.paymentMethod &&
@@ -187,16 +187,33 @@ function SalesDaily() {
     }
   }, [selectedDateSales, searchTerm, handleSearchChange]);
 
-  // Format date for display
-  const formatDisplayDate = (dateStr) => {
+  function formatDisplayDate(input) {
+    let date;
+
     try {
-      const date = new Date(dateStr);
+      if (input instanceof Date) {
+        date = input;
+      } else if (input?.toDate) {
+        date = input.toDate();
+      } else if (input?._seconds && input?._nanoseconds !== undefined) {
+        // Firestore timestamp with _seconds and _nanoseconds
+        date = new Date(input._seconds * 1000 + input._nanoseconds / 1e6);
+      } else if (typeof input === "string" || typeof input === "number") {
+        date = new Date(input);
+      } else {
+        return "Invalid date";
+      }
+
+      // Check for invalid date
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+
       return format(date, "MMMM d, yyyy");
     } catch (e) {
-      return dateStr;
+      return "Invalid date";
     }
-  };
-
+  }
   return (
     <div className="flex flex-col">
       <SalesHeader

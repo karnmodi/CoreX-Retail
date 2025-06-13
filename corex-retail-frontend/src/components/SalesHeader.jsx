@@ -169,10 +169,6 @@ export function SalesHeader({
               />
             </PopoverContent>
           </Popover>
-
-          <Button variant="outline" size="icon" onClick={handleExport}>
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </div>

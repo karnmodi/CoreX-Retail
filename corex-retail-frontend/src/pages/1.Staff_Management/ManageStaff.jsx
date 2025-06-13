@@ -104,13 +104,13 @@ const ManageStaffPage = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>Error loading staff data: {error}</AlertDescription>
-      </Alert>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <Alert variant="destructive">
+  //       <AlertDescription>Error loading staff data: {error}</AlertDescription>
+  //     </Alert>
+  //   );
+  // }
 
   // Modify role filter options based on user role
   const getRoleFilterOptions = () => {

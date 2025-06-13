@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { format } from "date-fns";
+import { format, subMonths } from "date-fns";
 
 export function SalesOverviewChart() {
   const {
@@ -35,11 +35,10 @@ export function SalesOverviewChart() {
       try {
         // Using a full year range
         const endDate = new Date();
-        const startDate = new Date();
-        startDate.setFullYear(endDate.getFullYear() - 1);
+        const startDate = subMonths(endDate, 12); // Get data for the last 12 months
 
-        const formattedEndDate = endDate.toISOString().split("T")[0];
-        const formattedStartDate = startDate.toISOString().split("T")[0];
+        const formattedEndDate = format(endDate, "yyyy-MM-dd");
+        const formattedStartDate = format(startDate, "yyyy-MM-dd");
 
         console.log(
           `[SalesOverviewChart] Fetching data from ${formattedStartDate} to ${formattedEndDate}`
@@ -65,8 +64,6 @@ export function SalesOverviewChart() {
   }, []);
 
   useEffect(() => {
-    if (!salesByDateMonthly || !salesTargetsByRange) return;
-
     try {
       console.log(
         `[SalesOverviewChart] Processing ${
@@ -74,9 +71,16 @@ export function SalesOverviewChart() {
         } months of data`
       );
 
+      // If no monthly data, don't create any chart data
+      if (!salesByDateMonthly || salesByDateMonthly.length === 0) {
+        setChartData([]);
+        console.log("[SalesOverviewChart] No data available");
+        return;
+      }
+
       const targets = {};
 
-      if (salesTargetsByRange.summary) {
+      if (salesTargetsByRange && salesTargetsByRange.summary) {
         Object.entries(salesTargetsByRange.summary).forEach(([key, value]) => {
           if (key.startsWith("monthly-")) {
             const monthKey = key.substring(8);
@@ -87,10 +91,17 @@ export function SalesOverviewChart() {
 
       console.log("[SalesOverviewChart] Monthly targets:", targets);
 
+      // Process monthly data
       const chartArray = salesByDateMonthly.map((monthData) => {
+        // Ensure month is in correct format
         const monthKey = monthData.month;
+        // Format display name
+        const displayName = monthData.month.includes("-")
+          ? format(new Date(`${monthData.month}-01`), "MMM yyyy")
+          : monthData.month;
+
         return {
-          name: monthData.displayName,
+          name: displayName,
           month: monthKey,
           sales: monthData.totalAmount || 0,
           target: targets[monthKey] || 0,
@@ -100,6 +111,7 @@ export function SalesOverviewChart() {
       setChartData(chartArray);
     } catch (err) {
       console.error("[SalesOverviewChart] Error processing data:", err);
+      setChartData([]);
     }
   }, [salesByDateMonthly, salesTargetsByRange]);
 
@@ -107,9 +119,7 @@ export function SalesOverviewChart() {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-gray-200 shadow-md rounded">
-          <p className="font-semibold">
-            {format(new Date(`${label}-01`), "MMMM yyyy")}
-          </p>
+          <p className="font-semibold">{label}</p>
           {payload.map((entry, index) => (
             <p key={`item-${index}`} style={{ color: entry.color }}>
               {entry.name}: £
@@ -125,10 +135,10 @@ export function SalesOverviewChart() {
     return null;
   };
 
-  // Simplified loading check
+  // Check if we're still loading or have no data
   const isLoading = loading.salesByDateMonthly || loading.salesTargetsByRange;
 
-  if (isLoading && chartData.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[300px]">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -148,7 +158,7 @@ export function SalesOverviewChart() {
   if (!chartData.length) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-        No data to display.
+        No data to display. Try adding some sales transactions.
       </div>
     );
   }
@@ -179,10 +189,7 @@ export function SalesOverviewChart() {
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="month"
-            tickFormatter={(tick) => format(new Date(`${tick}-01`), "MMM yyyy")}
-          />
+          <XAxis dataKey="name" tickFormatter={(tick) => tick} />
 
           <YAxis
             domain={[0, yAxisMax]}

@@ -78,6 +78,53 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
     navigate(`../remove/${user.id}`);
   };
 
+function formatTimestamp(timestamp) {
+  if (!timestamp) return "N/A";
+
+  // 1. Firestore Timestamp (with .toDate method)
+  if (typeof timestamp.toDate === "function") {
+    return timestamp.toDate().toLocaleString("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  }
+
+  // 2. JavaScript Date object
+  if (timestamp instanceof Date) {
+    return timestamp.toLocaleString("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  }
+
+  // 3. Try parsing as ISO string or other formats directly
+  const parsedDate = new Date(timestamp);
+  if (!isNaN(parsedDate.getTime())) {
+    return parsedDate.toLocaleString("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  }
+
+  // 4. If it's a string, check for MM/DD/YYYY manually
+  if (typeof timestamp === "string") {
+    const mmddyyyyRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    const match = timestamp.match(mmddyyyyRegex);
+    if (match) {
+      const [_, mm, dd, yyyy] = match;
+      const fallbackDate = new Date(`${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`);
+      if (!isNaN(fallbackDate.getTime())) {
+        return fallbackDate.toLocaleString("en-GB", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+      }
+    }
+  }
+
+  return "Invalid Date";
+}
+
   const handlePrint = () => {
     // Create the employee name for filename
     const employeeName = getFullName(user.firstName, user.lastName).replace(
@@ -287,19 +334,19 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
 
             <div class="info-item">
               <div class="label">Start Date</div>
-              <div class="value">${user.startDate || "N/A"}</div>
+              <div class="value">${formatTimestamp(user.startDate) || "N/A"}</div>
             </div>
             <div class="info-item">
               <div class="label">Created At</div>
               <div class="value">${
                 user.createdAt
-                  ? new Date(user.createdAt) //.toDate()).toLocaleDateString()
+                  ? formatTimestamp(user.createdAt)
                   : "N/A"
               }</div>
             </div>
             <div class="info-item">
               <div class="label">Exit Date</div>
-              <div class="value">${user.exitDate || "N/A"}</div>
+              <div class="value">${formatTimestamp(user.exitDate) || "N/A"}</div>
             </div>
             <div class="info-item">
               <div class="label">Termination Type</div>
@@ -567,7 +614,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               label="Last Update Date"
               value={
                 user.updatedAt
-                  ? user.updatedAt //.toDate().toLocaleDateString("en-GB")
+                  ? formatTimestamp(user.updatedAt)
                   : "N/A"
               }
             />
@@ -575,7 +622,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               label="Start Date"
               value={
                 user.startDate
-                  ? new Date(user.startDate).toLocaleDateString("en-GB")
+                  ? formatTimestamp(user.startDate)
                   : "N/A"
               }
             />
@@ -583,7 +630,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               label="Created At"
               value={
                 user.createdAt
-                  ? user.createdAt //.toDate().toLocaleDateString("en-GB")
+                  ? formatTimestamp(user.createdAt)
                   : "N/A"
               }
             />
@@ -591,7 +638,7 @@ const UserDetailsDialog = ({ open, onClose, user, sections = {} }) => {
               label="Exit Date"
               value={
                 user.exitDate
-                  ? new Date(user.exitDate).toLocaleDateString("en-GB")
+                  ? formatTimestamp(user.exitDate)
                   : "N/A"
               }
             />
