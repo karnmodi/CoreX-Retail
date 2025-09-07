@@ -20,7 +20,7 @@ function Footer() {
 
   return (
     <footer className="text-xs text-gray-500 text-center p-2">
-      Last Updated: {lastUpdated}
+      Last Updated: {lastUpdated} by <b>Karan F. Modi</b>
     </footer>
   );
 }
