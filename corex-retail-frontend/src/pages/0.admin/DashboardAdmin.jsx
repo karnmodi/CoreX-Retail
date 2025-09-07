@@ -143,6 +143,14 @@ const DashboardAdmin = () => {
     }
   };
 
+  if (!dashboardData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <main className="container mx-auto px-4 py-6">
