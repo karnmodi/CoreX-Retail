@@ -150,6 +150,9 @@ async function prepareRecords(records) {
             // Double-check totalAmount calculation
             ensureTotalAmount(preparedRecord);
 
+            // **FIX: Ensure saleDateTime is properly set**
+            ensureSaleDateTime(preparedRecord);
+
             // Validate the record
             const validation = validateSalesItem(preparedRecord);
 
@@ -283,18 +286,46 @@ function standardizeFieldNames(record) {
 
 // Make sure time keys are preserved
 function preserveTimeKeys(preparedRecord, originalRecord) {
-    // Double-check the time keys are still present
-    if (!preparedRecord.dateKey || !preparedRecord.hourKey || !preparedRecord.minuteKey) {
-        preparedRecord.dateKey = originalRecord.dateKey;
-        preparedRecord.hourKey = originalRecord.hourKey;
-        preparedRecord.minuteKey = originalRecord.minuteKey;
+    if (!preparedRecord.dateKey)   preparedRecord.dateKey   = originalRecord.dateKey;
+    if (!preparedRecord.hourKey)   preparedRecord.hourKey   = originalRecord.hourKey;
+    if (!preparedRecord.minuteKey) preparedRecord.minuteKey = originalRecord.minuteKey;
+  
+    // NEW: preserve saleDateTime explicitly
+    if (!preparedRecord.saleDateTime) {
+      const src = originalRecord.saleDateTime || originalRecord.datetime;
+      if (src instanceof Date) {
+        preparedRecord.saleDateTime = src.toISOString();
+      } else if (typeof src === 'string' && src.trim()) {
+        const d = new Date(src);
+        preparedRecord.saleDateTime = isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      } else {
+        preparedRecord.saleDateTime = new Date().toISOString();
+      }
+    } else if (preparedRecord.saleDateTime instanceof Date) {
+      preparedRecord.saleDateTime = preparedRecord.saleDateTime.toISOString();
     }
-}
+  }
+  
 
 // Ensure totalAmount is calculated
 function ensureTotalAmount(record) {
     if ((!record.totalAmount || record.totalAmount === 0) && record.unitPrice && record.quantity) {
         record.totalAmount = parseFloat((record.unitPrice * record.quantity).toFixed(2));
+    }
+}
+
+// **NEW FUNCTION: Ensure saleDateTime is properly set**
+function ensureSaleDateTime(record) {
+    // If saleDateTime is undefined or null, try to use datetime field
+    if (!record.saleDateTime && record.datetime) {
+        record.saleDateTime = record.datetime;
+    }
+    
+    // If still undefined, create from the original datetime string if available
+    if (!record.saleDateTime) {
+        console.warn(`Warning: saleDateTime is undefined for record ${record.id || 'unknown'}`);
+        // Set to current time as fallback (you may want to handle this differently)
+        record.saleDateTime = new Date();
     }
 }
 
@@ -427,19 +458,35 @@ async function updateBulkAggregation(collection, docId, records) {
                     record.totalAmount = parseFloat((record.unitPrice * record.quantity).toFixed(2));
                 }
 
+                // **FIX: Ensure saleDateTime is not undefined before adding to salesArray**
+                if (!record.saleDateTime) {
+                    console.warn(`Warning: saleDateTime is undefined for record ${record.id}, using datetime or current time`);
+                    record.saleDateTime = record.datetime || new Date();
+                }
+
                 totalAmount += (record.totalAmount || 0);
                 totalQuantity += (record.quantity || 0);
 
-                salesArray.push({
+                // **FIX: Only include fields that are not undefined**
+                const salesItem = {
                     id: record.id,
-                    productId: record.productId,
-                    productName: record.productName,
-                    quantity: record.quantity,
-                    unitPrice: record.unitPrice,
-                    totalAmount: record.totalAmount,
-                    storeLocation: record.storeLocation,
+                    productId: record.productId || null,
+                    productName: record.productName || null,
+                    quantity: record.quantity || 0,
+                    unitPrice: record.unitPrice || 0,
+                    totalAmount: record.totalAmount || 0,
+                    storeLocation: record.storeLocation || null,
                     saleDateTime: record.saleDateTime
+                };
+
+                // Remove any undefined values
+                Object.keys(salesItem).forEach(key => {
+                    if (salesItem[key] === undefined) {
+                        delete salesItem[key];
+                    }
                 });
+
+                salesArray.push(salesItem);
             }
 
             if (doc.exists) {
